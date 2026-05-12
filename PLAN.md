@@ -251,57 +251,66 @@ interface Portrait {
 
 ### 3.4 File structure
 
+The repository root contains the spec, docs, and (in Phase 2) the Tauri shell. The Phase 1 web application lives under `app/`. This keeps "what to build" (PLAN.md, docs/) separate from "how it's built" (app/) and leaves a clean sibling slot for `src-tauri/` in Phase 2.
+
 ```
-calabash/
-├── public/
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── components/
-│   │   ├── Canvas/
-│   │   │   ├── CalabashCanvas.tsx        # React Flow wrapper
-│   │   │   ├── CharacterNode.tsx          # custom node component
-│   │   │   ├── RelationshipEdge.tsx       # custom edge component
-│   │   │   └── ChapterSlider.tsx          # bottom-docked slider
-│   │   ├── Sidebar/
-│   │   │   ├── BookList.tsx
-│   │   │   └── BookSettings.tsx
-│   │   ├── Inspector/
-│   │   │   ├── CharacterInspector.tsx     # right panel, edits selected node
-│   │   │   └── RelationshipInspector.tsx  # right panel, edits selected edge
-│   │   ├── CommandBar/
-│   │   │   └── GlobalSearch.tsx           # / shortcut
-│   │   └── ui/                             # shadcn primitives
-│   ├── stores/
-│   │   ├── bookStore.ts                    # Zustand: active book, chapter cursor
-│   │   ├── graphStore.ts                   # nodes, edges, selection, undo/redo
-│   │   └── uiStore.ts                      # theme, panel state
-│   ├── db/
-│   │   ├── schema.ts                       # Dexie table definitions
-│   │   ├── books.ts                        # book CRUD
-│   │   ├── characters.ts
-│   │   ├── relationships.ts
-│   │   ├── portraits.ts                    # binary blob storage + URL.createObjectURL helpers
-│   │   └── importExport.ts                 # JSON import/export (inlines portraits as data URLs)
-│   ├── hooks/
-│   │   ├── useKeyboardShortcuts.ts
-│   │   ├── usePortraitUrl.ts               # Blob -> object URL with revoke on unmount
-│   │   └── useChapterFilter.ts             # the core filter logic
-│   ├── lib/
-│   │   ├── certainty.ts                    # cycle, visual mapping
-│   │   ├── relationshipTypes.ts            # RELATIONSHIP_TYPE_META: directionality table
-│   │   ├── aliases.ts                      # resolve display name for a given chapter
-│   │   ├── layout.ts                       # force-directed layout trigger
-│   │   └── theme.ts                        # CSS variable definitions
-│   └── styles/
-│       ├── globals.css
-│       └── themes.css                      # light + dark CSS vars
-├── index.html
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-├── vite.config.ts
-└── README.md
+Calabash/                                       # repo root
+├── PLAN.md                                     # canonical product + technical spec
+├── README.md
+├── .gitignore
+├── docs/
+│   └── plans/                                  # implementation plans (writing-plans output)
+└── app/                                        # Phase 1 web application
+    ├── public/
+    ├── src/
+    │   ├── main.tsx
+    │   ├── App.tsx
+    │   ├── components/
+    │   │   ├── Canvas/
+    │   │   │   ├── CalabashCanvas.tsx         # React Flow wrapper
+    │   │   │   ├── CharacterNode.tsx          # custom node component
+    │   │   │   ├── RelationshipEdge.tsx       # custom edge component
+    │   │   │   └── ChapterSlider.tsx          # bottom-docked slider
+    │   │   ├── Sidebar/
+    │   │   │   ├── BookList.tsx
+    │   │   │   └── BookSettings.tsx
+    │   │   ├── Inspector/
+    │   │   │   ├── CharacterInspector.tsx     # right panel, edits selected node
+    │   │   │   └── RelationshipInspector.tsx  # right panel, edits selected edge
+    │   │   ├── CommandBar/
+    │   │   │   └── GlobalSearch.tsx           # / shortcut
+    │   │   └── ui/                            # shadcn primitives
+    │   ├── stores/
+    │   │   ├── bookStore.ts                   # Zustand: active book, chapter cursor
+    │   │   ├── graphStore.ts                  # nodes, edges, selection, undo/redo
+    │   │   └── uiStore.ts                     # theme, panel state
+    │   ├── db/
+    │   │   ├── schema.ts                      # Dexie table definitions
+    │   │   ├── books.ts                       # book CRUD
+    │   │   ├── characters.ts
+    │   │   ├── relationships.ts
+    │   │   ├── portraits.ts                   # binary blob storage + URL.createObjectURL helpers
+    │   │   └── importExport.ts                # JSON import/export (inlines portraits as data URLs)
+    │   ├── hooks/
+    │   │   ├── useKeyboardShortcuts.ts
+    │   │   ├── usePortraitUrl.ts              # Blob -> object URL with revoke on unmount
+    │   │   └── useChapterFilter.ts            # the core filter logic
+    │   ├── lib/
+    │   │   ├── certainty.ts                   # cycle, visual mapping
+    │   │   ├── relationshipTypes.ts           # RELATIONSHIP_TYPE_META: directionality table
+    │   │   ├── aliases.ts                     # resolve display name for a given chapter
+    │   │   ├── layout.ts                      # force-directed layout trigger
+    │   │   └── theme.ts                       # CSS variable definitions
+    │   └── styles/
+    │       ├── globals.css
+    │       └── themes.css                     # light + dark CSS vars
+    ├── index.html
+    ├── package.json
+    ├── tsconfig.json
+    ├── tsconfig.app.json
+    ├── tsconfig.node.json
+    ├── tailwind.config.ts
+    └── vite.config.ts
 ```
 
 ### 3.5 Responsive layout

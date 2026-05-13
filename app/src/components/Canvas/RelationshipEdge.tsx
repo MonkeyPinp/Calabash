@@ -1,7 +1,6 @@
 import { memo } from 'react';
-import { BaseEdge, EdgeLabelRenderer, type EdgeProps } from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps, type Position } from '@xyflow/react';
 import type { CertaintyLevel, RelationshipType, Relationship } from '@/types';
-import { isDirected } from '@/lib/relationshipTypes';
 import { cycleCertainty } from '@/lib/certainty';
 import { updateRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
@@ -21,6 +20,7 @@ const CERTAINTY_STYLE: Record<CertaintyLevel, { strokeDasharray: string; opacity
   disproven: { strokeDasharray: '4 4', opacity: 0.4 },
 };
 
+// Must stay in sync with EDGE_COLOR in CalabashCanvas (both reference themes.css vars)
 const TYPE_COLOR: Record<RelationshipType, string> = {
   family:       'var(--rel-family)',
   professional: 'var(--rel-professional)',
@@ -31,50 +31,72 @@ const TYPE_COLOR: Record<RelationshipType, string> = {
 };
 
 /**
- * Returns a quadratic bezier path whose midpoint is offset perpendicularly
- * from the straight line between source and target.
- * offset=0 → straight line; offset>0 → bows to the left; offset<0 → bows right.
+ * Compute a cubic bezier path using React Flow's getBezierPath, but offset the
+ * two control points perpendicularly so parallel edges fan out to opposite sides.
+ * Source and target endpoints stay at the original node handles so the marker
+ * arrow is anchored correctly.
  */
-function getOffsetPath(
-  sx: number, sy: number,
-  tx: number, ty: number,
+function getEdgePath(
+  sourceX: number, sourceY: number, sourcePosition: Position,
+  targetX: number, targetY: number, targetPosition: Position,
   offset: number,
 ): [path: string, labelX: number, labelY: number] {
-  const mx = (sx + tx) / 2;
-  const my = (sy + ty) / 2;
-  const dx = tx - sx;
-  const dy = ty - sy;
+  const [basePath] = getBezierPath({
+    sourceX, sourceY, sourcePosition,
+    targetX, targetY, targetPosition,
+  });
+
+  if (offset === 0) {
+    // Re-use getBezierPath result directly — nice natural curve, label at midpoint.
+    const [p, lx, ly] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+    return [p, lx, ly];
+  }
+
+  // Parse cubic bezier output: "M sx,sy C c1x,c1y c2x,c2y tx,ty"
+  const m = basePath.match(/M ([\d.-]+),([\d.-]+) C ([\d.-]+),([\d.-]+) ([\d.-]+),([\d.-]+) ([\d.-]+),([\d.-]+)/);
+  if (!m) {
+    const [p, lx, ly] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+    return [p, lx, ly];
+  }
+
+  // Perpendicular unit vector to the straight-line direction
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  // Perpendicular unit vector (rotate 90° CCW)
-  const px = -dy / len;
-  const py = dx / len;
-  // Control point displaced perpendicularly
-  const cx = mx + px * offset;
-  const cy = my + py * offset;
-  // Label sits at the bezier midpoint: t=0.5 → (s + 2c + t) / 4
-  const labelX = (sx + 2 * cx + tx) / 4;
-  const labelY = (sy + 2 * cy + ty) / 4;
-  return [`M ${sx},${sy} Q ${cx},${cy} ${tx},${ty}`, labelX, labelY];
+  const ox = (-dy / len) * offset;
+  const oy = (dx / len) * offset;
+
+  // Offset only the control points — source & target stay at node handles
+  const c1x = parseFloat(m[3]) + ox;
+  const c1y = parseFloat(m[4]) + oy;
+  const c2x = parseFloat(m[5]) + ox;
+  const c2y = parseFloat(m[6]) + oy;
+
+  const path = `M ${sourceX},${sourceY} C ${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`;
+  // Label at cubic bezier midpoint (t=0.5): (s + 3c1 + 3c2 + t) / 8
+  const labelX = (sourceX + 3 * c1x + 3 * c2x + targetX) / 8;
+  const labelY = (sourceY + 3 * c1y + 3 * c2y + targetY) / 8;
+
+  return [path, labelX, labelY];
 }
 
 function RelationshipEdgeImpl(props: EdgeProps) {
   const data = props.data as unknown as RelationshipEdgeData;
   const offset = data.pathOffset ?? 0;
-
-  const [pathD, labelX, labelY] = getOffsetPath(
-    props.sourceX, props.sourceY,
-    props.targetX, props.targetY,
-    offset,
-  );
-
-  const { strokeDasharray, opacity } = CERTAINTY_STYLE[data.certainty];
   const stroke = TYPE_COLOR[data.type];
-  const markerEnd = isDirected(data.type) ? 'url(#arrow)' : 'url(#arrow-open)';
+  const { strokeDasharray, opacity } = CERTAINTY_STYLE[data.certainty];
   const fullRel = data.relationship;
   const displayLabel = fullRel?.label?.trim() || data.type;
 
-  async function handleBadgeClick(e: React.MouseEvent) {
-    e.stopPropagation();
+  const [pathD, labelX, labelY] = getEdgePath(
+    props.sourceX, props.sourceY, props.sourcePosition,
+    props.targetX, props.targetY, props.targetPosition,
+    offset,
+  );
+
+  async function handleBadgeClick() {
+    // No stopPropagation — the click also reaches the edge SVG path so React Flow
+    // selects the edge and opens RelationshipInspector at the same time.
     if (!fullRel) return;
     const next = cycleCertainty(data.certainty);
     await updateRelationship(props.id, { certainty: next });
@@ -86,19 +108,16 @@ function RelationshipEdgeImpl(props: EdgeProps) {
       <BaseEdge
         id={props.id}
         path={pathD}
-        markerEnd={markerEnd}
-        interactionWidth={24}
+        markerEnd={props.markerEnd}
+        interactionWidth={40}
         style={{ stroke, strokeDasharray, opacity, strokeWidth: 2 }}
       />
       <EdgeLabelRenderer>
-        {/*
-          Container has pointerEvents:none so the edge body behind it remains
-          selectable. Only the badge circle itself captures clicks.
-        */}
+        {/* Container: pointerEvents none — edge body behind it stays clickable */}
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            transform: `translate(-50%,-50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'none',
             display: 'flex',
             flexDirection: 'column',
@@ -107,10 +126,10 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             userSelect: 'none',
           }}
         >
-          {/* Badge circle — the ONLY interactive element */}
+          {/* Badge: only interactive element — click cycles certainty */}
           <div
             data-testid="certainty-badge"
-            onClick={handleBadgeClick}
+            onClick={() => void handleBadgeClick()}
             style={{
               pointerEvents: 'all',
               cursor: 'pointer',
@@ -130,7 +149,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             {BADGE[data.certainty]}
           </div>
 
-          {/* Type pill — display only, no pointer events */}
+          {/* Type pill — display only */}
           <div style={{
             background: 'var(--bg-panel)',
             border: `1px solid ${stroke}`,
@@ -143,7 +162,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             fontWeight: 500,
-            opacity: 0.85,
+            opacity: 0.9,
           }}>
             {displayLabel}
           </div>

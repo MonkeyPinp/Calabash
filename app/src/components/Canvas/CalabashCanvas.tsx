@@ -4,6 +4,7 @@ import {
   ReactFlowProvider,
   Background,
   Controls,
+  MarkerType,
   useReactFlow,
   type Node,
   type Edge,
@@ -17,12 +18,25 @@ import RelationshipEdge from './RelationshipEdge';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
+import { isDirected } from '@/lib/relationshipTypes';
 import { deleteCharacter, updateCharacter } from '@/db/characters';
 import { deleteRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
+import type { RelationshipType } from '@/types';
 
 const nodeTypes = { character: CharacterNode };
 const edgeTypes = { relationship: RelationshipEdge };
+
+// Hex colours — must match themes.css CSS variables for the default light theme.
+// Used for React Flow's marker system (SVG markers can't use CSS vars).
+const EDGE_COLOR: Record<RelationshipType, string> = {
+  family:       '#b06820',
+  professional: '#2c6080',
+  romantic:     '#a83870',
+  hostile:      '#b02020',
+  suspicion:    '#9a7010',
+  other:        '#707070',
+};
 
 export interface CalabashCanvasProps {
   characters: Character[];
@@ -103,18 +117,26 @@ function CalabashCanvasInner({
       const idx = pairIndex.get(key) ?? 0;
       pairIndex.set(key, idx + 1);
 
-      // Spread parallel edges in opposite directions using perpendicular offset.
-      // 1 edge → offset 0 (straight bezier).
-      // 2 edges → offsets −40, +40 (one curves left, one curves right).
-      // 3 edges → −50, 0, +50.  And so on.
-      const spread = 40;
+      // Offset parallel edges symmetrically in opposite directions.
+      // Single edge: 0 offset (use default bezier curve).
+      // Two edges: −45 and +45 (curve left / right).
+      const spread = 45;
       const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
+      const color = EDGE_COLOR[r.type];
       return {
         id: r.id,
         source: r.sourceId,
         target: r.targetId,
         type: 'relationship',
+        // React Flow creates the SVG <marker> def from this object and passes
+        // the resolved url() string to the custom edge via props.markerEnd.
+        markerEnd: {
+          type: isDirected(r.type) ? MarkerType.ArrowClosed : MarkerType.Arrow,
+          color,
+          width: 14,
+          height: 14,
+        },
         data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset },
       };
     });
@@ -209,19 +231,6 @@ function CalabashCanvasInner({
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
-        {/* SVG marker defs for edge arrows */}
-        <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-          <defs>
-            {/* Filled arrow — directed relationships (hostile, suspicion) */}
-            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-              <path d="M0,0 L0,6 L9,3 z" fill="context-stroke" />
-            </marker>
-            {/* Open arrow — symmetric relationships */}
-            <marker id="arrow-open" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-              <path d="M0,0 L9,3 L0,6" fill="none" stroke="context-stroke" strokeWidth="1.5" />
-            </marker>
-          </defs>
-        </svg>
         <Background />
         <Controls />
       </ReactFlow>

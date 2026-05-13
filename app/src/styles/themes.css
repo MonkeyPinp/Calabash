@@ -1,0 +1,35 @@
+:root[data-theme='light'] {
+  --bg-canvas: #fafaf7;
+  --bg-panel: #ffffff;
+  --fg-primary: #1a1a1a;
+  --fg-muted: #6b6b6b;
+  --border: #e5e5e0;
+  --accent: #8b2e2e;
+  --node-detective: #2c5f7c;
+  --node-suspect: #8b2e2e;
+  --node-victim: #5c5c5c;
+  --node-witness: #7c6f2c;
+  --node-bystander: #b8b8b3;
+  --node-other: #8a8a85;
+  --edge-confirmed: #1a1a1a;
+  --edge-suspected: #6b6b6b;
+  --edge-disproven: #b8b8b3;
+}
+
+:root[data-theme='dark'] {
+  --bg-canvas: #14140f;
+  --bg-panel: #1d1d18;
+  --fg-primary: #f3f3ee;
+  --fg-muted: #a0a09a;
+  --border: #2c2c25;
+  --accent: #c45a5a;
+  --node-detective: #5fa3c8;
+  --node-suspect: #c45a5a;
+  --node-victim: #9a9a95;
+  --node-witness: #c9b855;
+  --node-bystander: #5c5c57;
+  --node-other: #757570;
+  --edge-confirmed: #f3f3ee;
+  --edge-suspected: #a0a09a;
+  --edge-disproven: #5c5c57;
+}

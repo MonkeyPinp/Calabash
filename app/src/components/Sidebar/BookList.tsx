@@ -4,6 +4,7 @@ import type { Book } from '@/types';
 import { listBooks, createBook, updateBook, deleteBook } from '@/db/books';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
+import { seedRogerAckroyd } from '@/lib/demoData';
 
 // ─── Relative time helper ────────────────────────────────────────────────────
 
@@ -521,22 +522,35 @@ export default function BookList() {
 
       {/* + New Book button */}
       {!showNewForm && (
-        <button
-          onClick={() => setShowNewForm(true)}
-          style={{
-            margin: '8px 12px',
-            padding: '6px 0',
-            fontSize: 13,
-            background: 'transparent',
-            border: '1px dashed var(--border)',
-            borderRadius: 4,
-            color: 'var(--fg-muted)',
-            cursor: 'pointer',
-            textAlign: 'center',
-          }}
-        >
-          + New Book
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, margin: '6px 12px 8px' }}>
+          <button
+            onClick={() => setShowNewForm(true)}
+            style={{
+              padding: '6px 0', fontSize: 13,
+              background: 'transparent', border: '1px dashed var(--border)',
+              borderRadius: 4, color: 'var(--fg-muted)', cursor: 'pointer', textAlign: 'center',
+            }}
+          >
+            + New Book
+          </button>
+          <button
+            onClick={async () => {
+              const newBookId = await seedRogerAckroyd();
+              await refresh();
+              setActiveBook(newBookId);
+              setCharacters([]);
+              setRelationships([]);
+            }}
+            style={{
+              padding: '5px 0', fontSize: 11,
+              background: 'transparent', border: '1px dashed var(--border)',
+              borderRadius: 4, color: 'var(--fg-muted)', cursor: 'pointer', textAlign: 'center',
+              opacity: 0.7,
+            }}
+          >
+            ↓ Load Ackroyd demo
+          </button>
+        </div>
       )}
 
       {/* Hover show menu button style */}

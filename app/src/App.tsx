@@ -11,7 +11,6 @@ import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
 import { useUiStore } from './stores/uiStore';
 import { exportBookAsJson, importBookFromJson } from './db/importExport';
-import { seedRogerAckroyd } from './lib/demoData';
 
 export default function App() {
   const { loading } = useBookHydration();
@@ -50,12 +49,6 @@ export default function App() {
   const handleFitViewReady = useCallback((fn: () => void) => {
     fitViewRef.current = fn;
   }, []);
-
-  // Demo data handler
-  async function handleLoadDemo() {
-    const newBookId = await seedRogerAckroyd();
-    setActiveBook(newBookId);
-  }
 
   // Export handler
   async function handleExport() {
@@ -237,25 +230,10 @@ export default function App() {
             </div>
           ) : activeBookId === null ? (
             <div style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              height: '100%', gap: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              height: '100%', color: 'var(--fg-muted)', fontSize: 14,
             }}>
-              <div style={{ fontSize: 14, color: 'var(--fg-muted)' }}>
-                Create a book in the sidebar to get started
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--fg-muted)', opacity: 0.6 }}>— or —</div>
-              <button
-                onClick={() => void handleLoadDemo()}
-                style={{
-                  padding: '8px 18px', fontSize: 13,
-                  background: 'var(--accent)', color: '#fff',
-                  border: 'none', borderRadius: 6, cursor: 'pointer',
-                  fontWeight: 500,
-                }}
-              >
-                Try demo: The Murder of Roger Ackroyd
-              </button>
+              Create a book in the sidebar — or load the Ackroyd demo ↙
             </div>
           ) : (
             <CalabashCanvas

@@ -103,18 +103,19 @@ function CalabashCanvasInner({
       const idx = pairIndex.get(key) ?? 0;
       pairIndex.set(key, idx + 1);
 
-      // Spread parallel edges symmetrically around a base curvature
-      // Single edge: 0.25. Two edges: 0.12 and 0.45. Three: 0.1, 0.3, 0.55. Etc.
-      const base = 0.12;
-      const step = count > 1 ? 0.33 / (count - 1) : 0;
-      const curvature = count === 1 ? 0.25 : base + idx * step;
+      // Spread parallel edges in opposite directions using perpendicular offset.
+      // 1 edge → offset 0 (straight bezier).
+      // 2 edges → offsets −40, +40 (one curves left, one curves right).
+      // 3 edges → −50, 0, +50.  And so on.
+      const spread = 40;
+      const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
       return {
         id: r.id,
         source: r.sourceId,
         target: r.targetId,
         type: 'relationship',
-        data: { certainty: r.certainty, type: r.type, relationship: r, curvature },
+        data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset },
       };
     });
   }, [relationships, visibleCharIds, currentChapter]);

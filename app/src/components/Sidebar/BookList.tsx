@@ -4,7 +4,7 @@ import type { Book } from '@/types';
 import { listBooks, createBook, updateBook, deleteBook } from '@/db/books';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
-import { seedRogerAckroyd } from '@/lib/demoData';
+import { seedRogerAckroyd, seedHundredYearsSolitude } from '@/lib/demoData';
 
 // ─── Relative time helper ────────────────────────────────────────────────────
 
@@ -549,6 +549,23 @@ export default function BookList() {
             }}
           >
             ↓ Load Ackroyd demo
+          </button>
+          <button
+            onClick={async () => {
+              const newBookId = await seedHundredYearsSolitude();
+              await refresh();
+              setActiveBook(newBookId);
+              setCharacters([]);
+              setRelationships([]);
+            }}
+            style={{
+              padding: '5px 0', fontSize: 11,
+              background: 'transparent', border: '1px dashed var(--border)',
+              borderRadius: 4, color: 'var(--fg-muted)', cursor: 'pointer', textAlign: 'center',
+              opacity: 0.7,
+            }}
+          >
+            ↓ Load Solitude demo
           </button>
         </div>
       )}

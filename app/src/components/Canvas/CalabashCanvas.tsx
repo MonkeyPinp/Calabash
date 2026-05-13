@@ -1,9 +1,10 @@
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
   Background,
   Controls,
+  useReactFlow,
   type Node,
   type Edge,
   type OnSelectionChangeParams,
@@ -28,9 +29,20 @@ export interface CalabashCanvasProps {
   relationships: Relationship[];
   currentChapter: number;
   bookId: string | null;
+  onNodeSelect?: (id: string | null) => void;
+  onEdgeSelect?: (id: string | null) => void;
+  onFitViewReady?: (fn: () => void) => void;
 }
 
-function CalabashCanvasInner({ characters, relationships, currentChapter, bookId }: CalabashCanvasProps) {
+function CalabashCanvasInner({
+  characters,
+  relationships,
+  currentChapter,
+  bookId,
+  onNodeSelect,
+  onEdgeSelect,
+  onFitViewReady,
+}: CalabashCanvasProps) {
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [pendingConnection, setPendingConnection] = useState<{ sourceId: string; targetId: string } | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
@@ -41,6 +53,14 @@ function CalabashCanvasInner({ characters, relationships, currentChapter, bookId
   const removeCharacter = useGraphStore((s) => s.removeCharacter);
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
+
+  const { fitView } = useReactFlow();
+
+  // Expose fitView to parent once on mount
+  useEffect(() => {
+    onFitViewReady?.(fitView);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const nodes: Node[] = useMemo(
     () =>
@@ -79,57 +99,78 @@ function CalabashCanvasInner({ characters, relationships, currentChapter, bookId
     [relationships, visibleCharIds, currentChapter],
   );
 
-  const handleSelectionChange = useCallback(({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
-    setSelectedNodeIds(new Set(selNodes.map((n) => n.id)));
-    setSelectedEdgeIds(new Set(selEdges.map((e) => e.id)));
-  }, []);
+  const handleSelectionChange = useCallback(
+    ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
+      const nodeIds = new Set(selNodes.map((n) => n.id));
+      const edgeIds = new Set(selEdges.map((e) => e.id));
+      setSelectedNodeIds(nodeIds);
+      setSelectedEdgeIds(edgeIds);
 
-  const handleKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-
-    if (selectedNodeIds.size > 0) {
-      // Delete relationships connected to selected nodes first
-      const relsToDelete = relationships.filter(
-        (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
-      );
-      for (const rel of relsToDelete) {
-        await deleteRelationship(rel.id);
-        removeRelationship(rel.id);
+      if (onNodeSelect) {
+        onNodeSelect(selNodes.length === 1 ? selNodes[0].id : null);
       }
-      // Delete selected characters
-      for (const id of selectedNodeIds) {
-        await deleteCharacter(id);
-        removeCharacter(id);
+      if (onEdgeSelect) {
+        onEdgeSelect(selEdges.length === 1 ? selEdges[0].id : null);
       }
-    }
+    },
+    [onNodeSelect, onEdgeSelect],
+  );
 
-    if (selectedEdgeIds.size > 0) {
-      for (const id of selectedEdgeIds) {
-        await deleteRelationship(id);
-        removeRelationship(id);
+  const handleKeyDown = useCallback(
+    async (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+
+      if (selectedNodeIds.size > 0) {
+        // Delete relationships connected to selected nodes first
+        const relsToDelete = relationships.filter(
+          (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
+        );
+        for (const rel of relsToDelete) {
+          await deleteRelationship(rel.id);
+          removeRelationship(rel.id);
+        }
+        // Delete selected characters
+        for (const id of selectedNodeIds) {
+          await deleteCharacter(id);
+          removeCharacter(id);
+        }
       }
-    }
-  }, [selectedNodeIds, selectedEdgeIds, relationships, removeCharacter, removeRelationship]);
 
-  const handleDoubleClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (!bookId) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('.react-flow__node')) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const position = {
-      x: event.clientX - bounds.left,
-      y: event.clientY - bounds.top,
-    };
-    setPendingPosition(position);
-  }, [bookId]);
+      if (selectedEdgeIds.size > 0) {
+        for (const id of selectedEdgeIds) {
+          await deleteRelationship(id);
+          removeRelationship(id);
+        }
+      }
+    },
+    [selectedNodeIds, selectedEdgeIds, relationships, removeCharacter, removeRelationship],
+  );
 
-  const handleNodeDragStop = useCallback((_event: React.MouseEvent, node: Node) => {
-    if (!bookId) return;
-    const char = characters.find((c) => c.id === node.id);
-    if (!char) return;
-    void updateCharacter(node.id, { position: node.position });
-    updateCharacterInStore({ ...char, position: node.position });
-  }, [bookId, characters, updateCharacterInStore]);
+  const handleDoubleClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!bookId) return;
+      const target = event.target as HTMLElement;
+      if (target.closest('.react-flow__node')) return;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const position = {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      };
+      setPendingPosition(position);
+    },
+    [bookId],
+  );
+
+  const handleNodeDragStop = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      if (!bookId) return;
+      const char = characters.find((c) => c.id === node.id);
+      if (!char) return;
+      void updateCharacter(node.id, { position: node.position });
+      updateCharacterInStore({ ...char, position: node.position });
+    },
+    [bookId, characters, updateCharacterInStore],
+  );
 
   return (
     <div

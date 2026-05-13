@@ -39,6 +39,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     EdgeLabelRenderer: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
     Background: () => null,
     Controls: () => null,
+    useReactFlow: () => ({ fitView: vi.fn() }),
   };
 });
 
@@ -55,7 +56,7 @@ describe('CalabashCanvas', () => {
   it('renders nodes for every character and the certainty badge for every edge', () => {
     render(
       <div style={{ width: 800, height: 600 }}>
-        <CalabashCanvas characters={characters} relationships={relationships} currentChapter={10} />
+        <CalabashCanvas characters={characters} relationships={relationships} currentChapter={10} bookId={null} />
       </div>,
     );
     expect(screen.getByText('Poirot')).toBeInTheDocument();
@@ -73,6 +74,7 @@ describe('CalabashCanvas', () => {
           characters={[characters[0], future]}
           relationships={[]}
           currentChapter={10}
+          bookId={null}
         />
       </div>,
     );

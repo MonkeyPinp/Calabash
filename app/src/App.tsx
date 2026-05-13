@@ -1,17 +1,23 @@
-import { useState } from 'react';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronRight, ChevronLeft, Moon, Sun } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
+import CharacterInspector from './components/Inspector/CharacterInspector';
+import RelationshipInspector from './components/Inspector/RelationshipInspector';
 import { useBookHydration } from './hooks/useBookHydration';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
+import { useUiStore } from './stores/uiStore';
+import { exportBookAsJson, importBookFromJson } from './db/importExport';
 
 export default function App() {
   const { loading } = useBookHydration();
   const [inspectorOpen, setInspectorOpen] = useState(true);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
+  const setActiveBook = useBookStore((s) => s.setActiveBook);
   const currentChapter = useBookStore((s) => s.currentChapter);
   const totalChapters = useBookStore((s) => s.totalChapters);
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
@@ -19,6 +25,58 @@ export default function App() {
 
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
+
+  const theme = useUiStore((s) => s.theme);
+  const toggleTheme = useUiStore((s) => s.toggleTheme);
+
+  // Inspector selection state
+  const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
+  const [selectedRelId, setSelectedRelId] = useState<string | null>(null);
+
+  // Reset selection when active book changes
+  useEffect(() => {
+    setSelectedCharId(null);
+    setSelectedRelId(null);
+  }, [activeBookId]);
+
+  // fitView ref — populated by CalabashCanvas on mount
+  const fitViewRef = useRef<(() => void) | undefined>(undefined);
+  const handleFitViewReady = useCallback((fn: () => void) => {
+    fitViewRef.current = fn;
+  }, []);
+
+  // Export handler
+  async function handleExport() {
+    if (!activeBookId) return;
+    const data = await exportBookAsJson(activeBookId);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.book.title.replace(/[^a-z0-9]/gi, '_')}.calabash.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Import handler
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const payload = JSON.parse(text);
+      const newBookId = await importBookFromJson(payload);
+      setActiveBook(newBookId);
+    } catch {
+      alert('Invalid Calabash JSON file.');
+    }
+    e.target.value = '';
+  }
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    fitView: () => fitViewRef.current?.(),
+  });
 
   return (
     <div
@@ -56,16 +114,81 @@ export default function App() {
         {/* Book list */}
         <BookList />
 
-        {/* Settings placeholder */}
+        {/* Settings / footer */}
         <div
           style={{
             padding: '12px 16px',
             borderTop: '1px solid var(--border)',
             color: 'var(--fg-muted)',
             fontSize: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
           }}
         >
-          {/* settings icon area — placeholder */}
+          {/* Theme toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={toggleTheme}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '3px 6px',
+                cursor: 'pointer',
+                color: 'var(--fg-muted)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
+            <span style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+              {theme === 'light' ? 'Dark mode' : 'Light mode'}
+            </span>
+          </div>
+
+          {/* Export / Import */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => void handleExport()}
+              disabled={!activeBookId}
+              style={{
+                flex: 1,
+                padding: '4px 0',
+                fontSize: 11,
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                color: activeBookId ? 'var(--fg-muted)' : 'var(--border)',
+                cursor: activeBookId ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Export
+            </button>
+            <label
+              style={{
+                flex: 1,
+                padding: '4px 0',
+                fontSize: 11,
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                color: 'var(--fg-muted)',
+                cursor: 'pointer',
+                textAlign: 'center',
+              }}
+            >
+              Import
+              <input
+                type="file"
+                accept="application/json,.json"
+                style={{ display: 'none' }}
+                onChange={(e) => void handleImport(e)}
+              />
+            </label>
+          </div>
         </div>
       </aside>
 
@@ -111,6 +234,9 @@ export default function App() {
               relationships={relationships}
               currentChapter={currentChapter}
               bookId={activeBookId}
+              onNodeSelect={setSelectedCharId}
+              onEdgeSelect={setSelectedRelId}
+              onFitViewReady={handleFitViewReady}
             />
           )}
         </div>
@@ -138,6 +264,7 @@ export default function App() {
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
+            overflow: 'hidden',
           }}
         >
           {/* Collapse/expand toggle */}
@@ -165,14 +292,19 @@ export default function App() {
           </button>
 
           {/* Inspector content */}
-          <div
-            style={{
-              padding: '16px',
-              color: 'var(--fg-muted)',
-              fontSize: 13,
-            }}
-          >
-            Select a character or relationship
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            {selectedCharId && activeBookId ? (
+              <CharacterInspector
+                characterId={selectedCharId}
+                bookId={activeBookId}
+              />
+            ) : selectedRelId ? (
+              <RelationshipInspector relationshipId={selectedRelId} />
+            ) : (
+              <div style={{ padding: 16, color: 'var(--fg-muted)', fontSize: 13 }}>
+                Select a character or relationship
+              </div>
+            )}
           </div>
         </aside>
       )}

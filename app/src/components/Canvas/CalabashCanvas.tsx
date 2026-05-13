@@ -178,16 +178,24 @@ function CalabashCanvasInner({
     onEdgeSelect?.(null);
   }, [onNodeSelect, onEdgeSelect]);
 
-  // Keep onSelectionChange for Delete-key tracking (still fires for nodes)
+  // Fires for marquee (Shift+drag) and keyboard selection
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
-      // Only update if the selection actually came from React Flow internals (keyboard, etc.)
-      if (selNodes.length > 0 || selEdges.length > 0) {
-        setSelectedNodeIds(new Set(selNodes.map((n) => n.id)));
-        setSelectedEdgeIds(new Set(selEdges.map((e) => e.id)));
+      if (selNodes.length + selEdges.length === 0) return;
+      const nodeIds = new Set(selNodes.map((n) => n.id));
+      const edgeIds = new Set(selEdges.map((e) => e.id));
+      setSelectedNodeIds(nodeIds);
+      setSelectedEdgeIds(edgeIds);
+      // For multi-select don't change inspector — for single node/edge keep current behavior
+      if (selNodes.length === 1 && selEdges.length === 0) {
+        onNodeSelect?.(selNodes[0].id);
+        onEdgeSelect?.(null);
+      } else if (selEdges.length === 1 && selNodes.length === 0) {
+        onEdgeSelect?.(selEdges[0].id);
+        onNodeSelect?.(null);
       }
     },
-    [],
+    [onNodeSelect, onEdgeSelect],
   );
 
   const handleKeyDown = useCallback(
@@ -267,7 +275,8 @@ function CalabashCanvasInner({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         panOnDrag
-        selectionOnDrag={false}
+        selectionOnDrag
+        selectionKeyCode="Shift"
         nodeDragThreshold={0}
         fitView
         onNodeClick={handleNodeClick}

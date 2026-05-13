@@ -1,9 +1,12 @@
+import { useState, useRef } from 'react';
+
 export interface ChapterSliderProps {
   bookId: string;
   totalChapters: number;
   currentChapter: number;
   onChange: (n: number) => void;
   onCommit: (n: number) => void;
+  onTotalChaptersChange?: (n: number) => void;
 }
 
 const btnStyle = (disabled: boolean): React.CSSProperties => ({
@@ -28,11 +31,31 @@ export default function ChapterSlider({
   currentChapter,
   onChange,
   onCommit,
+  onTotalChaptersChange,
 }: ChapterSliderProps) {
+  const [editingTotal, setEditingTotal] = useState(false);
+  const [totalDraft, setTotalDraft] = useState('');
+  const totalInputRef = useRef<HTMLInputElement>(null);
+
   function step(delta: number) {
     const next = Math.max(1, Math.min(totalChapters, currentChapter + delta));
     onChange(next);
     onCommit(next);
+  }
+
+  function startEditTotal() {
+    if (!onTotalChaptersChange) return;
+    setTotalDraft(String(totalChapters));
+    setEditingTotal(true);
+    setTimeout(() => { totalInputRef.current?.select(); }, 0);
+  }
+
+  function commitTotal() {
+    const v = parseInt(totalDraft, 10);
+    if (!isNaN(v) && v >= 1 && v !== totalChapters) {
+      onTotalChaptersChange?.(v);
+    }
+    setEditingTotal(false);
   }
 
   return (
@@ -61,8 +84,43 @@ export default function ChapterSlider({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontWeight: 500 }}>Chapter</span>
-          <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontWeight: 600 }}>
-            {currentChapter} / {totalChapters}
+
+          {/* Current / Total — click Total to edit */}
+          <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}>
+            {currentChapter} /
+            {editingTotal ? (
+              <input
+                ref={totalInputRef}
+                type="number"
+                min={1}
+                value={totalDraft}
+                onChange={(e) => setTotalDraft(e.target.value)}
+                onBlur={commitTotal}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitTotal();
+                  if (e.key === 'Escape') setEditingTotal(false);
+                }}
+                style={{
+                  width: 44, fontSize: 11, fontWeight: 600,
+                  background: 'var(--bg-canvas)', border: '1px solid var(--accent)',
+                  borderRadius: 3, color: 'var(--fg-primary)', padding: '0 3px',
+                  outline: 'none', textAlign: 'center',
+                }}
+              />
+            ) : (
+              <span
+                onClick={startEditTotal}
+                title={onTotalChaptersChange ? 'Click to change total chapters' : undefined}
+                style={{
+                  cursor: onTotalChaptersChange ? 'text' : 'default',
+                  borderBottom: onTotalChaptersChange ? '1px dashed var(--border)' : 'none',
+                  paddingBottom: 1,
+                  marginLeft: 2,
+                }}
+              >
+                {totalChapters}
+              </span>
+            )}
           </span>
         </div>
         <input

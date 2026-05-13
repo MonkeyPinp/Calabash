@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2 } from 'lucide-react';
+import { Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
@@ -11,6 +11,10 @@ import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
 import { useUiStore } from './stores/uiStore';
 import { exportBookAsJson, importBookFromJson } from './db/importExport';
+import GlobalSearch from './components/CommandBar/GlobalSearch';
+import { computeForceLayout } from './lib/layout';
+import { updateCharacter } from './db/characters';
+import { updateBook } from './db/books';
 
 const toolbarBtnStyle: React.CSSProperties = {
   background: 'transparent',
@@ -31,6 +35,7 @@ export default function App() {
   const { loading } = useBookHydration();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setActiveBook = useBookStore((s) => s.setActiveBook);
@@ -38,9 +43,11 @@ export default function App() {
   const totalChapters = useBookStore((s) => s.totalChapters);
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
   const setCurrentChapterAndPersist = useBookStore((s) => s.setCurrentChapterAndPersist);
+  const setTotalChapters = useBookStore((s) => s.setTotalChapters);
 
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
+  const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
   const undoStack = useGraphStore((s) => s.undoStack);
@@ -98,9 +105,32 @@ export default function App() {
     e.target.value = '';
   }
 
+  // Auto-layout: run force-directed layout on all visible characters
+  async function handleAutoLayout() {
+    if (!activeBookId) return;
+    const visible = characters.filter((c) => c.chapterIntroduced <= currentChapter);
+    const visibleIds = new Set(visible.map((c) => c.id));
+    const visibleEdges = relationships
+      .filter((r) => r.chapterRevealed <= currentChapter && visibleIds.has(r.sourceId) && visibleIds.has(r.targetId))
+      .map((r) => ({ source: r.sourceId, target: r.targetId }));
+
+    const positions = computeForceLayout(visible.map((c) => c.id), visibleEdges);
+
+    await Promise.all(
+      visible.map(async (c) => {
+        const pos = positions.get(c.id);
+        if (!pos) return;
+        await updateCharacter(c.id, { position: pos });
+        updateCharacterInStore({ ...c, position: pos });
+      }),
+    );
+    setTimeout(() => fitViewRef.current?.(), 50);
+  }
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
     fitView: () => fitViewRef.current?.(),
+    openSearch: () => setSearchOpen(true),
   });
 
   return (
@@ -264,6 +294,16 @@ export default function App() {
             <Undo2 size={15} />
           </button>
 
+          {/* Auto-layout */}
+          <button
+            onClick={() => void handleAutoLayout()}
+            disabled={!activeBookId}
+            title="Auto-layout (force-directed)"
+            style={toolbarBtnStyle}
+          >
+            <LayoutGrid size={15} />
+          </button>
+
           {/* Redo */}
           <button
             onClick={() => void redo()}
@@ -335,6 +375,10 @@ export default function App() {
             currentChapter={currentChapter}
             onChange={setCurrentChapter}
             onCommit={(n) => void setCurrentChapterAndPersist(activeBookId, n)}
+            onTotalChaptersChange={async (n) => {
+              setTotalChapters(n);
+              await updateBook(activeBookId, { totalChapters: n });
+            }}
           />
         )}
       </main>
@@ -367,6 +411,23 @@ export default function App() {
             )}
           </div>
         </aside>
+      )}
+
+      {/* Global search overlay */}
+      {searchOpen && (
+        <GlobalSearch
+          onSelectCharacter={(id) => {
+            setSelectedCharId(id);
+            setSelectedRelId(null);
+            setInspectorOpen(true);
+          }}
+          onSelectRelationship={(id) => {
+            setSelectedRelId(id);
+            setSelectedCharId(null);
+            setInspectorOpen(true);
+          }}
+          onClose={() => setSearchOpen(false)}
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useGraphStore } from '@/stores/graphStore';
 interface KeyboardShortcutOptions {
   onNewCharacter?: () => void;
   fitView?: () => void;
+  openSearch?: () => void;
 }
 
 function isInputFocused(): boolean {
@@ -13,7 +14,7 @@ function isInputFocused(): boolean {
   return tag === 'input' || tag === 'textarea' || tag === 'select' || (el as HTMLElement).isContentEditable;
 }
 
-export function useKeyboardShortcuts({ onNewCharacter, fitView }: KeyboardShortcutOptions) {
+export function useKeyboardShortcuts({ onNewCharacter, fitView, openSearch }: KeyboardShortcutOptions) {
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
 
@@ -45,11 +46,10 @@ export function useKeyboardShortcuts({ onNewCharacter, fitView }: KeyboardShortc
         return;
       }
 
-      // / — focus search input
+      // / — open global search
       if (e.key === '/') {
         e.preventDefault();
-        const searchInput = document.getElementById('book-search') as HTMLInputElement | null;
-        searchInput?.focus();
+        openSearch?.();
         return;
       }
 
@@ -63,5 +63,5 @@ export function useKeyboardShortcuts({ onNewCharacter, fitView }: KeyboardShortc
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, fitView, onNewCharacter]);
+  }, [undo, redo, fitView, onNewCharacter, openSearch]);
 }

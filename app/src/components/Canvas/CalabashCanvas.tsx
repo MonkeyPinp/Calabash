@@ -81,24 +81,43 @@ function CalabashCanvasInner({
 
   const visibleCharIds = useMemo(() => new Set(nodes.map((n) => n.id)), [nodes]);
 
-  const edges: Edge[] = useMemo(
-    () =>
-      relationships
-        .filter(
-          (r) =>
-            r.chapterRevealed <= currentChapter &&
-            visibleCharIds.has(r.sourceId) &&
-            visibleCharIds.has(r.targetId),
-        )
-        .map((r) => ({
-          id: r.id,
-          source: r.sourceId,
-          target: r.targetId,
-          type: 'relationship',
-          data: { certainty: r.certainty, type: r.type, relationship: r },
-        })),
-    [relationships, visibleCharIds, currentChapter],
-  );
+  const edges: Edge[] = useMemo(() => {
+    const visible = relationships.filter(
+      (r) =>
+        r.chapterRevealed <= currentChapter &&
+        visibleCharIds.has(r.sourceId) &&
+        visibleCharIds.has(r.targetId),
+    );
+
+    // Group by unordered node pair to detect parallel edges
+    const pairCount = new Map<string, number>();
+    const pairIndex = new Map<string, number>();
+    for (const r of visible) {
+      const key = [r.sourceId, r.targetId].sort().join('::');
+      pairCount.set(key, (pairCount.get(key) ?? 0) + 1);
+    }
+
+    return visible.map((r) => {
+      const key = [r.sourceId, r.targetId].sort().join('::');
+      const count = pairCount.get(key) ?? 1;
+      const idx = pairIndex.get(key) ?? 0;
+      pairIndex.set(key, idx + 1);
+
+      // Spread parallel edges symmetrically around a base curvature
+      // Single edge: 0.25. Two edges: 0.12 and 0.45. Three: 0.1, 0.3, 0.55. Etc.
+      const base = 0.12;
+      const step = count > 1 ? 0.33 / (count - 1) : 0;
+      const curvature = count === 1 ? 0.25 : base + idx * step;
+
+      return {
+        id: r.id,
+        source: r.sourceId,
+        target: r.targetId,
+        type: 'relationship',
+        data: { certainty: r.certainty, type: r.type, relationship: r, curvature },
+      };
+    });
+  }, [relationships, visibleCharIds, currentChapter]);
 
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
@@ -189,6 +208,19 @@ function CalabashCanvasInner({
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
+        {/* SVG marker defs for edge arrows */}
+        <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+          <defs>
+            {/* Filled arrow — directed relationships (hostile, suspicion) */}
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="context-stroke" />
+            </marker>
+            {/* Open arrow — symmetric relationships */}
+            <marker id="arrow-open" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L9,3 L0,6" fill="none" stroke="context-stroke" strokeWidth="1.5" />
+            </marker>
+          </defs>
+        </svg>
         <Background />
         <Controls />
       </ReactFlow>

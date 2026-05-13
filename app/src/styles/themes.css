@@ -14,6 +14,13 @@
   --edge-confirmed: #1a1a1a;
   --edge-suspected: #6b6b6b;
   --edge-disproven: #b8b8b3;
+  /* Relationship-type stroke colours */
+  --rel-family:       #b06820;
+  --rel-professional: #2c6080;
+  --rel-romantic:     #a83870;
+  --rel-hostile:      #b02020;
+  --rel-suspicion:    #9a7010;
+  --rel-other:        #707070;
 }
 
 :root[data-theme='dark'] {
@@ -32,4 +39,11 @@
   --edge-confirmed: #f3f3ee;
   --edge-suspected: #a0a09a;
   --edge-disproven: #5c5c57;
+  /* Relationship-type stroke colours */
+  --rel-family:       #e09040;
+  --rel-professional: #60a8d0;
+  --rel-romantic:     #e06098;
+  --rel-hostile:      #e05050;
+  --rel-suspicion:    #d4a830;
+  --rel-other:        #909090;
 }

@@ -126,19 +126,21 @@ function CalabashCanvasInner({
       const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
       const color = EDGE_COLOR[r.type];
+      const filled = { type: MarkerType.ArrowClosed, color, width: 14, height: 14 };
+      const open   = { type: MarkerType.Arrow,       color, width: 14, height: 14 };
+
+      // Resolve direction from explicit field, falling back to type-derived default.
+      const dir = r.direction ?? (isDirected(r.type) ? 'forward' : 'none');
+      const markerEnd   = (dir === 'forward' || dir === 'both') ? filled : open;
+      const markerStart = (dir === 'backward' || dir === 'both') ? filled : undefined;
+
       return {
         id: r.id,
         source: r.sourceId,
         target: r.targetId,
         type: 'relationship',
-        // React Flow creates the SVG <marker> def from this object and passes
-        // the resolved url() string to the custom edge via props.markerEnd.
-        markerEnd: {
-          type: isDirected(r.type) ? MarkerType.ArrowClosed : MarkerType.Arrow,
-          color,
-          width: 14,
-          height: 14,
-        },
+        markerEnd,
+        markerStart,
         data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset },
       };
     });

@@ -1,7 +1,6 @@
 import { memo } from 'react';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, MarkerType, type EdgeProps, type Position } from '@xyflow/react';
-import type { CertaintyLevel, RelationshipDirection, RelationshipType, Relationship } from '@/types';
-import { isDirected } from '@/lib/relationshipTypes';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps, type Position } from '@xyflow/react';
+import type { CertaintyLevel, RelationshipType, Relationship } from '@/types';
 import { cycleCertainty } from '@/lib/certainty';
 import { updateRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
@@ -30,47 +29,10 @@ const TYPE_COLOR: Record<RelationshipType, string> = {
   other:        'var(--rel-other)',
 };
 
-// Hex values must stay in sync with themes.css / EDGE_COLOR in CalabashCanvas
-const TYPE_HEX: Record<RelationshipType, string> = {
-  family:       '#b06820',
-  professional: '#2c6080',
-  romantic:     '#a83870',
-  hostile:      '#b02020',
-  suspicion:    '#9a7010',
-  other:        '#707070',
-};
-
-function resolveMarkers(rel: Relationship): { markerStart?: string; markerEnd?: string } {
-  const hex = TYPE_HEX[rel.type];
-  const arrowClosed = { type: MarkerType.ArrowClosed, color: hex, width: 14, height: 14 };
-  const arrowOpen   = { type: MarkerType.Arrow,       color: hex, width: 14, height: 14 };
-
-  const dir: RelationshipDirection = rel.direction ??
-    (isDirected(rel.type) ? 'forward' : 'none');
-
-  // Convert to the URL strings React Flow expects on BaseEdge.
-  // Since we're inside a custom edge component, we build them inline using
-  // the same ID scheme React Flow generates: react-flow__<type>-<color>
-  // In practice we return marker objects that CalabashCanvas already set via
-  // the edge object's markerEnd; here we just control markerStart as well.
-  switch (dir) {
-    case 'forward':  return { markerEnd:   `url(#${arrowClosed.type}-${hex})` };
-    case 'backward': return { markerStart: `url(#${arrowClosed.type}-${hex})` };
-    case 'both':     return {
-      markerEnd:   `url(#${arrowClosed.type}-${hex})`,
-      markerStart: `url(#${arrowClosed.type}-${hex})`,
-    };
-    case 'none':     return { markerEnd: `url(#${arrowOpen.type}-${hex})` };
-    default:         return {};
-  }
-}
-
 /**
- * Compute a cubic bezier path whose CONTROL POINTS are shifted perpendicularly
- * to fan parallel edges apart. Source and target stay at the node handles so
- * markers anchor correctly.
- *
- * Regex is lenient: handles "M-190,161" (no space after M) and negative floats.
+ * Cubic bezier whose control points are shifted perpendicularly to separate
+ * parallel edges. Source/target stay at node handles → markers anchor correctly.
+ * Regex handles React Flow's format: "M-190.69,161.30 C ..." (no space after M).
  */
 function getEdgePath(
   sourceX: number, sourceY: number, sourcePosition: Position,
@@ -84,8 +46,6 @@ function getEdgePath(
 
   if (offset === 0) return [basePath, baseLX, baseLY];
 
-  // React Flow outputs e.g. "M-190.69,161.30 C-190.69,219.36 353.5,16.94 353.5,75"
-  // Regex: optional space after M, allow negative numbers
   const m = basePath.match(
     /M\s*([-\d.]+),([-\d.]+)\s+C\s*([-\d.]+),([-\d.]+)\s+([-\d.]+),([-\d.]+)\s+([-\d.]+),([-\d.]+)/,
   );
@@ -101,7 +61,6 @@ function getEdgePath(
   const c2x = parseFloat(m[5]) + ox, c2y = parseFloat(m[6]) + oy;
 
   const path = `M ${sourceX},${sourceY} C ${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`;
-  // Cubic bezier midpoint t=0.5: (s + 3c1 + 3c2 + t) / 8
   const labelX = (sourceX + 3 * c1x + 3 * c2x + targetX) / 8;
   const labelY = (sourceY + 3 * c1y + 3 * c2y + targetY) / 8;
   return [path, labelX, labelY];
@@ -121,9 +80,6 @@ function RelationshipEdgeImpl(props: EdgeProps) {
     offset,
   );
 
-  // Use direction from data model; fall back to type-derived direction
-  const { markerStart, markerEnd } = resolveMarkers(fullRel ?? { type: data.type } as Relationship);
-
   async function handleBadgeClick() {
     if (!fullRel) return;
     const next = cycleCertainty(data.certainty);
@@ -133,11 +89,13 @@ function RelationshipEdgeImpl(props: EdgeProps) {
 
   return (
     <>
+      {/* CalabashCanvas sets markerEnd/markerStart as MarkerType objects;
+          React Flow resolves them and passes URL strings via props. */}
       <BaseEdge
         id={props.id}
         path={pathD}
-        markerStart={markerStart}
-        markerEnd={markerEnd ?? props.markerEnd}
+        markerStart={props.markerStart}
+        markerEnd={props.markerEnd}
         interactionWidth={40}
         style={{ stroke, strokeDasharray, opacity, strokeWidth: 2 }}
       />
@@ -147,10 +105,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             position: 'absolute',
             transform: `translate(-50%,-50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 3,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
             userSelect: 'none',
           }}
         >
@@ -158,13 +113,10 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             data-testid="certainty-badge"
             onClick={() => void handleBadgeClick()}
             style={{
-              pointerEvents: 'all',
-              cursor: 'pointer',
+              pointerEvents: 'all', cursor: 'pointer',
               background: 'var(--bg-panel)',
-              border: `1.5px solid ${stroke}`,
-              color: stroke,
-              borderRadius: '50%',
-              width: 20, height: 20,
+              border: `1.5px solid ${stroke}`, color: stroke,
+              borderRadius: '50%', width: 20, height: 20,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, fontWeight: 700,
             }}
@@ -172,13 +124,10 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             {BADGE[data.certainty]}
           </div>
           <div style={{
-            background: 'var(--bg-panel)',
-            border: `1px solid ${stroke}`,
-            borderRadius: 10,
-            padding: '1px 6px',
-            fontSize: 10, color: stroke,
-            whiteSpace: 'nowrap', maxWidth: 100,
-            overflow: 'hidden', textOverflow: 'ellipsis',
+            background: 'var(--bg-panel)', border: `1px solid ${stroke}`,
+            borderRadius: 10, padding: '1px 6px',
+            fontSize: 10, color: stroke, whiteSpace: 'nowrap',
+            maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis',
             fontWeight: 500, opacity: 0.9,
           }}>
             {displayLabel}

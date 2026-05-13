@@ -10,15 +10,15 @@ import {
   type OnSelectionChangeParams,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { UserPlus } from 'lucide-react';
 import type { Character, Relationship } from '@/types';
 import CharacterNode from './CharacterNode';
 import RelationshipEdge from './RelationshipEdge';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
-import { deleteCharacter } from '@/db/characters';
+import { deleteCharacter, updateCharacter } from '@/db/characters';
 import { deleteRelationship } from '@/db/relationships';
-import { updateCharacter } from '@/db/characters';
 import { useGraphStore } from '@/stores/graphStore';
 
 const nodeTypes = { character: CharacterNode };
@@ -54,9 +54,8 @@ function CalabashCanvasInner({
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
 
-  const { fitView, screenToFlowPosition } = useReactFlow();
+  const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
 
-  // Expose fitView to parent once on mount
   useEffect(() => {
     onFitViewReady?.(fitView);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,17 +100,10 @@ function CalabashCanvasInner({
 
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
-      const nodeIds = new Set(selNodes.map((n) => n.id));
-      const edgeIds = new Set(selEdges.map((e) => e.id));
-      setSelectedNodeIds(nodeIds);
-      setSelectedEdgeIds(edgeIds);
-
-      if (onNodeSelect) {
-        onNodeSelect(selNodes.length === 1 ? selNodes[0].id : null);
-      }
-      if (onEdgeSelect) {
-        onEdgeSelect(selEdges.length === 1 ? selEdges[0].id : null);
-      }
+      setSelectedNodeIds(new Set(selNodes.map((n) => n.id)));
+      setSelectedEdgeIds(new Set(selEdges.map((e) => e.id)));
+      onNodeSelect?.(selNodes.length === 1 ? selNodes[0].id : null);
+      onEdgeSelect?.(selEdges.length === 1 ? selEdges[0].id : null);
     },
     [onNodeSelect, onEdgeSelect],
   );
@@ -119,9 +111,10 @@ function CalabashCanvasInner({
   const handleKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      // Don't delete when typing in an input
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
 
       if (selectedNodeIds.size > 0) {
-        // Delete relationships connected to selected nodes first
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
@@ -129,7 +122,6 @@ function CalabashCanvasInner({
           await deleteRelationship(rel.id);
           removeRelationship(rel.id);
         }
-        // Delete selected characters
         for (const id of selectedNodeIds) {
           await deleteCharacter(id);
           removeCharacter(id);
@@ -146,22 +138,21 @@ function CalabashCanvasInner({
     [selectedNodeIds, selectedEdgeIds, relationships, removeCharacter, removeRelationship],
   );
 
-  const handleDoubleClick = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!bookId) return;
-      // Ignore double-clicks on nodes, edges, or controls
-      const target = event.target as HTMLElement;
-      if (
-        target.closest('.react-flow__node') ||
-        target.closest('.react-flow__edge') ||
-        target.closest('.react-flow__controls')
-      ) return;
-      // screenToFlowPosition converts screen coords → flow coords, accounting for pan/zoom
-      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      setPendingPosition(position);
-    },
-    [bookId, screenToFlowPosition],
-  );
+  // "Add Character" toolbar button — places new node at the centre of the current viewport
+  const handleAddCharacterClick = useCallback(() => {
+    if (!bookId) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const bounds = container.getBoundingClientRect();
+    const position = screenToFlowPosition({
+      x: bounds.left + bounds.width / 2,
+      y: bounds.top + bounds.height / 2,
+    });
+    // Offset slightly so repeated clicks don't stack exactly
+    const { zoom } = getViewport();
+    const jitter = (characters.length % 5) * (60 / zoom);
+    setPendingPosition({ x: position.x + jitter, y: position.y + jitter });
+  }, [bookId, screenToFlowPosition, getViewport, characters.length]);
 
   const handleNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -179,8 +170,7 @@ function CalabashCanvasInner({
       ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      onDoubleClick={handleDoubleClick}
-      style={{ width: '100%', height: '100%', outline: 'none' }}
+      style={{ width: '100%', height: '100%', outline: 'none', position: 'relative' }}
     >
       <ReactFlow
         nodes={nodes}
@@ -200,6 +190,42 @@ function CalabashCanvasInner({
         <Background />
         <Controls />
       </ReactFlow>
+
+      {/* Canvas toolbar — floats top-right, above React Flow controls */}
+      {bookId && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 10,
+            display: 'flex',
+            gap: 6,
+          }}
+        >
+          <button
+            onClick={handleAddCharacterClick}
+            title="Add character (N)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 10px',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              color: 'var(--fg-primary)',
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            }}
+          >
+            <UserPlus size={13} />
+            Add character
+          </button>
+        </div>
+      )}
 
       {pendingPosition !== null && bookId !== null && (
         <NewCharacterModal

@@ -107,10 +107,13 @@ export default function BookList() {
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
 
+  const setTotalChapters = useBookStore((s) => s.setTotalChapters);
+
   const [books, setBooks] = useState<Book[]>([]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
+  const [newTotalChapters, setNewTotalChapters] = useState(30);
 
   // inline rename state
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -161,12 +164,15 @@ export default function BookList() {
   async function handleCreate() {
     const title = newTitle.trim();
     if (!title) return;
-    const book = await createBook({ title, author: newAuthor.trim() || undefined });
+    const totalChapters = Math.max(1, newTotalChapters);
+    const book = await createBook({ title, author: newAuthor.trim() || undefined, totalChapters });
     setNewTitle('');
     setNewAuthor('');
+    setNewTotalChapters(30);
     setShowNewForm(false);
     await refresh();
     setActiveBook(book.id);
+    setTotalChapters(totalChapters);
     setCharacters([]);
     setRelationships([]);
   }
@@ -441,23 +447,36 @@ export default function BookList() {
             onChange={(e) => setNewAuthor(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void handleCreate();
-              if (e.key === 'Escape') {
-                setShowNewForm(false);
-                setNewTitle('');
-                setNewAuthor('');
-              }
+              if (e.key === 'Escape') { setShowNewForm(false); setNewTitle(''); setNewAuthor(''); }
             }}
             placeholder="Author (optional)"
             style={{
-              fontSize: 13,
-              padding: '4px 8px',
-              background: 'var(--bg-canvas)',
-              border: '1px solid var(--border)',
-              borderRadius: 4,
-              color: 'var(--fg-primary)',
-              outline: 'none',
+              fontSize: 13, padding: '4px 8px',
+              background: 'var(--bg-canvas)', border: '1px solid var(--border)',
+              borderRadius: 4, color: 'var(--fg-primary)', outline: 'none',
             }}
           />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <label style={{ fontSize: 11, color: 'var(--fg-muted)', whiteSpace: 'nowrap' }}>
+              Chapters
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={newTotalChapters}
+              onChange={(e) => setNewTotalChapters(Math.max(1, Number(e.target.value)))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleCreate();
+                if (e.key === 'Escape') { setShowNewForm(false); setNewTitle(''); setNewAuthor(''); }
+              }}
+              style={{
+                width: '60px', fontSize: 13, padding: '4px 8px',
+                background: 'var(--bg-canvas)', border: '1px solid var(--border)',
+                borderRadius: 4, color: 'var(--fg-primary)', outline: 'none',
+              }}
+            />
+          </div>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => void handleCreate()}
@@ -481,6 +500,7 @@ export default function BookList() {
                 setShowNewForm(false);
                 setNewTitle('');
                 setNewAuthor('');
+                setNewTotalChapters(30);
               }}
               style={{
                 flex: 1,

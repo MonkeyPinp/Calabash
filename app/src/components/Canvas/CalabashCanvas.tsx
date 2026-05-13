@@ -54,7 +54,7 @@ function CalabashCanvasInner({
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
 
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
 
   // Expose fitView to parent once on mount
   useEffect(() => {
@@ -149,16 +149,18 @@ function CalabashCanvasInner({
   const handleDoubleClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (!bookId) return;
+      // Ignore double-clicks on nodes, edges, or controls
       const target = event.target as HTMLElement;
-      if (target.closest('.react-flow__node')) return;
-      const bounds = event.currentTarget.getBoundingClientRect();
-      const position = {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      };
+      if (
+        target.closest('.react-flow__node') ||
+        target.closest('.react-flow__edge') ||
+        target.closest('.react-flow__controls')
+      ) return;
+      // screenToFlowPosition converts screen coords → flow coords, accounting for pan/zoom
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       setPendingPosition(position);
     },
-    [bookId],
+    [bookId, screenToFlowPosition],
   );
 
   const handleNodeDragStop = useCallback(
@@ -177,6 +179,7 @@ function CalabashCanvasInner({
       ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      onDoubleClick={handleDoubleClick}
       style={{ width: '100%', height: '100%', outline: 'none' }}
     >
       <ReactFlow
@@ -188,7 +191,6 @@ function CalabashCanvasInner({
         selectionOnDrag={false}
         fitView
         onSelectionChange={handleSelectionChange}
-        onDoubleClick={handleDoubleClick}
         onNodeDragStop={handleNodeDragStop}
         onConnect={(connection) => {
           if (!bookId || !connection.source || !connection.target) return;

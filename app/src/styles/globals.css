@@ -80,9 +80,6 @@ button.toolbar-btn:disabled {
   overflow: hidden;
   box-shadow: var(--shadow-panel);
 }
-.react-flow__minimap-mask {
-  fill: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
-}
 
 /* ── React Flow: selection box ───────────────────────────────────────────── */
 .react-flow__selection {

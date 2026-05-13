@@ -7,9 +7,11 @@ import {
   Controls,
   MiniMap,
   MarkerType,
+  applyNodeChanges,
   useReactFlow,
   type Node,
   type Edge,
+  type NodeChange,
   type OnSelectionChangeParams,
   type NodeMouseHandler,
   type EdgeMouseHandler,
@@ -82,7 +84,8 @@ function CalabashCanvasInner({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const nodes: Node[] = useMemo(
+  // Canonical node list derived from Zustand (source of truth)
+  const computedNodes: Node[] = useMemo(
     () =>
       characters
         .filter((c) => c.chapterIntroduced <= currentChapter)
@@ -90,6 +93,9 @@ function CalabashCanvasInner({
           id: c.id,
           type: 'character',
           position: c.position,
+          // Pre-declare dimensions so the MiniMap renders immediately
+          width: 180,
+          height: 80,
           data: {
             name: resolveDisplayName(c.aliases, currentChapter),
             role: c.role,
@@ -100,7 +106,20 @@ function CalabashCanvasInner({
     [characters, currentChapter],
   );
 
-  const visibleCharIds = useMemo(() => new Set(nodes.map((n) => n.id)), [nodes]);
+  const visibleCharIds = useMemo(() => new Set(computedNodes.map((n) => n.id)), [computedNodes]);
+
+  // Local RF copy — updated smoothly during drag via onNodesChange.
+  // Only syncs from computedNodes when no drag is in progress.
+  const [rfNodes, setRfNodes] = useState<Node[]>(computedNodes);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) setRfNodes(computedNodes);
+  }, [computedNodes]);
+
+  const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
+    setRfNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
 
   const edges: Edge[] = useMemo(() => {
     const visible = relationships.filter(
@@ -253,8 +272,13 @@ function CalabashCanvasInner({
     setPendingPosition({ x: position.x + jitter, y: position.y + jitter });
   }, [bookId, screenToFlowPosition, getViewport, characters.length]);
 
+  const handleNodeDragStart = useCallback(() => {
+    isDraggingRef.current = true;
+  }, []);
+
   const handleNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
+      isDraggingRef.current = false;
       if (!bookId) return;
       const char = characters.find((c) => c.id === node.id);
       if (!char) return;
@@ -272,20 +296,22 @@ function CalabashCanvasInner({
       style={{ width: '100%', height: '100%', outline: 'none', position: 'relative' }}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={rfNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         panOnDrag
         selectionOnDrag
         selectionKeyCode="Shift"
-        nodeDragThreshold={0}
+        nodeDragThreshold={1}
         fitView
         fitViewOptions={{ padding: 0.15 }}
+        onNodesChange={handleNodesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onPaneClick={handlePaneClick}
         onSelectionChange={handleSelectionChange}
+        onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
         connectionLineStyle={{ stroke: 'var(--accent)', strokeDasharray: '6 3', strokeWidth: 1.5, opacity: 0.7 }}
         proOptions={{ hideAttribution: true }}
@@ -306,8 +332,9 @@ function CalabashCanvasInner({
             };
             return map[role] ?? '#6b6b65';
           }}
-          maskColor="rgba(0,0,0,0.06)"
-          style={{ width: 160, height: 100 }}
+          nodeStrokeWidth={0}
+          maskColor="rgba(100,100,80,0.12)"
+          style={{ width: 180, height: 110, borderRadius: 8 }}
           zoomable
           pannable
         />

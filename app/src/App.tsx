@@ -302,10 +302,11 @@ export default function App() {
             className="toolbar-btn"
             onClick={() => void handleAutoLayout()}
             disabled={!activeBookId}
-            title="Auto-layout"
-            style={toolbarBtnStyle}
+            title="Auto-layout — rearrange all visible nodes"
+            style={{ ...toolbarBtnStyle, width: 'auto', padding: '0 8px', gap: 5, fontSize: 11, fontWeight: 500 }}
           >
-            <LayoutGrid size={15} />
+            <LayoutGrid size={13} />
+            Layout
           </button>
 
           {/* Redo */}

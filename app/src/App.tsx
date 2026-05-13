@@ -39,6 +39,11 @@ export default function App() {
     setSelectedRelId(null);
   }, [activeBookId]);
 
+  // Auto-open inspector panel when a node or edge is selected
+  useEffect(() => {
+    if (selectedCharId || selectedRelId) setInspectorOpen(true);
+  }, [selectedCharId, selectedRelId]);
+
   // fitView ref — populated by CalabashCanvas on mount
   const fitViewRef = useRef<(() => void) | undefined>(undefined);
   const handleFitViewReady = useCallback((fn: () => void) => {
@@ -213,8 +218,16 @@ export default function App() {
                 height: '100%',
                 color: 'var(--fg-muted)',
                 fontSize: 14,
+                gap: 10,
               }}
-            />
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+                  <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                </path>
+              </svg>
+              Loading…
+            </div>
           ) : activeBookId === null ? (
             <div
               style={{

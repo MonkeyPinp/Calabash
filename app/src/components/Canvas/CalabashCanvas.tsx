@@ -72,6 +72,8 @@ function CalabashCanvasInner({
           data: {
             name: resolveDisplayName(c.aliases, currentChapter),
             role: c.role,
+            profession: c.profession,
+            portraitId: c.portraitId,
           },
         })),
     [characters, currentChapter],

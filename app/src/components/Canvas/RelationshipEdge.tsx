@@ -1,3 +1,4 @@
+// v3 — getBezierPath + MarkerType
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps, type Position } from '@xyflow/react';
 import type { CertaintyLevel, RelationshipType, Relationship } from '@/types';

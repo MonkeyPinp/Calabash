@@ -9,6 +9,8 @@ import {
   type Node,
   type Edge,
   type OnSelectionChangeParams,
+  type NodeMouseHandler,
+  type EdgeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { UserPlus } from 'lucide-react';
@@ -142,14 +144,45 @@ function CalabashCanvasInner({
     });
   }, [relationships, visibleCharIds, currentChapter]);
 
-  const handleSelectionChange = useCallback(
-    ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
-      setSelectedNodeIds(new Set(selNodes.map((n) => n.id)));
-      setSelectedEdgeIds(new Set(selEdges.map((e) => e.id)));
-      onNodeSelect?.(selNodes.length === 1 ? selNodes[0].id : null);
-      onEdgeSelect?.(selEdges.length === 1 ? selEdges[0].id : null);
+  // onSelectionChange doesn't reliably fire for custom edge types in React Flow v12.
+  // Use explicit click callbacks instead.
+  const handleNodeClick = useCallback<NodeMouseHandler>(
+    (_event, node) => {
+      setSelectedNodeIds(new Set([node.id]));
+      setSelectedEdgeIds(new Set());
+      onNodeSelect?.(node.id);
+      onEdgeSelect?.(null);
     },
     [onNodeSelect, onEdgeSelect],
+  );
+
+  const handleEdgeClick = useCallback<EdgeMouseHandler>(
+    (_event, edge) => {
+      setSelectedEdgeIds(new Set([edge.id]));
+      setSelectedNodeIds(new Set());
+      onEdgeSelect?.(edge.id);
+      onNodeSelect?.(null);
+    },
+    [onEdgeSelect, onNodeSelect],
+  );
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeIds(new Set());
+    onNodeSelect?.(null);
+    onEdgeSelect?.(null);
+  }, [onNodeSelect, onEdgeSelect]);
+
+  // Keep onSelectionChange for Delete-key tracking (still fires for nodes)
+  const handleSelectionChange = useCallback(
+    ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
+      // Only update if the selection actually came from React Flow internals (keyboard, etc.)
+      if (selNodes.length > 0 || selEdges.length > 0) {
+        setSelectedNodeIds(new Set(selNodes.map((n) => n.id)));
+        setSelectedEdgeIds(new Set(selEdges.map((e) => e.id)));
+      }
+    },
+    [],
   );
 
   const handleKeyDown = useCallback(
@@ -224,6 +257,9 @@ function CalabashCanvasInner({
         panOnDrag
         selectionOnDrag={false}
         fitView
+        onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         onSelectionChange={handleSelectionChange}
         onNodeDragStop={handleNodeDragStop}
         onConnect={(connection) => {

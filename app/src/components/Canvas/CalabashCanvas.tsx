@@ -3,7 +3,9 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  BackgroundVariant,
   Controls,
+  MiniMap,
   MarkerType,
   useReactFlow,
   type Node,
@@ -279,18 +281,36 @@ function CalabashCanvasInner({
         selectionKeyCode="Shift"
         nodeDragThreshold={0}
         fitView
+        fitViewOptions={{ padding: 0.15 }}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onPaneClick={handlePaneClick}
         onSelectionChange={handleSelectionChange}
         onNodeDragStop={handleNodeDragStop}
+        connectionLineStyle={{ stroke: 'var(--accent)', strokeDasharray: '6 3', strokeWidth: 1.5, opacity: 0.7 }}
+        proOptions={{ hideAttribution: true }}
         onConnect={(connection) => {
           if (!bookId || !connection.source || !connection.target) return;
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
-        <Background />
-        <Controls />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--border)" />
+        <Controls position="bottom-left" />
+        <MiniMap
+          position="bottom-right"
+          nodeColor={(node) => {
+            const role = (node.data as { role?: string }).role ?? 'other';
+            const map: Record<string, string> = {
+              detective: '#2c5f7c', suspect: '#8b2e2e', victim: '#5c5c5c',
+              witness: '#7c6f2c', bystander: '#9a9a95', other: '#6b6b65',
+            };
+            return map[role] ?? '#6b6b65';
+          }}
+          maskColor="rgba(0,0,0,0.06)"
+          style={{ width: 160, height: 100 }}
+          zoomable
+          pannable
+        />
       </ReactFlow>
 
       {/* Canvas toolbar — floats top-right, above React Flow controls */}

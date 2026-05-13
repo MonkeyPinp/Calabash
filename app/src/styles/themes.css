@@ -1,16 +1,16 @@
 :root[data-theme='light'] {
-  --bg-canvas: #fafaf7;
+  --bg-canvas: #f5f5f2;
   --bg-panel: #ffffff;
   --fg-primary: #1a1a1a;
   --fg-muted: #6b6b6b;
-  --border: #e5e5e0;
+  --border: #e2e2dc;
   --accent: #8b2e2e;
   --node-detective: #2c5f7c;
   --node-suspect: #8b2e2e;
   --node-victim: #5c5c5c;
   --node-witness: #7c6f2c;
-  --node-bystander: #b8b8b3;
-  --node-other: #8a8a85;
+  --node-bystander: #9a9a95;
+  --node-other: #6b6b65;
   --edge-confirmed: #1a1a1a;
   --edge-suspected: #6b6b6b;
   --edge-disproven: #b8b8b3;
@@ -21,14 +21,23 @@
   --rel-hostile:      #b02020;
   --rel-suspicion:    #9a7010;
   --rel-other:        #707070;
+  /* Shadows */
+  --shadow-node: 0 1px 4px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-node-selected: 0 0 0 2.5px var(--accent), 0 4px 16px rgba(0,0,0,0.14);
+  --shadow-panel: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-overlay: 0 8px 32px rgba(0,0,0,0.16);
+  /* Transitions */
+  --transition-fast: 0.13s ease;
+  --transition-panel: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-node: 0.15s ease;
 }
 
 :root[data-theme='dark'] {
-  --bg-canvas: #14140f;
-  --bg-panel: #1d1d18;
-  --fg-primary: #f3f3ee;
-  --fg-muted: #a0a09a;
-  --border: #2c2c25;
+  --bg-canvas: #13130e;
+  --bg-panel: #1c1c17;
+  --fg-primary: #f0f0eb;
+  --fg-muted: #9a9a93;
+  --border: #2a2a22;
   --accent: #c45a5a;
   --node-detective: #5fa3c8;
   --node-suspect: #c45a5a;
@@ -36,14 +45,22 @@
   --node-witness: #c9b855;
   --node-bystander: #5c5c57;
   --node-other: #757570;
-  --edge-confirmed: #f3f3ee;
-  --edge-suspected: #a0a09a;
-  --edge-disproven: #5c5c57;
+  --edge-confirmed: #f0f0eb;
+  --edge-suspected: #9a9a93;
+  --edge-disproven: #4a4a44;
   /* Relationship-type stroke colours */
   --rel-family:       #e09040;
   --rel-professional: #60a8d0;
-  --rel-romantic:     #e06098;
+  --rel-romantic:     #e060a0;
   --rel-hostile:      #e05050;
   --rel-suspicion:    #d4a830;
   --rel-other:        #909090;
+  /* Shadows */
+  --shadow-node: 0 1px 4px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-node-selected: 0 0 0 2.5px var(--accent), 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-panel: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-overlay: 0 8px 32px rgba(0,0,0,0.5);
+  --transition-fast: 0.13s ease;
+  --transition-panel: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-node: 0.15s ease;
 }

@@ -14,48 +14,126 @@ body {
   background: var(--bg-canvas);
   color: var(--fg-primary);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── React Flow controls: respect theme CSS variables ── */
-.react-flow__controls {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: none;
+/* ── Toolbar buttons ─────────────────────────────────────────────────────── */
+button.toolbar-btn {
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              color var(--transition-fast), transform 0.1s ease, opacity var(--transition-fast);
+}
+button.toolbar-btn:hover:not(:disabled) {
+  background: var(--bg-canvas) !important;
+  border-color: var(--border) !important;
+  color: var(--fg-primary) !important;
+}
+button.toolbar-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+button.toolbar-btn:disabled {
+  opacity: 0.28 !important;
+  cursor: not-allowed !important;
 }
 
-.react-flow__controls-button {
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
-  color: var(--fg-primary);
-  fill: var(--fg-primary);
-  width: 26px;
-  height: 26px;
-}
-
-.react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-
-.react-flow__controls-button:hover {
+/* ── React Flow: base canvas ─────────────────────────────────────────────── */
+.react-flow__background {
   background: var(--bg-canvas);
 }
 
-.react-flow__controls-button svg {
+/* ── React Flow: controls ────────────────────────────────────────────────── */
+.react-flow__controls {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  fill: var(--fg-muted);
+  width: 28px;
+  height: 28px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+.react-flow__controls-button:hover {
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
   fill: var(--fg-primary);
+}
+.react-flow__controls-button svg {
+  fill: inherit;
   max-width: 12px;
   max-height: 12px;
 }
 
-/* Attribution badge */
+/* ── React Flow: MiniMap ─────────────────────────────────────────────────── */
+.react-flow__minimap {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
+}
+.react-flow__minimap-mask {
+  fill: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
+}
+
+/* ── React Flow: selection box ───────────────────────────────────────────── */
+.react-flow__selection {
+  background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
+  border: 1.5px solid var(--accent) !important;
+  border-radius: 4px;
+}
+
+/* ── React Flow: node handles ────────────────────────────────────────────── */
+.react-flow__handle {
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  border-radius: 50% !important;
+}
+.react-flow__handle:hover {
+  transform: scale(1.35) !important;
+}
+.react-flow__handle-connecting {
+  opacity: 1 !important;
+}
+
+/* ── React Flow: edge paths ──────────────────────────────────────────────── */
+.react-flow__edge-path {
+  transition: stroke-opacity 0.15s ease;
+}
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-opacity: 1 !important;
+  filter: brightness(1.15);
+}
+
+/* ── React Flow: connection line (while dragging) ────────────────────────── */
+.react-flow__connection-path {
+  stroke: var(--accent) !important;
+  stroke-dasharray: 6 3 !important;
+  stroke-opacity: 0.7 !important;
+}
+
+/* ── React Flow: attribution ─────────────────────────────────────────────── */
 .react-flow__attribution {
   background: transparent;
   color: var(--fg-muted);
-  opacity: 0.5;
+  opacity: 0.4;
   font-size: 10px;
 }
 
-/* Canvas background dots */
-.react-flow__background {
-  background: var(--bg-canvas);
+/* ── React Flow: node wrapper — remove default outline ───────────────────── */
+.react-flow__node {
+  transition: filter var(--transition-node);
+}
+.react-flow__node:focus {
+  outline: none !important;
+}
+.react-flow__node.selected .react-flow__node-character {
+  /* selection handled inside CharacterNode via props.selected */
 }

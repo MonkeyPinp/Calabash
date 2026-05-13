@@ -116,19 +116,23 @@ function RelationshipEdgeImpl(props: EdgeProps) {
               pointerEvents: 'all', cursor: 'pointer',
               background: 'var(--bg-panel)',
               border: `1.5px solid ${stroke}`, color: stroke,
-              borderRadius: '50%', width: 20, height: 20,
+              borderRadius: '50%', width: 18, height: 18,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700,
+              fontSize: 10, fontWeight: 700,
+              transition: 'transform 0.12s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
             }}
           >
             {BADGE[data.certainty]}
           </div>
           <div style={{
-            background: 'var(--bg-panel)', border: `1px solid ${stroke}`,
-            borderRadius: 10, padding: '1px 6px',
+            background: 'var(--bg-panel)',
+            border: `1px solid color-mix(in srgb, ${stroke} 40%, var(--border))`,
+            borderRadius: 8, padding: '1px 7px',
             fontSize: 10, color: stroke, whiteSpace: 'nowrap',
-            maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis',
-            fontWeight: 500, opacity: 0.9,
+            maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis',
+            fontWeight: 600, letterSpacing: '0.02em',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
           }}>
             {displayLabel}
           </div>

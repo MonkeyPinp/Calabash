@@ -19,7 +19,7 @@ import { updateBook } from './db/books';
 const toolbarBtnStyle: React.CSSProperties = {
   background: 'transparent',
   border: '1px solid transparent',
-  borderRadius: 4,
+  borderRadius: 5,
   width: 28,
   height: 28,
   display: 'flex',
@@ -142,18 +142,18 @@ export default function App() {
         overflow: 'hidden',
       }}
     >
-      {/* Left sidebar — 240px, collapsible */}
-      {sidebarOpen && (
-        <aside
-          style={{
-            width: 240,
-            flexShrink: 0,
-            background: 'var(--bg-panel)',
-            borderRight: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+      {/* Left sidebar — 240px, slides in/out */}
+      <aside
+        style={{
+          width: sidebarOpen ? 240 : 0,
+          minWidth: 0,
+          flexShrink: 0,
+          overflow: 'hidden',
+          transition: 'width var(--transition-panel)',
+          borderRight: sidebarOpen ? '1px solid var(--border)' : 'none',
+        }}
+      >
+        <div style={{ width: 240, height: '100%', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column' }}>
           {/* App title */}
           <div
             style={{
@@ -246,9 +246,8 @@ export default function App() {
               </label>
             </div>
           </div>
-        </aside>
-      )}
-
+        </div>
+      </aside>
 
       {/* Centre canvas area — flex-grow */}
       <main
@@ -267,17 +266,20 @@ export default function App() {
             flexShrink: 0,
             borderBottom: '1px solid var(--border)',
             background: 'var(--bg-panel)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             display: 'flex',
             alignItems: 'center',
             gap: 2,
             padding: '0 8px',
+            zIndex: 1,
           }}
         >
           {/* Sidebar toggle */}
           <button
+            className="toolbar-btn"
             onClick={() => setSidebarOpen((v) => !v)}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-            style={toolbarBtnStyle}
+            style={{ ...toolbarBtnStyle, color: sidebarOpen ? 'var(--fg-primary)' : 'var(--fg-muted)' }}
           >
             <PanelLeft size={15} />
           </button>
@@ -286,6 +288,7 @@ export default function App() {
 
           {/* Undo */}
           <button
+            className="toolbar-btn"
             onClick={() => void undo()}
             disabled={undoStack.length === 0}
             title="Undo (Ctrl+Z)"
@@ -296,9 +299,10 @@ export default function App() {
 
           {/* Auto-layout */}
           <button
+            className="toolbar-btn"
             onClick={() => void handleAutoLayout()}
             disabled={!activeBookId}
-            title="Auto-layout (force-directed)"
+            title="Auto-layout"
             style={toolbarBtnStyle}
           >
             <LayoutGrid size={15} />
@@ -306,6 +310,7 @@ export default function App() {
 
           {/* Redo */}
           <button
+            className="toolbar-btn"
             onClick={() => void redo()}
             disabled={redoStack.length === 0}
             title="Redo (Ctrl+Shift+Z)"
@@ -318,9 +323,10 @@ export default function App() {
 
           {/* Inspector toggle */}
           <button
+            className="toolbar-btn"
             onClick={() => setInspectorOpen((v) => !v)}
             title={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
-            style={toolbarBtnStyle}
+            style={{ ...toolbarBtnStyle, color: inspectorOpen ? 'var(--fg-primary)' : 'var(--fg-muted)' }}
           >
             <PanelRight size={15} />
           </button>
@@ -383,19 +389,18 @@ export default function App() {
         )}
       </main>
 
-      {/* Right inspector panel — 320px, collapsible */}
-      {inspectorOpen && (
-        <aside
-          style={{
-            width: 320,
-            flexShrink: 0,
-            background: 'var(--bg-panel)',
-            borderLeft: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
+      {/* Right inspector panel — 320px, slides in/out */}
+      <aside
+        style={{
+          width: inspectorOpen ? 320 : 0,
+          minWidth: 0,
+          flexShrink: 0,
+          overflow: 'hidden',
+          transition: 'width var(--transition-panel)',
+          borderLeft: inspectorOpen ? '1px solid var(--border)' : 'none',
+        }}
+      >
+        <div style={{ width: 320, height: '100%', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, overflow: 'hidden' }}>
             {selectedCharId && activeBookId ? (
               <CharacterInspector
@@ -410,8 +415,8 @@ export default function App() {
               </div>
             )}
           </div>
-        </aside>
-      )}
+        </div>
+      </aside>
 
       {/* Global search overlay */}
       {searchOpen && (

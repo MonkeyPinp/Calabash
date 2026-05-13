@@ -50,6 +50,7 @@ describe('CharacterNode', () => {
     );
     const root = container.querySelector('[data-testid="character-node"]');
     expect(root).toBeTruthy();
-    expect(root!.getAttribute('style')).toMatch(/--node-suspect/);
+    // Role color appears in child elements (avatar background, role badge)
+    expect(root!.innerHTML).toMatch(/--node-suspect/);
   });
 });

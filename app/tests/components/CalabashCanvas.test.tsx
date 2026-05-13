@@ -60,7 +60,8 @@ describe('CalabashCanvas', () => {
       </div>,
     );
     expect(screen.getByText('Poirot')).toBeInTheDocument();
-    expect(screen.getByText('Suspect')).toBeInTheDocument();
+    // "Suspect" appears twice: once as the character name, once as the role badge
+    expect(screen.getAllByText('Suspect').length).toBeGreaterThan(0);
     expect(screen.getByText('?')).toBeInTheDocument();
   });
 

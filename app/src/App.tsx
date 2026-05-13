@@ -14,6 +14,7 @@ import { exportBookAsJson, importBookFromJson } from './db/importExport';
 
 export default function App() {
   const { loading } = useBookHydration();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
@@ -92,110 +93,163 @@ export default function App() {
         overflow: 'hidden',
       }}
     >
-      {/* Left sidebar — 240px */}
-      <aside
-        style={{
-          width: 240,
-          flexShrink: 0,
-          background: 'var(--bg-panel)',
-          borderRight: '1px solid var(--border)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {/* App title */}
-        <div
+      {/* Left sidebar — 240px, collapsible */}
+      {sidebarOpen && (
+        <aside
           style={{
-            padding: '16px 16px 12px',
-            fontSize: 13,
-            fontWeight: 600,
-            color: 'var(--fg-muted)',
-            letterSpacing: '0.05em',
-          }}
-        >
-          Calabash
-        </div>
-
-        {/* Book list */}
-        <BookList />
-
-        {/* Settings / footer */}
-        <div
-          style={{
-            padding: '12px 16px',
-            borderTop: '1px solid var(--border)',
-            color: 'var(--fg-muted)',
-            fontSize: 12,
+            width: 240,
+            flexShrink: 0,
+            background: 'var(--bg-panel)',
+            borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            position: 'relative',
           }}
         >
-          {/* Theme toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={toggleTheme}
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                padding: '3px 6px',
-                cursor: 'pointer',
-                color: 'var(--fg-muted)',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
-            </button>
-            <span style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
-              {theme === 'light' ? 'Dark mode' : 'Light mode'}
-            </span>
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: -16,
+              width: 16,
+              height: 32,
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border)',
+              borderLeft: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--fg-muted)',
+              padding: 0,
+              zIndex: 5,
+            }}
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft size={12} />
+          </button>
+
+          {/* App title */}
+          <div
+            style={{
+              padding: '16px 16px 12px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--fg-muted)',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Calabash
           </div>
 
-          {/* Export / Import */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              onClick={() => void handleExport()}
-              disabled={!activeBookId}
-              style={{
-                flex: 1,
-                padding: '4px 0',
-                fontSize: 11,
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                color: activeBookId ? 'var(--fg-muted)' : 'var(--border)',
-                cursor: activeBookId ? 'pointer' : 'not-allowed',
-              }}
-            >
-              Export
-            </button>
-            <label
-              style={{
-                flex: 1,
-                padding: '4px 0',
-                fontSize: 11,
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                color: 'var(--fg-muted)',
-                cursor: 'pointer',
-                textAlign: 'center',
-              }}
-            >
-              Import
-              <input
-                type="file"
-                accept="application/json,.json"
-                style={{ display: 'none' }}
-                onChange={(e) => void handleImport(e)}
-              />
-            </label>
+          {/* Book list */}
+          <BookList />
+
+          {/* Settings / footer */}
+          <div
+            style={{
+              padding: '12px 16px',
+              borderTop: '1px solid var(--border)',
+              color: 'var(--fg-muted)',
+              fontSize: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {/* Theme toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={toggleTheme}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  padding: '3px 6px',
+                  cursor: 'pointer',
+                  color: 'var(--fg-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
+              <span style={{ fontSize: 12, color: 'var(--fg-muted)' }}>
+                {theme === 'light' ? 'Dark mode' : 'Light mode'}
+              </span>
+            </div>
+
+            {/* Export / Import */}
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={() => void handleExport()}
+                disabled={!activeBookId}
+                style={{
+                  flex: 1,
+                  padding: '4px 0',
+                  fontSize: 11,
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  color: activeBookId ? 'var(--fg-muted)' : 'var(--border)',
+                  cursor: activeBookId ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Export
+              </button>
+              <label
+                style={{
+                  flex: 1,
+                  padding: '4px 0',
+                  fontSize: 11,
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: 4,
+                  color: 'var(--fg-muted)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                Import
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  style={{ display: 'none' }}
+                  onChange={(e) => void handleImport(e)}
+                />
+              </label>
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      )}
+
+      {/* Re-open button when sidebar is collapsed */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            width: 16,
+            flexShrink: 0,
+            background: 'var(--bg-panel)',
+            borderRight: '1px solid var(--border)',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderBottom: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--fg-muted)',
+            padding: 0,
+          } as React.CSSProperties}
+          aria-label="Expand sidebar"
+        >
+          <ChevronRight size={12} />
+        </button>
+      )}
 
       {/* Centre canvas area — flex-grow */}
       <main

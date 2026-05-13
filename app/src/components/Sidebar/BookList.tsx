@@ -137,7 +137,7 @@ export default function BookList() {
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [activeBookId]);
 
   // Focus new title input when form opens
   useEffect(() => {

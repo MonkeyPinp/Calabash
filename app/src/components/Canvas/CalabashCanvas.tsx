@@ -21,8 +21,8 @@ import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
 import { isDirected } from '@/lib/relationshipTypes';
-import { deleteCharacter, updateCharacter } from '@/db/characters';
-import { deleteRelationship } from '@/db/relationships';
+import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/characters';
+import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
 import type { RelationshipType } from '@/types';
 
@@ -66,9 +66,12 @@ function CalabashCanvasInner({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const addCharacter = useGraphStore((s) => s.addCharacter);
   const removeCharacter = useGraphStore((s) => s.removeCharacter);
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
+  const addRelationship = useGraphStore((s) => s.addRelationship);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
+  const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
 
@@ -190,31 +193,38 @@ function CalabashCanvasInner({
   const handleKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      // Don't delete when typing in an input
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
 
       if (selectedNodeIds.size > 0) {
+        const charsToDelete = characters.filter((c) => selectedNodeIds.has(c.id));
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
-        for (const rel of relsToDelete) {
-          await deleteRelationship(rel.id);
-          removeRelationship(rel.id);
-        }
-        for (const id of selectedNodeIds) {
-          await deleteCharacter(id);
-          removeCharacter(id);
-        }
+        for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+        for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
+        pushUndo(
+          async () => {
+            for (const char of charsToDelete) { await restoreCharacter(char); addCharacter(char); }
+            for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); }
+          },
+          async () => {
+            for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+            for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
+          },
+        );
       }
 
       if (selectedEdgeIds.size > 0) {
-        for (const id of selectedEdgeIds) {
-          await deleteRelationship(id);
-          removeRelationship(id);
-        }
+        const relsToDelete = relationships.filter((r) => selectedEdgeIds.has(r.id));
+        for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+        pushUndo(
+          async () => { for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); } },
+          async () => { for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); } },
+        );
       }
     },
-    [selectedNodeIds, selectedEdgeIds, relationships, removeCharacter, removeRelationship],
+    [selectedNodeIds, selectedEdgeIds, characters, relationships,
+     addCharacter, removeCharacter, addRelationship, removeRelationship, pushUndo],
   );
 
   // "Add Character" toolbar button — places new node at the centre of the current viewport

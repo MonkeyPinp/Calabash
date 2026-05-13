@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Relationship } from '@/types';
-import { createRelationship } from '@/db/relationships';
+import { createRelationship, deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
 
 const RELATIONSHIP_TYPES = ['family', 'professional', 'romantic', 'hostile', 'suspicion', 'other'] as const;
@@ -36,6 +36,8 @@ export default function NewRelationshipModal({
   onCreated,
 }: NewRelationshipModalProps) {
   const addRelationship = useGraphStore((s) => s.addRelationship);
+  const removeRelationship = useGraphStore((s) => s.removeRelationship);
+  const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -66,6 +68,10 @@ export default function NewRelationshipModal({
       certainty: values.certainty,
     });
     addRelationship(rel);
+    pushUndo(
+      async () => { await deleteRelationship(rel.id); removeRelationship(rel.id); },
+      async () => { await restoreRelationship(rel); addRelationship(rel); },
+    );
     onCreated(rel);
     onClose();
   }

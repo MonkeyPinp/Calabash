@@ -53,3 +53,7 @@ export async function updateRelationship(
 export async function deleteRelationship(id: string): Promise<void> {
   await db.relationships.delete(id);
 }
+
+export async function restoreRelationship(rel: Relationship): Promise<void> {
+  await db.relationships.put(rel);
+}

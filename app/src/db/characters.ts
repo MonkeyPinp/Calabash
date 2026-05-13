@@ -57,3 +57,7 @@ export async function updateCharacter(
 export async function deleteCharacter(id: string): Promise<void> {
   await db.characters.delete(id);
 }
+
+export async function restoreCharacter(char: Character): Promise<void> {
+  await db.characters.put(char);
+}

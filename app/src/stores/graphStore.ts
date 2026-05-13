@@ -3,6 +3,11 @@ import type { Character, Relationship } from '@/types';
 
 const MAX_UNDO = 100;
 
+interface UndoEntry {
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
+}
+
 interface GraphStoreState {
   characters: Character[];
   relationships: Relationship[];
@@ -15,9 +20,8 @@ interface GraphStoreState {
   removeRelationship: (id: string) => void;
   updateRelationshipInStore: (rel: Relationship) => void;
 
-  // Undo/redo infrastructure
-  undoStack: Array<() => Promise<void>>;
-  redoStack: Array<() => Promise<void>>;
+  undoStack: UndoEntry[];
+  redoStack: UndoEntry[];
   pushUndo: (undoFn: () => Promise<void>, redoFn: () => Promise<void>) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
@@ -57,24 +61,25 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
 
   pushUndo: (undoFn, redoFn) =>
     set((state) => {
-      const newStack = [...state.undoStack, undoFn];
+      const entry: UndoEntry = { undo: undoFn, redo: redoFn };
+      const newStack = [...state.undoStack, entry];
       if (newStack.length > MAX_UNDO) newStack.shift();
-      return { undoStack: newStack, redoStack: [...state.redoStack, redoFn] };
+      return { undoStack: newStack, redoStack: [] };
     }),
 
   undo: async () => {
     const { undoStack, redoStack } = get();
     if (undoStack.length === 0) return;
-    const undoFn = undoStack[undoStack.length - 1];
-    set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, undoFn] });
-    await undoFn();
+    const entry = undoStack[undoStack.length - 1];
+    set({ undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, entry] });
+    await entry.undo();
   },
 
   redo: async () => {
-    const { redoStack } = get();
+    const { redoStack, undoStack } = get();
     if (redoStack.length === 0) return;
-    const redoFn = redoStack[redoStack.length - 1];
-    set({ redoStack: redoStack.slice(0, -1) });
-    await redoFn();
+    const entry = redoStack[redoStack.length - 1];
+    set({ redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, entry] });
+    await entry.redo();
   },
 }));

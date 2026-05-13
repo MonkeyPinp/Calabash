@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Character } from '@/types';
-import { createCharacter } from '@/db/characters';
+import { createCharacter, deleteCharacter, restoreCharacter } from '@/db/characters';
 import { useGraphStore } from '@/stores/graphStore';
 
 const CHARACTER_ROLES = ['detective', 'suspect', 'victim', 'witness', 'bystander', 'other'] as const;
@@ -45,6 +45,8 @@ export default function NewCharacterModal({
   onCreated,
 }: NewCharacterModalProps) {
   const addCharacter = useGraphStore((s) => s.addCharacter);
+  const removeCharacter = useGraphStore((s) => s.removeCharacter);
+  const pushUndo = useGraphStore((s) => s.pushUndo);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
@@ -73,6 +75,10 @@ export default function NewCharacterModal({
       position,
     });
     addCharacter(char);
+    pushUndo(
+      async () => { await deleteCharacter(char.id); removeCharacter(char.id); },
+      async () => { await restoreCharacter(char); addCharacter(char); },
+    );
     onCreated(char);
     onClose();
   }

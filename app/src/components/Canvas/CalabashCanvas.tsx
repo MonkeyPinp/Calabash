@@ -256,6 +256,7 @@ function CalabashCanvasInner({
         edgeTypes={edgeTypes}
         panOnDrag
         selectionOnDrag={false}
+        nodeDragThreshold={0}
         fitView
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}

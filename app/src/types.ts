@@ -47,12 +47,15 @@ export interface Character {
   updatedAt: number;
 }
 
+export type RelationshipDirection = 'forward' | 'backward' | 'both' | 'none';
+
 export interface Relationship {
   id: string;
   bookId: string;
   sourceId: string;
   targetId: string;
   type: RelationshipType;
+  direction?: RelationshipDirection;
   label?: string;
   notes?: string;
   chapterRevealed: number;

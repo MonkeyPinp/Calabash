@@ -73,6 +73,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
   const { strokeDasharray, opacity } = CERTAINTY_STYLE[data.certainty];
   const fullRel = data.relationship;
   const displayLabel = fullRel?.label?.trim() || data.type;
+  const badgeTextDecoration = data.certainty === 'disproven' ? 'line-through' : 'none';
 
   const [pathD, labelX, labelY] = getEdgePath(
     props.sourceX, props.sourceY, props.sourcePosition,
@@ -80,16 +81,28 @@ function RelationshipEdgeImpl(props: EdgeProps) {
     offset,
   );
 
-  async function handleBadgeClick() {
+  async function handleBadgeClick(event: React.MouseEvent<HTMLDivElement>) {
+    event.stopPropagation();
     if (!fullRel) return;
     const next = cycleCertainty(data.certainty);
-    await updateRelationship(props.id, { certainty: next });
-    useGraphStore.getState().updateRelationshipInStore({ ...fullRel, certainty: next });
+    const updated = await updateRelationship(props.id, { certainty: next });
+    const store = useGraphStore.getState();
+    store.updateRelationshipInStore(updated);
+    store.pushUndo(
+      async () => {
+        const reverted = await updateRelationship(props.id, { certainty: data.certainty });
+        useGraphStore.getState().updateRelationshipInStore(reverted);
+      },
+      async () => {
+        const redone = await updateRelationship(props.id, { certainty: next });
+        useGraphStore.getState().updateRelationshipInStore(redone);
+      },
+    );
   }
 
   return (
     <>
-      {/* CalabashCanvas sets markerEnd/markerStart as MarkerType objects;
+      {/* CalabashCanvas sets markerEnd as a MarkerType object for directed types;
           React Flow resolves them and passes URL strings via props. */}
       <BaseEdge
         id={props.id}
@@ -105,34 +118,39 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             position: 'absolute',
             transform: `translate(-50%,-50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'none',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            display: 'inline-flex',
+            alignItems: 'center',
             userSelect: 'none',
           }}
         >
           <div
             data-testid="certainty-badge"
-            onClick={() => void handleBadgeClick()}
+            onClick={(event) => void handleBadgeClick(event)}
             style={{
               pointerEvents: 'all', cursor: 'pointer',
               background: 'var(--bg-panel)',
               border: `1.5px solid ${stroke}`, color: stroke,
-              borderRadius: '50%', width: 18, height: 18,
+              borderRadius: '50%', width: 16, height: 16,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700,
+              fontSize: 9, fontWeight: 700,
               transition: 'transform 0.12s ease',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+              boxShadow: 'var(--shadow-soft)',
+              marginRight: -7,
+              zIndex: 1,
             }}
           >
             {BADGE[data.certainty]}
           </div>
           <div style={{
             background: 'var(--bg-panel)',
-            border: `1px solid color-mix(in srgb, ${stroke} 40%, var(--border))`,
-            borderRadius: 8, padding: '1px 7px',
+            border: `1px solid ${stroke}`,
+            borderRadius: 999,
+            padding: '2px 9px 2px 11px',
             fontSize: 10, color: stroke, whiteSpace: 'nowrap',
             maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis',
-            fontWeight: 600, letterSpacing: '0.02em',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+            fontWeight: 500, letterSpacing: '0.01em',
+            textDecoration: badgeTextDecoration,
+            boxShadow: 'none',
           }}>
             {displayLabel}
           </div>

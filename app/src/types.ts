@@ -6,6 +6,7 @@ export type CharacterRole =
   | 'victim'
   | 'witness'
   | 'bystander'
+  | 'murderer'
   | 'other';
 
 export type RelationshipType =
@@ -21,12 +22,28 @@ export interface Alias {
   chapterRevealed: number;
 }
 
+export interface RoleReveal {
+  role: CharacterRole;
+  chapterRevealed: number;
+}
+
 export interface Book {
   id: string;
+  categoryId?: string;
   title: string;
   author?: string;
   totalChapters: number;
   currentChapter: number;
+  spoilerShield: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Category {
+  id: string;
+  userId?: string;
+  name: string;
+  order: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -37,6 +54,7 @@ export interface Character {
   name: string;
   aliases: Alias[];
   role: CharacterRole;
+  roleReveals?: RoleReveal[];
   profession?: string;
   socialPosition?: string;
   notes?: string;
@@ -47,15 +65,12 @@ export interface Character {
   updatedAt: number;
 }
 
-export type RelationshipDirection = 'forward' | 'backward' | 'both' | 'none';
-
 export interface Relationship {
   id: string;
   bookId: string;
   sourceId: string;
   targetId: string;
   type: RelationshipType;
-  direction?: RelationshipDirection;
   label?: string;
   notes?: string;
   chapterRevealed: number;
@@ -70,4 +85,18 @@ export interface Portrait {
   blob: Blob;
   mimeType: string;
   createdAt: number;
+}
+
+export type StickyNoteColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
+
+export interface StickyNote {
+  id: string;
+  bookId: string;
+  content: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+  color: StickyNoteColor;
+  createdAt: number;
+  updatedAt: number;
 }

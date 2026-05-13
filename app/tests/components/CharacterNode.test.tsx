@@ -53,4 +53,24 @@ describe('CharacterNode', () => {
     // Role color appears in child elements (avatar background, role badge)
     expect(root!.innerHTML).toMatch(/--node-suspect/);
   });
+
+  it('renders the spoiler-sensitive murderer role', () => {
+    renderInFlow(
+      <CharacterNode
+        id="c3"
+        type="character"
+        data={{ name: 'Hidden Culprit', role: 'murderer' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+    expect(screen.getByText('Murderer')).toBeInTheDocument();
+  });
 });

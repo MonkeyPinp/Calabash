@@ -6,7 +6,7 @@
 
 ## Status
 
-Phase 1 foundation (Plan A) — data layer, stores, and a hardcoded-data canvas.
+Phase 1 MVP / Phase 1.5 polish in progress — local Dexie persistence, book CRUD, book categories, chapter filtering, graph editing, sticky notes, Spoiler Shield, settings, import/export, and desktop shell are underway.
 See [docs/plans/](./docs/plans/) for the implementation plans.
 
 ## Develop

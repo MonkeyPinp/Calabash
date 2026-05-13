@@ -3,6 +3,7 @@ import { useGraphStore } from '@/stores/graphStore';
 
 interface KeyboardShortcutOptions {
   onNewCharacter?: () => void;
+  onStartEdge?: () => void;
   fitView?: () => void;
   openSearch?: () => void;
 }
@@ -14,7 +15,7 @@ function isInputFocused(): boolean {
   return tag === 'input' || tag === 'textarea' || tag === 'select' || (el as HTMLElement).isContentEditable;
 }
 
-export function useKeyboardShortcuts({ onNewCharacter, fitView, openSearch }: KeyboardShortcutOptions) {
+export function useKeyboardShortcuts({ onNewCharacter, onStartEdge, fitView, openSearch }: KeyboardShortcutOptions) {
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
 
@@ -59,9 +60,16 @@ export function useKeyboardShortcuts({ onNewCharacter, fitView, openSearch }: Ke
         onNewCharacter?.();
         return;
       }
+
+      // E — start edge from selected character, then click target
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        onStartEdge?.();
+        return;
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, fitView, onNewCharacter, openSearch]);
+  }, [undo, redo, fitView, onNewCharacter, onStartEdge, openSearch]);
 }

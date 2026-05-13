@@ -6,7 +6,7 @@ import type { Character } from '@/types';
 import { createCharacter, deleteCharacter, restoreCharacter } from '@/db/characters';
 import { useGraphStore } from '@/stores/graphStore';
 
-const CHARACTER_ROLES = ['detective', 'suspect', 'victim', 'witness', 'bystander', 'other'] as const;
+const CHARACTER_ROLES = ['detective', 'suspect', 'victim', 'witness', 'bystander', 'murderer', 'other'] as const;
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -19,11 +19,11 @@ type FormValues = z.infer<typeof schema>;
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '6px 10px',
-  border: '1px solid var(--border)',
+  padding: '6px 9px',
+  border: '1px solid var(--ink-200)',
   borderRadius: 4,
   background: 'var(--bg-canvas)',
-  color: 'var(--fg-primary)',
+  color: 'var(--ink-900)',
   fontSize: 13,
   boxSizing: 'border-box',
   outline: 'none',
@@ -89,50 +89,57 @@ export default function NewCharacterModal({
     <div
       style={{
         position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.4)',
+        background: 'color-mix(in srgb, var(--ink-900) 34%, transparent)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         zIndex: 1000,
+        padding: 24,
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         style={{
-          background: 'var(--bg-panel)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: 20, maxWidth: 360, width: '100%',
+          background: 'var(--bg-elevated)', border: '1px solid var(--ink-200)',
+          borderRadius: 8, maxWidth: 460, width: '100%',
+          boxShadow: 'var(--shadow-modal)',
+          overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: 'var(--fg-primary)' }}>
-          New Character
-        </h2>
+        <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--ink-150)' }}>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink-900)' }}>
+            Add character
+          </h2>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)}>
+          <div style={{ padding: '16px 18px 4px' }}>
           {/* Name */}
           <div style={{ marginBottom: 10 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>Name *</label>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>Name *</label>
             <input
               {...nameRest}
               ref={(el) => { rhfRef(el); nameRef.current = el; }}
               placeholder="e.g. Hercule Poirot"
               style={inputStyle}
             />
-            {errors.name && <span style={{ fontSize: 11, color: '#e05' }}>{errors.name.message}</span>}
+            {errors.name && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{errors.name.message}</span>}
           </div>
 
           {/* Role + Profession side-by-side */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>Role</label>
+              <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>Role</label>
               <select {...register('role')} style={inputStyle}>
                 <option value="detective">Detective</option>
                 <option value="suspect">Suspect</option>
                 <option value="victim">Victim</option>
                 <option value="witness">Witness</option>
                 <option value="bystander">Bystander</option>
+                <option value="murderer">Murderer</option>
                 <option value="other">Other</option>
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>Occupation</label>
+              <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>Occupation</label>
               <input
                 {...register('profession')}
                 placeholder="e.g. Housemaid"
@@ -143,27 +150,28 @@ export default function NewCharacterModal({
 
           {/* Chapter introduced */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>Chapter Introduced</label>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>Chapter Introduced</label>
             <input
               {...register('chapterIntroduced', { valueAsNumber: true })}
               type="number" min={1}
               style={{ ...inputStyle, width: 90 }}
             />
           </div>
+          </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
             <button type="button" onClick={onClose} style={{
-              background: 'transparent', border: '1px solid var(--border)',
+              background: 'transparent', border: '1px solid var(--ink-200)',
               borderRadius: 4, padding: '8px 16px', cursor: 'pointer',
-              color: 'var(--fg-primary)', fontSize: 13,
+              color: 'var(--ink-700)', fontSize: 12, fontWeight: 500,
             }}>Cancel</button>
             <button type="submit" disabled={isSubmitting} style={{
-              background: 'var(--accent)', color: 'white', border: 'none',
+              background: 'var(--ink-900)', color: 'var(--bg-panel)', border: 'none',
               borderRadius: 4, padding: '8px 16px',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              fontSize: 13, opacity: isSubmitting ? 0.7 : 1,
+              fontSize: 12, fontWeight: 500, opacity: isSubmitting ? 0.7 : 1,
             }}>
-              {isSubmitting ? 'Adding…' : 'Add Character'}
+              {isSubmitting ? 'Adding…' : 'Create character'}
             </button>
           </div>
         </form>

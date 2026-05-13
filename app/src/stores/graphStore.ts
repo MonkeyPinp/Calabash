@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Character, Relationship } from '@/types';
+import type { Character, Relationship, StickyNote } from '@/types';
 
 const MAX_UNDO = 100;
 
@@ -11,14 +11,19 @@ interface UndoEntry {
 interface GraphStoreState {
   characters: Character[];
   relationships: Relationship[];
+  stickyNotes: StickyNote[];
   setCharacters: (cs: Character[]) => void;
   setRelationships: (rs: Relationship[]) => void;
+  setStickyNotes: (notes: StickyNote[]) => void;
   addCharacter: (char: Character) => void;
   removeCharacter: (id: string) => void;
   updateCharacterInStore: (char: Character) => void;
   addRelationship: (rel: Relationship) => void;
   removeRelationship: (id: string) => void;
   updateRelationshipInStore: (rel: Relationship) => void;
+  addStickyNote: (note: StickyNote) => void;
+  removeStickyNote: (id: string) => void;
+  updateStickyNoteInStore: (note: StickyNote) => void;
 
   undoStack: UndoEntry[];
   redoStack: UndoEntry[];
@@ -30,11 +35,13 @@ interface GraphStoreState {
 export const useGraphStore = create<GraphStoreState>((set, get) => ({
   characters: [],
   relationships: [],
+  stickyNotes: [],
   undoStack: [],
   redoStack: [],
 
   setCharacters: (characters) => set({ characters }),
   setRelationships: (relationships) => set({ relationships }),
+  setStickyNotes: (stickyNotes) => set({ stickyNotes }),
   addCharacter: (char) =>
     set((state) => ({ characters: [...state.characters, char] })),
   removeCharacter: (id) =>
@@ -57,6 +64,14 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   updateRelationshipInStore: (rel) =>
     set((state) => ({
       relationships: state.relationships.map((r) => (r.id === rel.id ? rel : r)),
+    })),
+  addStickyNote: (note) =>
+    set((state) => ({ stickyNotes: [...state.stickyNotes, note] })),
+  removeStickyNote: (id) =>
+    set((state) => ({ stickyNotes: state.stickyNotes.filter((n) => n.id !== id) })),
+  updateStickyNoteInStore: (note) =>
+    set((state) => ({
+      stickyNotes: state.stickyNotes.map((n) => (n.id === note.id ? note : n)),
     })),
 
   pushUndo: (undoFn, redoFn) =>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export interface ChapterSliderProps {
   bookId: string;
@@ -8,22 +8,6 @@ export interface ChapterSliderProps {
   onCommit: (n: number) => void;
   onTotalChaptersChange?: (n: number) => void;
 }
-
-const btnStyle = (disabled: boolean): React.CSSProperties => ({
-  background: 'transparent',
-  border: '1px solid var(--border)',
-  borderRadius: 4,
-  width: 28,
-  height: 28,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  color: disabled ? 'var(--border)' : 'var(--fg-muted)',
-  fontSize: 14,
-  flexShrink: 0,
-  userSelect: 'none',
-});
 
 export default function ChapterSlider({
   bookId: _bookId,
@@ -36,12 +20,7 @@ export default function ChapterSlider({
   const [editingTotal, setEditingTotal] = useState(false);
   const [totalDraft, setTotalDraft] = useState('');
   const totalInputRef = useRef<HTMLInputElement>(null);
-
-  function step(delta: number) {
-    const next = Math.max(1, Math.min(totalChapters, currentChapter + delta));
-    onChange(next);
-    onCommit(next);
-  }
+  const pct = totalChapters <= 1 ? 0 : ((currentChapter - 1) / (totalChapters - 1)) * 100;
 
   function startEditTotal() {
     if (!onTotalChaptersChange) return;
@@ -61,67 +40,95 @@ export default function ChapterSlider({
   return (
     <div
       style={{
-        padding: '8px 14px',
-        borderTop: '1px solid var(--border)',
+        height: 76,
+        padding: '12px 20px 16px',
+        borderTop: '1px solid var(--ink-200)',
         background: 'var(--bg-panel)',
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
+        gap: 18,
+        flexShrink: 0,
       }}
     >
-      {/* Prev button */}
-      <button
-        onClick={() => step(-1)}
-        disabled={currentChapter <= 1}
-        style={btnStyle(currentChapter <= 1)}
-        aria-label="Previous chapter"
-        title="Previous chapter"
-      >
-        ‹
-      </button>
+      <div>
+        <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>
+          Chapter
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 22,
+            fontWeight: 500,
+            color: 'var(--ink-900)',
+            lineHeight: 1.05,
+            marginTop: 2,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {String(currentChapter).padStart(2, '0')}
+          <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>/{totalChapters}</span>
+        </div>
+      </div>
 
-      {/* Slider area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontWeight: 500 }}>Chapter</span>
-
-          {/* Current / Total — click Total to edit */}
-          <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}>
-            {currentChapter} /
-            {editingTotal ? (
-              <input
-                ref={totalInputRef}
-                type="number"
-                min={1}
-                value={totalDraft}
-                onChange={(e) => setTotalDraft(e.target.value)}
-                onBlur={commitTotal}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitTotal();
-                  if (e.key === 'Escape') setEditingTotal(false);
-                }}
-                style={{
-                  width: 44, fontSize: 11, fontWeight: 600,
-                  background: 'var(--bg-canvas)', border: '1px solid var(--accent)',
-                  borderRadius: 3, color: 'var(--fg-primary)', padding: '0 3px',
-                  outline: 'none', textAlign: 'center',
-                }}
-              />
-            ) : (
-              <span
-                onClick={startEditTotal}
-                title={onTotalChaptersChange ? 'Click to change total chapters' : undefined}
-                style={{
-                  cursor: onTotalChaptersChange ? 'text' : 'default',
-                  borderBottom: onTotalChaptersChange ? '1px dashed var(--border)' : 'none',
-                  paddingBottom: 1,
-                  marginLeft: 2,
-                }}
-              >
-                {totalChapters}
-              </span>
-            )}
-          </span>
+      <div style={{ flex: 1, position: 'relative', height: 38 }}>
+        {Array.from({ length: Math.min(totalChapters, 120) }).map((_, i) => {
+          const chapter = i + 1;
+          const left = totalChapters <= 1 ? 0 : (i / (totalChapters - 1)) * 100;
+          const isMark = chapter === 1 || chapter === totalChapters || chapter === currentChapter || chapter % 5 === 0;
+          const passed = chapter <= currentChapter;
+          return (
+            <div
+              key={chapter}
+              style={{
+                position: 'absolute',
+                left: `${left}%`,
+                top: 16,
+                transform: 'translateX(-50%)',
+                width: isMark ? 2 : 1,
+                height: isMark ? 14 : 6,
+                background: passed
+                  ? (isMark ? 'var(--accent)' : 'var(--ink-400)')
+                  : (isMark ? 'var(--ink-300)' : 'var(--ink-200)'),
+                borderRadius: 1,
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 22, height: 2, background: 'var(--ink-200)', borderRadius: 1 }} />
+        <div style={{ position: 'absolute', left: 0, top: 22, width: `${pct}%`, height: 2, background: 'var(--ink-700)', borderRadius: 1 }} />
+        <div
+          style={{
+            position: 'absolute',
+            left: `${pct}%`,
+            top: 23,
+            transform: 'translate(-50%, -50%)',
+            width: 14,
+            height: 14,
+            borderRadius: 999,
+            background: 'var(--bg-panel)',
+            border: '2px solid var(--ink-900)',
+            boxShadow: 'var(--shadow-soft)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: `${pct}%`,
+            top: -4,
+            transform: 'translateX(-50%)',
+            padding: '2px 6px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            background: 'var(--ink-900)',
+            color: 'var(--bg-panel)',
+            borderRadius: 3,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          Ch {currentChapter}
         </div>
         <input
           type="range"
@@ -131,20 +138,69 @@ export default function ChapterSlider({
           onChange={(e) => onChange(Number(e.target.value))}
           onMouseUp={(e) => onCommit(Number((e.target as HTMLInputElement).value))}
           onTouchEnd={(e) => onCommit(Number((e.target as HTMLInputElement).value))}
-          style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+          aria-label="Current chapter"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            opacity: 0,
+            cursor: 'pointer',
+          }}
         />
       </div>
 
-      {/* Next button */}
-      <button
-        onClick={() => step(1)}
-        disabled={currentChapter >= totalChapters}
-        style={btnStyle(currentChapter >= totalChapters)}
-        aria-label="Next chapter"
-        title="Next chapter"
-      >
-        ›
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontSize: 10, color: 'var(--ink-400)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>
+          Of
+        </div>
+        {editingTotal ? (
+          <input
+            ref={totalInputRef}
+            type="number"
+            min={1}
+            value={totalDraft}
+            onChange={(e) => setTotalDraft(e.target.value)}
+            onBlur={commitTotal}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitTotal();
+              if (e.key === 'Escape') setEditingTotal(false);
+            }}
+            style={{
+              width: 44,
+              padding: '4px 6px',
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              background: 'var(--bg-canvas)',
+              border: '1px solid var(--accent)',
+              color: 'var(--ink-900)',
+              borderRadius: 4,
+              outline: 'none',
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={startEditTotal}
+            title={onTotalChaptersChange ? 'Click to change total chapters' : undefined}
+            style={{
+              width: 38,
+              padding: '4px 6px',
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              background: 'var(--bg-canvas)',
+              border: '1px solid var(--ink-200)',
+              color: 'var(--ink-800)',
+              borderRadius: 4,
+              cursor: onTotalChaptersChange ? 'text' : 'default',
+            }}
+          >
+            {totalChapters}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

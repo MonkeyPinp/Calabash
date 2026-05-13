@@ -1,12 +1,11 @@
 import { db } from './schema';
-import type { Relationship, RelationshipType, RelationshipDirection, CertaintyLevel } from '@/types';
+import type { Relationship, RelationshipType, CertaintyLevel } from '@/types';
 
 export interface CreateRelationshipInput {
   bookId: string;
   sourceId: string;
   targetId: string;
   type: RelationshipType;
-  direction?: RelationshipDirection;
   chapterRevealed: number;
   label?: string;
   notes?: string;
@@ -21,7 +20,6 @@ export async function createRelationship(input: CreateRelationshipInput): Promis
     sourceId: input.sourceId,
     targetId: input.targetId,
     type: input.type,
-    direction: input.direction,
     label: input.label,
     notes: input.notes,
     chapterRevealed: input.chapterRevealed,

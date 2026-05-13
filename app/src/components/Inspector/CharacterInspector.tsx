@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { Trash2, Copy } from 'lucide-react';
 import type { Alias, CharacterRole } from '@/types';
-import { updateCharacter } from '@/db/characters';
+import { updateCharacter, deleteCharacter, restoreCharacter, createCharacter } from '@/db/characters';
+import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { savePortrait, getPortrait } from '@/db/portraits';
 import { useGraphStore } from '@/stores/graphStore';
 
@@ -10,27 +12,28 @@ const CHARACTER_ROLES: CharacterRole[] = [
   'victim',
   'witness',
   'bystander',
+  'murderer',
   'other',
 ];
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: 10,
+  fontSize: 9.5,
   fontWeight: 600,
-  letterSpacing: '0.07em',
+  letterSpacing: '0.11em',
   textTransform: 'uppercase',
-  color: 'var(--fg-muted)',
-  marginBottom: 4,
+  color: 'var(--ink-500)',
+  marginBottom: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '5px 8px',
+  padding: '6px 9px',
   fontSize: 13,
-  border: '1px solid var(--border)',
+  border: '1px solid var(--ink-200)',
   borderRadius: 4,
   background: 'var(--bg-canvas)',
-  color: 'var(--fg-primary)',
+  color: 'var(--ink-900)',
   boxSizing: 'border-box',
   outline: 'none',
 };
@@ -42,11 +45,19 @@ const fieldStyle: React.CSSProperties = {
 export interface CharacterInspectorProps {
   characterId: string;
   bookId: string;
+  onDeleted?: () => void;
+  onDuplicated?: (newId: string) => void;
 }
 
-export default function CharacterInspector({ characterId, bookId }: CharacterInspectorProps) {
+export default function CharacterInspector({ characterId, bookId, onDeleted, onDuplicated }: CharacterInspectorProps) {
   const characters = useGraphStore((s) => s.characters);
+  const relationships = useGraphStore((s) => s.relationships);
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
+  const addCharacter = useGraphStore((s) => s.addCharacter);
+  const removeCharacter = useGraphStore((s) => s.removeCharacter);
+  const addRelationship = useGraphStore((s) => s.addRelationship);
+  const removeRelationship = useGraphStore((s) => s.removeRelationship);
+  const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const character = characters.find((c) => c.id === characterId);
 
@@ -87,7 +98,7 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
 
   if (!character) {
     return (
-      <div style={{ padding: 16, color: 'var(--fg-muted)', fontSize: 13 }}>
+      <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>
         Character not found.
       </div>
     );
@@ -96,6 +107,50 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
   async function persist(patch: Parameters<typeof updateCharacter>[1]) {
     const updated = await updateCharacter(characterId, patch);
     updateCharacterInStore(updated);
+  }
+
+  async function handleDelete() {
+    const relsToDelete = relationships.filter(
+      (r) => r.sourceId === characterId || r.targetId === characterId,
+    );
+    for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+    await deleteCharacter(characterId);
+    removeCharacter(characterId);
+    pushUndo(
+      async () => {
+        await restoreCharacter(character!);
+        addCharacter(character!);
+        for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); }
+      },
+      async () => {
+        for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+        await deleteCharacter(characterId);
+        removeCharacter(characterId);
+      },
+    );
+    onDeleted?.();
+  }
+
+  async function handleDuplicate() {
+    if (!character) return;
+    const copy = await createCharacter({
+      bookId,
+      name: `${character.name} (copy)`,
+      role: character.role,
+      roleReveals: character.roleReveals?.map((reveal) => ({ ...reveal })),
+      chapterIntroduced: character.chapterIntroduced,
+      aliases: character.aliases.map((a) => ({ ...a, name: `${a.name} (copy)` })),
+      profession: character.profession,
+      socialPosition: character.socialPosition,
+      notes: character.notes,
+      position: { x: character.position.x + 40, y: character.position.y + 40 },
+    });
+    addCharacter(copy);
+    pushUndo(
+      async () => { await deleteCharacter(copy.id); removeCharacter(copy.id); },
+      async () => { await restoreCharacter(copy); addCharacter(copy); },
+    );
+    onDuplicated?.(copy.id);
   }
 
   // ── Field handlers ──────────────────────────────────────────────────────────
@@ -175,21 +230,117 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ padding: 16, overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
-      {/* Title */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
         style={{
-          fontSize: 16,
-          fontWeight: 700,
-          color: 'var(--fg-primary)',
-          marginBottom: 16,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          padding: '14px 16px 12px',
+          borderBottom: '1px solid var(--ink-200)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          flexShrink: 0,
         }}
       >
-        {character.name}
+        {portraitUrl ? (
+          <img
+            src={portraitUrl}
+            alt=""
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: 'cover',
+              borderRadius: 4,
+              border: '1px solid var(--ink-200)',
+              flexShrink: 0,
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 4,
+              background: 'var(--bg-canvas)',
+              border: '1px solid var(--ink-200)',
+              display: 'grid',
+              placeItems: 'center',
+              fontFamily: 'var(--font-display)',
+              fontSize: 19,
+              fontWeight: 500,
+              color: `var(--role-${character.role})`,
+              flexShrink: 0,
+            }}
+          >
+            {character.name.trim().charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 18,
+              fontWeight: 500,
+              color: 'var(--ink-900)',
+              letterSpacing: '-0.005em',
+              lineHeight: 1.15,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {character.name}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {[character.profession, `introduced ch. ${character.chapterIntroduced}`].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+        <button
+          onClick={() => void handleDuplicate()}
+          title="Duplicate character"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 28, height: 28,
+            background: 'transparent', border: '1px solid transparent',
+            borderRadius: 5, cursor: 'pointer', color: 'var(--ink-600)',
+            flexShrink: 0,
+          }}
+        >
+          <Copy size={13} />
+        </button>
+        <button
+          onClick={() => void handleDelete()}
+          title="Delete character"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 28, height: 28,
+            background: 'transparent', border: '1px solid transparent',
+            borderRadius: 5, cursor: 'pointer', color: 'var(--accent)',
+            flexShrink: 0,
+          }}
+        >
+          <Trash2 size={13} />
+        </button>
       </div>
+
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--ink-200)', padding: '0 12px', flexShrink: 0 }}>
+        {['Details', 'Aliases', 'Notes'].map((tab, index) => (
+          <div
+            key={tab}
+            style={{
+              padding: '8px 10px 9px',
+              fontSize: 12,
+              fontWeight: index === 0 ? 600 : 500,
+              color: index === 0 ? 'var(--ink-900)' : 'var(--ink-500)',
+              borderBottom: index === 0 ? '2px solid var(--ink-900)' : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {tab}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
 
       {/* Name */}
       <div style={fieldStyle}>
@@ -286,11 +437,11 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
               title="Remove alias"
               style={{
                 background: 'transparent',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 padding: '4px 7px',
                 cursor: 'pointer',
-                color: 'var(--fg-muted)',
+                color: 'var(--ink-500)',
                 fontSize: 13,
                 lineHeight: 1,
                 flexShrink: 0,
@@ -306,9 +457,9 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
             fontSize: 12,
             padding: '4px 10px',
             background: 'transparent',
-            border: '1px dashed var(--border)',
+            border: '1px dashed var(--ink-300)',
             borderRadius: 4,
-            color: 'var(--fg-muted)',
+            color: 'var(--ink-600)',
             cursor: 'pointer',
             marginTop: 2,
           }}
@@ -330,7 +481,7 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
               height: 72,
               objectFit: 'cover',
               borderRadius: 4,
-              border: '1px solid var(--border)',
+              border: '1px solid var(--ink-200)',
               marginBottom: 8,
             }}
           />
@@ -341,9 +492,9 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
             fontSize: 12,
             padding: '4px 10px',
             background: 'transparent',
-            border: '1px solid var(--border)',
+            border: '1px solid var(--ink-200)',
             borderRadius: 4,
-            color: 'var(--fg-muted)',
+            color: 'var(--ink-600)',
             cursor: 'pointer',
           }}
         >
@@ -356,6 +507,7 @@ export default function CharacterInspector({ characterId, bookId }: CharacterIns
           />
         </label>
       </div>
+    </div>
     </div>
   );
 }

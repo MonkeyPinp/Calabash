@@ -7,6 +7,7 @@ import {
   Controls,
   MiniMap,
   MarkerType,
+  Position,
   applyNodeChanges,
   useReactFlow,
   type Node,
@@ -17,24 +18,26 @@ import {
   type EdgeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { UserPlus } from 'lucide-react';
-import type { Character, Relationship } from '@/types';
+import type { Character, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
 import RelationshipEdge from './RelationshipEdge';
+import StickyNoteNode from './StickyNoteNode';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
+import { resolveCharacterRole } from '@/lib/roles';
 import { isDirected } from '@/lib/relationshipTypes';
 import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
+import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
+import { computeForceLayout } from '@/lib/layout';
 import { useGraphStore } from '@/stores/graphStore';
 import type { RelationshipType } from '@/types';
 
-const nodeTypes = { character: CharacterNode };
+const nodeTypes = { character: CharacterNode, stickyNote: StickyNoteNode };
 const edgeTypes = { relationship: RelationshipEdge };
+const EMPTY_STICKY_NOTES: StickyNote[] = [];
 
-// Hex colours — must match themes.css CSS variables for the default light theme.
-// Used for React Flow's marker system (SVG markers can't use CSS vars).
 const EDGE_COLOR: Record<RelationshipType, string> = {
   family:       '#b06820',
   professional: '#2c6080',
@@ -44,37 +47,105 @@ const EDGE_COLOR: Record<RelationshipType, string> = {
   other:        '#707070',
 };
 
+const DEFAULT_CHARACTER_NODE_WIDTH = 184;
+const CHARACTER_NODE_MAX_WIDTH = 320;
+const CHARACTER_NODE_HEIGHT = 76;
+
+function estimateCharacterNodeWidth(name: string, subtitle?: string) {
+  const longest = Math.max(name.length, subtitle?.length ?? 0);
+  return Math.min(CHARACTER_NODE_MAX_WIDTH, Math.max(DEFAULT_CHARACTER_NODE_WIDTH, 96 + longest * 6.4));
+}
+
+const SHORTCUTS = [
+  ['N', 'New'],
+  ['E', 'Edge'],
+  ['F', 'Fit'],
+  ['/', 'Search'],
+  ['Del', 'Delete'],
+  ['Ctrl Z', 'Undo'],
+] as const;
+
+const kbdStyle: React.CSSProperties = {
+  minWidth: 20,
+  height: 18,
+  padding: '0 5px',
+  borderRadius: 3,
+  border: '1px solid var(--ink-200)',
+  borderBottom: '2px solid var(--ink-200)',
+  background: 'var(--bg-canvas)',
+  color: 'var(--ink-700)',
+  fontSize: 10,
+  fontWeight: 700,
+  lineHeight: '17px',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+};
+
+/** Choose which handles to use based on the relative position of two node centres. */
+function pickHandles(sx: number, sy: number, tx: number, ty: number) {
+  const dx = tx - sx;
+  const dy = ty - sy;
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { sourceHandle: 'source-right', targetHandle: 'target-left',  sourcePosition: Position.Right, targetPosition: Position.Left  }
+      : { sourceHandle: 'source-left',  targetHandle: 'target-right', sourcePosition: Position.Left,  targetPosition: Position.Right };
+  }
+  return dy >= 0
+    ? { sourceHandle: 'source-bottom', targetHandle: 'target-top',    sourcePosition: Position.Bottom, targetPosition: Position.Top    }
+    : { sourceHandle: 'source-top',    targetHandle: 'target-bottom', sourcePosition: Position.Top,    targetPosition: Position.Bottom };
+}
+
 export interface CalabashCanvasProps {
   characters: Character[];
   relationships: Relationship[];
+  stickyNotes?: StickyNote[];
   currentChapter: number;
   bookId: string | null;
+  newCharacterRequestId?: number;
+  startEdgeRequestId?: number;
+  startEdgeSourceId?: string | null;
   onNodeSelect?: (id: string | null) => void;
   onEdgeSelect?: (id: string | null) => void;
+  onStickyNoteSelect?: (id: string | null) => void;
   onFitViewReady?: (fn: () => void) => void;
+  onLayoutReady?: (fn: () => Promise<void>) => void;
 }
 
 function CalabashCanvasInner({
   characters,
   relationships,
+  stickyNotes = EMPTY_STICKY_NOTES,
   currentChapter,
   bookId,
+  newCharacterRequestId = 0,
+  startEdgeRequestId = 0,
+  startEdgeSourceId = null,
   onNodeSelect,
   onEdgeSelect,
+  onStickyNoteSelect,
   onFitViewReady,
+  onLayoutReady,
 }: CalabashCanvasProps) {
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [pendingConnection, setPendingConnection] = useState<{ sourceId: string; targetId: string } | null>(null);
+  const [edgeStartId, setEdgeStartId] = useState<string | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const handledNewCharacterRequestId = useRef(0);
+  const handledStartEdgeRequestId = useRef(0);
+  // Track node positions before drag for undo
+  const dragStartPositions = useRef<Map<string, { x: number; y: number }>>(new Map());
 
   const addCharacter = useGraphStore((s) => s.addCharacter);
   const removeCharacter = useGraphStore((s) => s.removeCharacter);
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const addRelationship = useGraphStore((s) => s.addRelationship);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
+  const addStickyNote = useGraphStore((s) => s.addStickyNote);
+  const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
+  const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
@@ -84,38 +155,75 @@ function CalabashCanvasInner({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Canonical node list derived from Zustand (source of truth)
-  const computedNodes: Node[] = useMemo(
+  // Character nodes
+  const characterNodes: Node[] = useMemo(
     () =>
       characters
         .filter((c) => c.chapterIntroduced <= currentChapter)
-        .map((c) => ({
-          id: c.id,
-          type: 'character',
-          position: c.position,
-          // Pre-declare dimensions so the MiniMap renders immediately
-          width: 180,
-          height: 80,
-          data: {
-            name: resolveDisplayName(c.aliases, currentChapter),
-            role: c.role,
-            profession: c.profession,
-            portraitId: c.portraitId,
-          },
-        })),
+        .map((c) => {
+          const name = resolveDisplayName(c.aliases, currentChapter);
+          const width = estimateCharacterNodeWidth(name, c.profession);
+          return {
+            id: c.id,
+            type: 'character',
+            position: c.position,
+            width,
+            height: CHARACTER_NODE_HEIGHT,
+            style: { width },
+            data: {
+              name,
+              width,
+              role: resolveCharacterRole(c, currentChapter),
+              profession: c.profession,
+              portraitId: c.portraitId,
+              chapterIntroduced: c.chapterIntroduced,
+            },
+          };
+        }),
     [characters, currentChapter],
   );
 
-  const visibleCharIds = useMemo(() => new Set(computedNodes.map((n) => n.id)), [computedNodes]);
+  // Sticky note nodes
+  const stickyNoteNodes: Node[] = useMemo(
+    () =>
+      stickyNotes.map((s) => ({
+        id: s.id,
+        type: 'stickyNote',
+        position: s.position,
+        width: s.width,
+        height: s.height,
+        style: { width: s.width, height: s.height },
+        data: { note: s },
+      })),
+    [stickyNotes],
+  );
 
-  // Local RF copy — updated smoothly during drag via onNodesChange.
-  // Only syncs from computedNodes when no drag is in progress.
-  const [rfNodes, setRfNodes] = useState<Node[]>(computedNodes);
+  const allComputedNodes: Node[] = useMemo(
+    () => [...characterNodes, ...stickyNoteNodes],
+    [characterNodes, stickyNoteNodes],
+  );
+
+  const visibleCharIds = useMemo(() => new Set(characterNodes.map((n) => n.id)), [characterNodes]);
+
+  // Position map (node centres) for smart handle selection
+  const nodeCenter = useMemo(
+    () =>
+      new Map(
+        characterNodes.map((n) => [
+          n.id,
+          { x: n.position.x + (n.width ?? DEFAULT_CHARACTER_NODE_WIDTH) / 2, y: n.position.y + (n.height ?? CHARACTER_NODE_HEIGHT) / 2 },
+        ]),
+      ),
+    [characterNodes],
+  );
+
+  // Local RF node copy for smooth drag
+  const [rfNodes, setRfNodes] = useState<Node[]>(allComputedNodes);
   const isDraggingRef = useRef(false);
 
   useEffect(() => {
-    if (!isDraggingRef.current) setRfNodes(computedNodes);
-  }, [computedNodes]);
+    if (!isDraggingRef.current) setRfNodes(allComputedNodes);
+  }, [allComputedNodes]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     setRfNodes((nds) => applyNodeChanges(changes, nds));
@@ -129,7 +237,6 @@ function CalabashCanvasInner({
         visibleCharIds.has(r.targetId),
     );
 
-    // Group by unordered node pair to detect parallel edges
     const pairCount = new Map<string, number>();
     const pairIndex = new Map<string, number>();
     for (const r of visible) {
@@ -143,43 +250,103 @@ function CalabashCanvasInner({
       const idx = pairIndex.get(key) ?? 0;
       pairIndex.set(key, idx + 1);
 
-      // Offset parallel edges symmetrically in opposite directions.
-      // Single edge: 0 offset (use default bezier curve).
-      // Two edges: −45 and +45 (curve left / right).
       const spread = 45;
       const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
       const color = EDGE_COLOR[r.type];
       const filled = { type: MarkerType.ArrowClosed, color, width: 14, height: 14 };
-      const open   = { type: MarkerType.Arrow,       color, width: 14, height: 14 };
 
-      // Resolve direction from explicit field, falling back to type-derived default.
-      const dir = r.direction ?? (isDirected(r.type) ? 'forward' : 'none');
-      const markerEnd   = (dir === 'forward' || dir === 'both') ? filled : open;
-      const markerStart = (dir === 'backward' || dir === 'both') ? filled : undefined;
+      const markerEnd = isDirected(r.type) ? filled : undefined;
+
+      const sc = nodeCenter.get(r.sourceId);
+      const tc = nodeCenter.get(r.targetId);
+      const handles = sc && tc
+        ? pickHandles(sc.x, sc.y, tc.x, tc.y)
+        : { sourceHandle: 'source-right', targetHandle: 'target-left',
+            sourcePosition: Position.Right, targetPosition: Position.Left };
 
       return {
         id: r.id,
         source: r.sourceId,
         target: r.targetId,
+        sourceHandle: handles.sourceHandle,
+        targetHandle: handles.targetHandle,
+        sourcePosition: handles.sourcePosition,
+        targetPosition: handles.targetPosition,
         type: 'relationship',
         markerEnd,
-        markerStart,
         data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset },
       };
     });
-  }, [relationships, visibleCharIds, currentChapter]);
+  }, [relationships, visibleCharIds, currentChapter, nodeCenter]);
 
-  // onSelectionChange doesn't reliably fire for custom edge types in React Flow v12.
-  // Use explicit click callbacks instead.
+  // ── Auto-layout (lives here so it has direct access to setRfNodes + fitView) ──
+
+  const runLayout = useCallback(async () => {
+    if (!bookId) return;
+    const visible = characters.filter((c) => c.chapterIntroduced <= currentChapter);
+    const visibleIds = new Set(visible.map((c) => c.id));
+    const visibleEdges = relationships
+      .filter((r) => r.chapterRevealed <= currentChapter && visibleIds.has(r.sourceId) && visibleIds.has(r.targetId))
+      .map((r) => ({ source: r.sourceId, target: r.targetId, directed: isDirected(r.type) }));
+
+    const positions = computeForceLayout(visible.map((c) => c.id), visibleEdges);
+
+    // Write to DB + Zustand
+    await Promise.all(
+      visible.map(async (c) => {
+        const pos = positions.get(c.id);
+        if (!pos) return;
+        await updateCharacter(c.id, { position: pos });
+        updateCharacterInStore({ ...c, position: pos });
+      }),
+    );
+
+    // Directly update rfNodes (bypasses the async useEffect chain)
+    setRfNodes((nds) =>
+      nds.map((n) => {
+        if (n.type !== 'character') return n;
+        const pos = positions.get(n.id);
+        return pos ? { ...n, position: pos } : n;
+      }),
+    );
+
+    // fitView after React Flow renders the new rfNodes (double rAF ensures post-paint)
+    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15 })));
+  }, [bookId, characters, relationships, currentChapter, updateCharacterInStore, fitView]);
+
+  useEffect(() => {
+    onLayoutReady?.(runLayout);
+  }, [onLayoutReady, runLayout]);
+
+  // ── Selection handlers ─────────────────────────────────────────────────────
+
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (_event, node) => {
+      if (node.type === 'stickyNote') {
+        setSelectedNodeIds(new Set([node.id]));
+        setSelectedEdgeIds(new Set());
+        setEdgeStartId(null);
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(node.id);
+        return;
+      }
+      if (edgeStartId && edgeStartId !== node.id) {
+        setPendingConnection({ sourceId: edgeStartId, targetId: node.id });
+        setEdgeStartId(null);
+        setSelectedNodeIds(new Set([node.id]));
+        setSelectedEdgeIds(new Set());
+        return;
+      }
+      if (edgeStartId === node.id) setEdgeStartId(null);
       setSelectedNodeIds(new Set([node.id]));
       setSelectedEdgeIds(new Set());
       onNodeSelect?.(node.id);
       onEdgeSelect?.(null);
+      onStickyNoteSelect?.(null);
     },
-    [onNodeSelect, onEdgeSelect],
+    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect],
   );
 
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
@@ -188,18 +355,20 @@ function CalabashCanvasInner({
       setSelectedNodeIds(new Set());
       onEdgeSelect?.(edge.id);
       onNodeSelect?.(null);
+      onStickyNoteSelect?.(null);
     },
-    [onEdgeSelect, onNodeSelect],
+    [onEdgeSelect, onNodeSelect, onStickyNoteSelect],
   );
 
   const handlePaneClick = useCallback(() => {
+    setEdgeStartId(null);
     setSelectedNodeIds(new Set());
     setSelectedEdgeIds(new Set());
     onNodeSelect?.(null);
     onEdgeSelect?.(null);
-  }, [onNodeSelect, onEdgeSelect]);
+    onStickyNoteSelect?.(null);
+  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect]);
 
-  // Fires for marquee (Shift+drag) and keyboard selection
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
       if (selNodes.length + selEdges.length === 0) return;
@@ -207,38 +376,54 @@ function CalabashCanvasInner({
       const edgeIds = new Set(selEdges.map((e) => e.id));
       setSelectedNodeIds(nodeIds);
       setSelectedEdgeIds(edgeIds);
-      // For multi-select don't change inspector — for single node/edge keep current behavior
-      if (selNodes.length === 1 && selEdges.length === 0) {
+      if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type !== 'stickyNote') {
         onNodeSelect?.(selNodes[0].id);
         onEdgeSelect?.(null);
+        onStickyNoteSelect?.(null);
+      } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'stickyNote') {
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(selNodes[0].id);
       } else if (selEdges.length === 1 && selNodes.length === 0) {
         onEdgeSelect?.(selEdges[0].id);
         onNodeSelect?.(null);
+        onStickyNoteSelect?.(null);
       }
     },
-    [onNodeSelect, onEdgeSelect],
+    [onNodeSelect, onEdgeSelect, onStickyNoteSelect],
   );
+
+  // ── Delete key ─────────────────────────────────────────────────────────────
 
   const handleKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Escape') {
+        setEdgeStartId(null);
+        return;
+      }
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
 
       if (selectedNodeIds.size > 0) {
         const charsToDelete = characters.filter((c) => selectedNodeIds.has(c.id));
+        const stickiesToDelete = stickyNotes.filter((s) => selectedNodeIds.has(s.id));
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
         for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
         for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
+        for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
+        if (stickiesToDelete.length > 0) onStickyNoteSelect?.(null);
         pushUndo(
           async () => {
             for (const char of charsToDelete) { await restoreCharacter(char); addCharacter(char); }
             for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); }
+            for (const note of stickiesToDelete) { await restoreAnnotation(note); addStickyNote(note); }
           },
           async () => {
             for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
             for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
+            for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
           },
         );
       }
@@ -252,11 +437,13 @@ function CalabashCanvasInner({
         );
       }
     },
-    [selectedNodeIds, selectedEdgeIds, characters, relationships,
-     addCharacter, removeCharacter, addRelationship, removeRelationship, pushUndo],
+    [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes,
+     addCharacter, removeCharacter, addRelationship, removeRelationship,
+     addStickyNote, removeStickyNote, pushUndo, onStickyNoteSelect],
   );
 
-  // "Add Character" toolbar button — places new node at the centre of the current viewport
+  // ── Node add + drag ────────────────────────────────────────────────────────
+
   const handleAddCharacterClick = useCallback(() => {
     if (!bookId) return;
     const container = containerRef.current;
@@ -266,27 +453,85 @@ function CalabashCanvasInner({
       x: bounds.left + bounds.width / 2,
       y: bounds.top + bounds.height / 2,
     });
-    // Offset slightly so repeated clicks don't stack exactly
     const { zoom } = getViewport();
     const jitter = (characters.length % 5) * (60 / zoom);
     setPendingPosition({ x: position.x + jitter, y: position.y + jitter });
   }, [bookId, screenToFlowPosition, getViewport, characters.length]);
 
-  const handleNodeDragStart = useCallback(() => {
+  const handleStartEdgeFromSelection = useCallback((requestedSourceId?: string | null) => {
+    if (requestedSourceId && characters.some((character) => character.id === requestedSourceId)) {
+      setSelectedNodeIds(new Set([requestedSourceId]));
+      setSelectedEdgeIds(new Set());
+      setEdgeStartId(requestedSourceId);
+      return;
+    }
+
+    const selectedCharacterIds = [...selectedNodeIds].filter((id) =>
+      characters.some((character) => character.id === id),
+    );
+    if (selectedCharacterIds.length !== 1) return;
+    setEdgeStartId(selectedCharacterIds[0]);
+  }, [characters, selectedNodeIds]);
+
+  useEffect(() => {
+    if (
+      newCharacterRequestId > 0 &&
+      newCharacterRequestId !== handledNewCharacterRequestId.current
+    ) {
+      handledNewCharacterRequestId.current = newCharacterRequestId;
+      handleAddCharacterClick();
+    }
+  }, [newCharacterRequestId, handleAddCharacterClick]);
+
+  useEffect(() => {
+    if (
+      startEdgeRequestId > 0 &&
+      startEdgeRequestId !== handledStartEdgeRequestId.current
+    ) {
+      handledStartEdgeRequestId.current = startEdgeRequestId;
+      handleStartEdgeFromSelection(startEdgeSourceId);
+    }
+  }, [startEdgeRequestId, startEdgeSourceId, handleStartEdgeFromSelection]);
+
+  const handleNodeDragStart = useCallback((_event: React.MouseEvent, node: Node) => {
     isDraggingRef.current = true;
+    // Record starting position for undo
+    dragStartPositions.current.set(node.id, { x: node.position.x, y: node.position.y });
   }, []);
 
   const handleNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       isDraggingRef.current = false;
       if (!bookId) return;
-      const char = characters.find((c) => c.id === node.id);
-      if (!char) return;
-      void updateCharacter(node.id, { position: node.position });
-      updateCharacterInStore({ ...char, position: node.position });
+
+      const oldPos = dragStartPositions.current.get(node.id);
+      const newPos = node.position;
+      dragStartPositions.current.delete(node.id);
+
+      if (node.type === 'character') {
+        const char = characters.find((c) => c.id === node.id);
+        if (!char) return;
+        void updateCharacter(node.id, { position: newPos });
+        updateCharacterInStore({ ...char, position: newPos });
+        // Character position undo is optional; skip for now to keep undo stack cleaner
+      } else if (node.type === 'stickyNote') {
+        const note = stickyNotes.find((s) => s.id === node.id);
+        if (!note) return;
+        void updateAnnotation(node.id, { position: newPos });
+        updateStickyNoteInStore({ ...note, position: newPos });
+        // Add undo for sticky note position
+        if (oldPos && (oldPos.x !== newPos.x || oldPos.y !== newPos.y)) {
+          pushUndo(
+            async () => { await updateAnnotation(node.id, { position: oldPos }); updateStickyNoteInStore({ ...note, position: oldPos }); },
+            async () => { await updateAnnotation(node.id, { position: newPos }); updateStickyNoteInStore({ ...note, position: newPos }); },
+          );
+        }
+      }
     },
-    [bookId, characters, updateCharacterInStore],
+    [bookId, characters, stickyNotes, updateCharacterInStore, updateStickyNoteInStore, pushUndo],
   );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -317,62 +562,151 @@ function CalabashCanvasInner({
         proOptions={{ hideAttribution: true }}
         onConnect={(connection) => {
           if (!bookId || !connection.source || !connection.target) return;
+          const sourceIsStickyNote = stickyNotes.some((s) => s.id === connection.source);
+          const targetIsStickyNote = stickyNotes.some((s) => s.id === connection.target);
+          if (sourceIsStickyNote || targetIsStickyNote) return;
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--border)" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--ink-200)" />
         <Controls position="bottom-left" />
         <MiniMap
           position="bottom-right"
           nodeColor={(node) => {
+            if (node.type === 'stickyNote') {
+              const note = (node.data as { note?: { color?: string } }).note;
+              const colorMap: Record<string, string> = {
+                yellow: '#fde047', green: '#86efac', blue: '#93c5fd',
+                pink: '#f9a8d4', purple: '#c4b5fd',
+              };
+              return colorMap[note?.color ?? 'yellow'] ?? '#fde047';
+            }
             const role = (node.data as { role?: string }).role ?? 'other';
             const map: Record<string, string> = {
               detective: '#2c5f7c', suspect: '#8b2e2e', victim: '#5c5c5c',
-              witness: '#7c6f2c', bystander: '#9a9a95', other: '#6b6b65',
+              witness: '#7c6f2c', bystander: '#9a9a95', murderer: '#111111', other: '#6b6b65',
             };
             return map[role] ?? '#6b6b65';
           }}
           nodeStrokeWidth={0}
-          maskColor="rgba(100,100,80,0.12)"
-          style={{ width: 180, height: 110, borderRadius: 8 }}
+          maskColor="color-mix(in srgb, var(--ink-900) 12%, transparent)"
+          style={{ width: 180, height: 110, borderRadius: 5 }}
           zoomable
           pannable
         />
       </ReactFlow>
 
-      {/* Canvas toolbar — floats top-right, above React Flow controls */}
-      {bookId && (
+      <div
+        aria-label="Keyboard shortcuts"
+        data-testid="keyboard-shortcuts-legend"
+        style={{
+          position: 'absolute',
+          right: 14,
+          top: 14,
+          zIndex: 8,
+          width: 178,
+          boxSizing: 'border-box',
+          padding: 0,
+          pointerEvents: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 6,
+        }}
+      >
         <div
           style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            zIndex: 10,
-            display: 'flex',
+            padding: '5px 9px 5px 8px',
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--ink-200)',
+            borderRadius: 999,
+            boxShadow: 'var(--shadow-soft)',
+            fontSize: 11,
+            color: 'var(--ink-600)',
+            display: 'inline-flex',
+            alignItems: 'center',
             gap: 6,
           }}
         >
-          <button
-            onClick={handleAddCharacterClick}
-            title="Add character (N)"
+          <span
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 10px',
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              color: 'var(--fg-primary)',
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: 'pointer',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+              display: 'grid',
+              placeItems: 'center',
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              border: '1px solid var(--ink-300)',
+              color: 'var(--ink-500)',
+              fontSize: 9.5,
+              fontWeight: 600,
             }}
           >
-            <UserPlus size={13} />
-            Add character
-          </button>
+            ?
+          </span>
+          Shortcuts
+        </div>
+        <div
+          style={{
+            width: 178,
+            boxSizing: 'border-box',
+            padding: '10px 12px 11px',
+            borderRadius: 6,
+            border: '1px solid var(--ink-200)',
+            background: 'var(--bg-panel)',
+            boxShadow: 'var(--shadow-pop)',
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr',
+              columnGap: 10,
+              rowGap: 5,
+              fontSize: 11,
+              color: 'var(--ink-600)',
+            }}
+          >
+            {SHORTCUTS.map(([key, label]) => (
+              <div key={`${key}-${label}`} style={{ display: 'contents' }}>
+                <span style={kbdStyle}>{key}</span>
+                <span
+                  style={{
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontWeight: 500,
+                  }}
+                >
+                  {label === 'New' ? 'New character' : label === 'Edge' ? 'Connect edge' : label === 'Delete' ? 'Delete selection' : label === 'Fit' ? 'Fit to view' : label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {edgeStartId && (
+        <div
+          data-testid="edge-start-hint"
+          style={{
+            position: 'absolute',
+            top: 10,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9,
+            padding: '6px 10px',
+            borderRadius: 6,
+            border: '1px solid color-mix(in srgb, var(--accent) 40%, var(--ink-200))',
+            background: 'color-mix(in srgb, var(--bg-panel) 94%, transparent)',
+            color: 'var(--ink-900)',
+            boxShadow: 'var(--shadow-panel)',
+            fontSize: 12,
+            fontWeight: 600,
+            pointerEvents: 'none',
+          }}
+        >
+          Edge mode: click a target character
         </div>
       )}
 

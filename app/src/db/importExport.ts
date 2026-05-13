@@ -87,7 +87,14 @@ export async function importBookFromJson(payload: CalabashExport): Promise<strin
   }));
 
   await db.transaction('rw', db.books, db.characters, db.relationships, db.portraits, async () => {
-    await db.books.put({ ...payload.book, id: newBookId, createdAt: now, updatedAt: now });
+    await db.books.put({
+      ...payload.book,
+      id: newBookId,
+      categoryId: undefined,
+      spoilerShield: payload.book.spoilerShield ?? false,
+      createdAt: now,
+      updatedAt: now,
+    });
     if (newPortraits.length)     await db.portraits.bulkAdd(newPortraits);
     if (newCharacters.length)    await db.characters.bulkAdd(newCharacters);
     if (newRelationships.length) await db.relationships.bulkAdd(newRelationships);

@@ -1,10 +1,21 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '@/db/schema';
 import { createBook, getBook, listBooks, updateBook, deleteBook } from '@/db/books';
+import { createCharacter, listCharactersByBook } from '@/db/characters';
+import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
+import { savePortrait } from '@/db/portraits';
+import { createAnnotation, listAnnotationsByBook } from '@/db/annotations';
 
 describe('books DAO', () => {
   beforeEach(async () => {
-    await db.books.clear();
+    await Promise.all([
+      db.books.clear(),
+      db.categories.clear(),
+      db.characters.clear(),
+      db.relationships.clear(),
+      db.portraits.clear(),
+      db.annotations.clear(),
+    ]);
   });
 
   it('createBook returns a Book with a UUID, timestamps, and default totalChapters', async () => {
@@ -13,6 +24,7 @@ describe('books DAO', () => {
     expect(book.title).toBe('And Then There Were None');
     expect(book.totalChapters).toBe(30);
     expect(book.currentChapter).toBe(1);
+    expect(book.spoilerShield).toBe(false);
     expect(book.createdAt).toBeGreaterThan(0);
     expect(book.updatedAt).toBe(book.createdAt);
   });
@@ -21,6 +33,12 @@ describe('books DAO', () => {
     const created = await createBook({ title: 'X' });
     const fetched = await getBook(created.id);
     expect(fetched?.title).toBe('X');
+  });
+
+  it('createBook can enable Spoiler Shield', async () => {
+    const created = await createBook({ title: 'Spoiler Book', spoilerShield: true });
+    const fetched = await getBook(created.id);
+    expect(fetched?.spoilerShield).toBe(true);
   });
 
   it('getBook returns undefined for unknown id', async () => {
@@ -38,9 +56,10 @@ describe('books DAO', () => {
   it('updateBook merges fields and bumps updatedAt', async () => {
     const book = await createBook({ title: 'X' });
     await new Promise((r) => setTimeout(r, 2));
-    const updated = await updateBook(book.id, { title: 'Y', currentChapter: 5 });
+    const updated = await updateBook(book.id, { title: 'Y', currentChapter: 5, spoilerShield: true });
     expect(updated.title).toBe('Y');
     expect(updated.currentChapter).toBe(5);
+    expect(updated.spoilerShield).toBe(true);
     expect(updated.updatedAt).toBeGreaterThan(book.updatedAt);
   });
 
@@ -48,5 +67,52 @@ describe('books DAO', () => {
     const book = await createBook({ title: 'X' });
     await deleteBook(book.id);
     expect(await getBook(book.id)).toBeUndefined();
+  });
+
+  it('deleteBook removes the book graph, portraits, and annotations', async () => {
+    const book = await createBook({ title: 'X' });
+    const other = await createBook({ title: 'Other' });
+    const portrait = await savePortrait({
+      bookId: book.id,
+      blob: new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }),
+      mimeType: 'image/png',
+    });
+    const a = await createCharacter({
+      bookId: book.id,
+      name: 'A',
+      role: 'suspect',
+      chapterIntroduced: 1,
+      portraitId: portrait.id,
+    });
+    const b = await createCharacter({
+      bookId: book.id,
+      name: 'B',
+      role: 'witness',
+      chapterIntroduced: 1,
+    });
+    await createRelationship({
+      bookId: book.id,
+      sourceId: a.id,
+      targetId: b.id,
+      type: 'suspicion',
+      chapterRevealed: 1,
+    });
+    await createAnnotation({ bookId: book.id, content: 'case note' });
+    await createCharacter({
+      bookId: other.id,
+      name: 'Other character',
+      role: 'other',
+      chapterIntroduced: 1,
+    });
+
+    await deleteBook(book.id);
+
+    expect(await getBook(book.id)).toBeUndefined();
+    expect(await listCharactersByBook(book.id)).toEqual([]);
+    expect(await listRelationshipsByBook(book.id)).toEqual([]);
+    expect(await db.portraits.where('bookId').equals(book.id).count()).toBe(0);
+    expect(await listAnnotationsByBook(book.id)).toEqual([]);
+    expect(await getBook(other.id)).toBeDefined();
+    expect(await listCharactersByBook(other.id)).toHaveLength(1);
   });
 });

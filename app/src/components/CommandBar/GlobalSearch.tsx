@@ -66,23 +66,23 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
         position: 'fixed', inset: 0,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         paddingTop: 80,
-        background: 'rgba(0,0,0,0.35)',
+        background: 'color-mix(in srgb, var(--ink-900) 34%, transparent)',
         zIndex: 2000,
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
-        background: 'var(--bg-panel)',
-        border: '1px solid var(--border)',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--ink-200)',
         borderRadius: 10,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-        width: 480,
+        boxShadow: 'var(--shadow-modal)',
+        width: 560,
         maxWidth: '90vw',
         overflow: 'hidden',
       }}>
         {/* Search input */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8, borderBottom: q ? '1px solid var(--border)' : 'none' }}>
-          <Search size={15} style={{ color: 'var(--fg-muted)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', gap: 10, borderBottom: q ? '1px solid var(--ink-150)' : 'none' }}>
+          <Search size={16} style={{ color: 'var(--ink-600)', flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
@@ -90,11 +90,11 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
             placeholder="Search characters and relationships…"
             style={{
               flex: 1, border: 'none', outline: 'none', fontSize: 14,
-              background: 'transparent', color: 'var(--fg-primary)',
+              background: 'transparent', color: 'var(--ink-900)',
             }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-muted)', padding: 2 }}>
+            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-500)', padding: 2 }}>
               <X size={13} />
             </button>
           )}
@@ -104,14 +104,14 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
         {q && (
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
             {!hasResults && (
-              <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--fg-muted)' }}>
+              <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--ink-500)' }}>
                 No results for &ldquo;{query}&rdquo;
               </div>
             )}
 
             {matchedChars.length > 0 && (
               <>
-                <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--fg-muted)', textTransform: 'uppercase' }}>
+                <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.11em', color: 'var(--ink-500)', textTransform: 'uppercase' }}>
                   Characters
                 </div>
                 {matchedChars.map((c) => (
@@ -126,9 +126,9 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
                     }}
                     className="search-result-row"
                   >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-primary)' }}>{c.name}</span>
-                    {c.profession && <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>{c.profession}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', flexShrink: 0 }}>Ch.{c.chapterIntroduced}</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 500, color: 'var(--ink-900)' }}>{c.name}</span>
+                    {c.profession && <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{c.profession}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>Ch.{c.chapterIntroduced}</span>
                   </button>
                 ))}
               </>
@@ -136,7 +136,7 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
 
             {matchedRels.length > 0 && (
               <>
-                <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--fg-muted)', textTransform: 'uppercase' }}>
+                <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.11em', color: 'var(--ink-500)', textTransform: 'uppercase' }}>
                   Relationships
                 </div>
                 {matchedRels.map((r) => (
@@ -151,11 +151,11 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
                     }}
                     className="search-result-row"
                   >
-                    <span style={{ fontSize: 13, color: 'var(--fg-primary)' }}>
+                    <span style={{ fontSize: 13, color: 'var(--ink-900)' }}>
                       {charMap.get(r.sourceId) ?? '?'} → {charMap.get(r.targetId) ?? '?'}
                     </span>
-                    {r.label && <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>{r.label}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', flexShrink: 0 }}>{r.type}</span>
+                    {r.label && <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{r.label}</span>}
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>{r.type}</span>
                   </button>
                 ))}
               </>
@@ -163,13 +163,13 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
           </div>
         )}
 
-        <div style={{ padding: '6px 14px', fontSize: 11, color: 'var(--fg-muted)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ padding: '8px 14px', fontSize: 11, color: 'var(--ink-500)', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
           ↩ select &nbsp;·&nbsp; Esc close
         </div>
       </div>
 
       <style>{`
-        .search-result-row:hover { background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel)) !important; }
+        .search-result-row:hover { background: var(--bg-canvas) !important; }
       `}</style>
     </div>
   );

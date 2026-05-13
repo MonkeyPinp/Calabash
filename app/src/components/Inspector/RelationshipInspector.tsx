@@ -1,5 +1,6 @@
-import type { RelationshipDirection, RelationshipType, CertaintyLevel } from '@/types';
-import { updateRelationship } from '@/db/relationships';
+import { Trash2, Copy } from 'lucide-react';
+import type { RelationshipType, CertaintyLevel } from '@/types';
+import { createRelationship, updateRelationship, deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
 import { isDirected } from '@/lib/relationshipTypes';
 
@@ -9,90 +10,231 @@ const RELATIONSHIP_TYPES: RelationshipType[] = [
 const CERTAINTY_LEVELS: CertaintyLevel[] = ['confirmed', 'suspected', 'disproven'];
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 10, fontWeight: 600,
-  letterSpacing: '0.07em', textTransform: 'uppercase',
-  color: 'var(--fg-muted)', marginBottom: 4,
+  display: 'block', fontSize: 9.5, fontWeight: 600,
+  letterSpacing: '0.11em', textTransform: 'uppercase',
+  color: 'var(--ink-500)', marginBottom: 6,
 };
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '5px 8px', fontSize: 13,
-  border: '1px solid var(--border)', borderRadius: 4,
-  background: 'var(--bg-canvas)', color: 'var(--fg-primary)',
+  width: '100%', padding: '6px 9px', fontSize: 13,
+  border: '1px solid var(--ink-200)', borderRadius: 4,
+  background: 'var(--bg-canvas)', color: 'var(--ink-900)',
   boxSizing: 'border-box', outline: 'none',
 };
 const fieldStyle: React.CSSProperties = { marginBottom: 14 };
 
-const DIRECTION_OPTIONS: { value: RelationshipDirection; label: string }[] = [
-  { value: 'forward',  label: '→  One-way (A → B)' },
-  { value: 'backward', label: '←  One-way (A ← B)' },
-  { value: 'both',     label: '↔  Both directions' },
-  { value: 'none',     label: '—  No arrow' },
-];
+export interface RelationshipInspectorProps {
+  relationshipId: string;
+  bookId: string;
+  onDeleted?: () => void;
+  onDuplicated?: (newId: string) => void;
+}
 
-export default function RelationshipInspector({ relationshipId }: { relationshipId: string }) {
+export default function RelationshipInspector({
+  relationshipId,
+  bookId,
+  onDeleted,
+  onDuplicated,
+}: RelationshipInspectorProps) {
   const relationships = useGraphStore((s) => s.relationships);
   const characters   = useGraphStore((s) => s.characters);
   const updateRelationshipInStore = useGraphStore((s) => s.updateRelationshipInStore);
+  const addRelationship = useGraphStore((s) => s.addRelationship);
+  const removeRelationship = useGraphStore((s) => s.removeRelationship);
+  const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const rel = relationships.find((r) => r.id === relationshipId);
-  if (!rel) return <div style={{ padding: 16, color: 'var(--fg-muted)', fontSize: 13 }}>Relationship not found.</div>;
+  if (!rel) return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>Relationship not found.</div>;
 
   const sourceName = characters.find((c) => c.id === rel.sourceId)?.name ?? rel.sourceId;
   const targetName = characters.find((c) => c.id === rel.targetId)?.name ?? rel.targetId;
 
-  // Effective direction for display in header
-  const effectiveDir = rel.direction ?? (isDirected(rel.type) ? 'forward' : 'none');
-  const headerArrow = effectiveDir === 'forward' ? '→' : effectiveDir === 'backward' ? '←' : effectiveDir === 'both' ? '↔' : '—';
+  const headerArrow = isDirected(rel.type) ? '→' : '—';
 
   async function persist(patch: Parameters<typeof updateRelationship>[1]) {
     const updated = await updateRelationship(relationshipId, patch);
     updateRelationshipInStore(updated);
   }
 
+  async function handleDelete() {
+    await deleteRelationship(relationshipId);
+    removeRelationship(relationshipId);
+    pushUndo(
+      async () => { await restoreRelationship(rel!); addRelationship(rel!); },
+      async () => { await deleteRelationship(relationshipId); removeRelationship(relationshipId); },
+    );
+    onDeleted?.();
+  }
+
+  async function handleDuplicate() {
+    if (!rel) return;
+    const copy = await createRelationship({
+      bookId,
+      sourceId: rel.sourceId,
+      targetId: rel.targetId,
+      type: rel.type,
+      certainty: rel.certainty,
+      label: rel.label ? `${rel.label} (copy)` : undefined,
+      chapterRevealed: rel.chapterRevealed,
+      notes: rel.notes,
+    });
+    addRelationship(copy);
+    pushUndo(
+      async () => { await deleteRelationship(copy.id); removeRelationship(copy.id); },
+      async () => { await restoreRelationship(copy); addRelationship(copy); },
+    );
+    onDuplicated?.(copy.id);
+  }
+
   return (
-    <div style={{ padding: 16, overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
-      {/* Header */}
-      <div style={{
-        fontSize: 14, fontWeight: 700, color: 'var(--fg-primary)',
-        marginBottom: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }} title={`${sourceName} ${headerArrow} ${targetName}`}>
-        {sourceName} <span style={{ color: 'var(--fg-muted)' }}>{headerArrow}</span> {targetName}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--ink-200)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>
+              Relationship
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginTop: 6,
+                fontFamily: 'var(--font-display)',
+                fontSize: 16,
+                color: 'var(--ink-900)',
+                minWidth: 0,
+              }}
+              title={`${sourceName} ${headerArrow} ${targetName}`}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sourceName}</span>
+              <span style={{ color: `var(--rel-${rel.type})`, flexShrink: 0 }}>{headerArrow}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{targetName}</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
+              {[rel.label || rel.type, rel.certainty, `revealed ch. ${rel.chapterRevealed}`].join(' · ')}
+            </div>
+          </div>
+          <button
+            onClick={() => void handleDuplicate()}
+            title="Duplicate relationship"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28,
+              background: 'transparent', border: '1px solid transparent',
+              borderRadius: 5, cursor: 'pointer', color: 'var(--ink-600)',
+              flexShrink: 0,
+            }}
+          >
+            <Copy size={13} />
+          </button>
+          <button
+            onClick={() => void handleDelete()}
+            title="Delete relationship"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28,
+              background: 'transparent', border: '1px solid transparent',
+              borderRadius: 5, cursor: 'pointer', color: 'var(--accent)',
+              flexShrink: 0,
+            }}
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
+      {/* Header + action buttons */}
+      <div style={{ display: 'none' }}>
+        <div style={{
+          flex: 1,
+          fontSize: 14, fontWeight: 700, color: 'var(--ink-900)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }} title={`${sourceName} ${headerArrow} ${targetName}`}>
+          {sourceName} <span style={{ color: 'var(--ink-500)' }}>{headerArrow}</span> {targetName}
+        </div>
+        <button
+          onClick={() => void handleDuplicate()}
+          title="Duplicate relationship"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 8px', fontSize: 11,
+            background: 'transparent', border: '1px solid var(--ink-200)',
+            borderRadius: 4, cursor: 'pointer', color: 'var(--ink-500)',
+            flexShrink: 0,
+          }}
+        >
+          <Copy size={11} /> Duplicate
+        </button>
+        <button
+          onClick={() => void handleDelete()}
+          title="Delete relationship"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 8px', fontSize: 11,
+            background: 'transparent', border: '1px solid var(--ink-200)',
+            borderRadius: 4, cursor: 'pointer', color: '#c0392b',
+            flexShrink: 0,
+          }}
+        >
+          <Trash2 size={11} /> Delete
+        </button>
       </div>
 
       {/* Type */}
       <div style={fieldStyle}>
         <label style={labelStyle}>Type</label>
-        <select style={inputStyle} defaultValue={rel.type} key={`type-${relationshipId}`}
-          onChange={(e) => void persist({ type: e.target.value as RelationshipType })}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {RELATIONSHIP_TYPES.map((t) => (
-            <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+            <button
+              key={t}
+              type="button"
+              onClick={() => void persist({ type: t })}
+              style={{
+                padding: '4px 9px',
+                fontSize: 11,
+                background: 'var(--bg-canvas)',
+                border: `1px solid ${t === rel.type ? `var(--rel-${t})` : 'var(--ink-200)'}`,
+                color: t === rel.type ? `var(--rel-${t})` : 'var(--ink-600)',
+                fontWeight: t === rel.type ? 600 : 500,
+                borderRadius: 999,
+                cursor: 'pointer',
+              }}
+            >
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
           ))}
-        </select>
-      </div>
-
-      {/* Direction */}
-      <div style={fieldStyle}>
-        <label style={labelStyle}>Arrow direction</label>
-        <select style={inputStyle} value={rel.direction ?? 'auto'} key={`dir-${relationshipId}`}
-          onChange={(e) => {
-            const v = e.target.value;
-            void persist({ direction: v === 'auto' ? undefined : v as RelationshipDirection });
-          }}>
-          <option value="auto">Auto (from type)</option>
-          {DIRECTION_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        </div>
       </div>
 
       {/* Certainty */}
       <div style={fieldStyle}>
         <label style={labelStyle}>Certainty</label>
-        <select style={inputStyle} defaultValue={rel.certainty} key={`certainty-${relationshipId}`}
-          onChange={(e) => void persist({ certainty: e.target.value as CertaintyLevel })}>
-          {CERTAINTY_LEVELS.map((c) => (
-            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {CERTAINTY_LEVELS.map((c) => {
+            const active = c === rel.certainty;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => void persist({ certainty: c as CertaintyLevel })}
+                style={{
+                  flex: 1,
+                  padding: '8px 4px',
+                  background: active ? 'var(--bg-canvas)' : 'transparent',
+                  border: `1px solid ${active ? 'var(--ink-700)' : 'var(--ink-200)'}`,
+                  borderRadius: 4,
+                  color: active ? 'var(--ink-900)' : 'var(--ink-500)',
+                  fontSize: 11,
+                  fontWeight: active ? 600 : 500,
+                  cursor: 'pointer',
+                }}
+              >
+                {c.charAt(0).toUpperCase() + c.slice(1)}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Label */}
@@ -124,6 +266,7 @@ export default function RelationshipInspector({ relationshipId }: { relationship
           placeholder="Optional"
           onBlur={(e) => { const v = e.target.value; if (v !== (rel.notes ?? '')) void persist({ notes: v || undefined }); }}
         />
+      </div>
       </div>
     </div>
   );

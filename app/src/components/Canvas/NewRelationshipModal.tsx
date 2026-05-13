@@ -81,11 +81,12 @@ export default function NewRelationshipModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.4)',
+        background: 'color-mix(in srgb, var(--ink-900) 34%, transparent)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
+        padding: 24,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -93,21 +94,25 @@ export default function NewRelationshipModal({
     >
       <div
         style={{
-          background: 'var(--bg-panel)',
-          border: '1px solid var(--border)',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--ink-200)',
           borderRadius: 8,
-          padding: 20,
-          maxWidth: 340,
+          maxWidth: 430,
           width: '100%',
+          boxShadow: 'var(--shadow-modal)',
+          overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: 'var(--fg-primary)' }}>
-          New Relationship
-        </h2>
+        <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--ink-150)' }}>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink-900)' }}>
+            Add relationship
+          </h2>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)}>
+          <div style={{ padding: '16px 18px 4px' }}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
               Type
             </label>
             <select
@@ -115,10 +120,10 @@ export default function NewRelationshipModal({
               style={{
                 width: '100%',
                 padding: '6px 10px',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 background: 'var(--bg-canvas)',
-                color: 'var(--fg-primary)',
+                color: 'var(--ink-900)',
                 fontSize: 13,
                 boxSizing: 'border-box',
               }}
@@ -133,7 +138,7 @@ export default function NewRelationshipModal({
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
               Label (optional)
             </label>
             <input
@@ -142,10 +147,10 @@ export default function NewRelationshipModal({
               style={{
                 width: '100%',
                 padding: '6px 10px',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 background: 'var(--bg-canvas)',
-                color: 'var(--fg-primary)',
+                color: 'var(--ink-900)',
                 fontSize: 13,
                 boxSizing: 'border-box',
               }}
@@ -153,7 +158,7 @@ export default function NewRelationshipModal({
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
               Chapter Revealed
             </label>
             <input
@@ -163,21 +168,21 @@ export default function NewRelationshipModal({
               style={{
                 width: '100%',
                 padding: '6px 10px',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 background: 'var(--bg-canvas)',
-                color: 'var(--fg-primary)',
+                color: 'var(--ink-900)',
                 fontSize: 13,
                 boxSizing: 'border-box',
               }}
             />
             {errors.chapterRevealed && (
-              <span style={{ fontSize: 11, color: 'var(--edge-disproven, #e05)' }}>{errors.chapterRevealed.message}</span>
+              <span style={{ fontSize: 11, color: 'var(--accent)' }}>{errors.chapterRevealed.message}</span>
             )}
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--fg-muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
               Certainty
             </label>
             <select
@@ -185,10 +190,10 @@ export default function NewRelationshipModal({
               style={{
                 width: '100%',
                 padding: '6px 10px',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 background: 'var(--bg-canvas)',
-                color: 'var(--fg-primary)',
+                color: 'var(--ink-900)',
                 fontSize: 13,
                 boxSizing: 'border-box',
               }}
@@ -198,19 +203,21 @@ export default function NewRelationshipModal({
               <option value="disproven">Disproven</option>
             </select>
           </div>
+          </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
             <button
               type="button"
               onClick={onClose}
               style={{
                 background: 'transparent',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--ink-200)',
                 borderRadius: 4,
                 padding: '8px 16px',
                 cursor: 'pointer',
-                color: 'var(--fg-primary)',
-                fontSize: 13,
+                color: 'var(--ink-700)',
+                fontSize: 12,
+                fontWeight: 500,
               }}
             >
               Cancel
@@ -219,17 +226,18 @@ export default function NewRelationshipModal({
               type="submit"
               disabled={isSubmitting}
               style={{
-                background: 'var(--accent)',
-                color: 'white',
+                background: 'var(--ink-900)',
+                color: 'var(--bg-panel)',
                 border: 'none',
                 borderRadius: 4,
                 padding: '8px 16px',
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                fontSize: 13,
+                fontSize: 12,
+                fontWeight: 500,
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              {isSubmitting ? 'Adding…' : 'Add Relationship'}
+              {isSubmitting ? 'Adding…' : 'Create relationship'}
             </button>
           </div>
         </form>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { listBooks } from '@/db/books';
 import { listCharactersByBook } from '@/db/characters';
 import { listRelationshipsByBook } from '@/db/relationships';
+import { listAnnotationsByBook } from '@/db/annotations';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
 
@@ -11,9 +12,11 @@ export function useBookHydration(): { loading: boolean } {
   const setActiveBook = useBookStore((s) => s.setActiveBook);
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
   const setTotalChapters = useBookStore((s) => s.setTotalChapters);
+  const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
+  const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
 
   // On mount: load books and set the most recently updated as active
   useEffect(() => {
@@ -37,23 +40,28 @@ export function useBookHydration(): { loading: boolean } {
     if (activeBookId === null) {
       setCharacters([]);
       setRelationships([]);
+      setStickyNotes([]);
+      setSpoilerShield(false);
       return;
     }
 
     let cancelled = false;
     (async () => {
-      const [characters, relationships, books] = await Promise.all([
+      const [characters, relationships, books, annotations] = await Promise.all([
         listCharactersByBook(activeBookId),
         listRelationshipsByBook(activeBookId),
         listBooks(),
+        listAnnotationsByBook(activeBookId),
       ]);
       if (cancelled) return;
       setCharacters(characters);
       setRelationships(relationships);
+      setStickyNotes(annotations);
       const book = books.find((b) => b.id === activeBookId);
       if (book) {
         setCurrentChapter(book.currentChapter);
         setTotalChapters(book.totalChapters);
+        setSpoilerShield(book.spoilerShield);
       }
     })();
 

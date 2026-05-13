@@ -1,10 +1,11 @@
 import { db } from './schema';
-import type { Character, Alias, CharacterRole } from '@/types';
+import type { Character, Alias, CharacterRole, RoleReveal } from '@/types';
 
 export interface CreateCharacterInput {
   bookId: string;
   name: string;
   role: CharacterRole;
+  roleReveals?: RoleReveal[];
   chapterIntroduced: number;
   aliases?: Alias[];
   profession?: string;
@@ -22,6 +23,7 @@ export async function createCharacter(input: CreateCharacterInput): Promise<Char
     name: input.name,
     aliases: input.aliases ?? [{ name: input.name, chapterRevealed: input.chapterIntroduced }],
     role: input.role,
+    roleReveals: input.roleReveals,
     profession: input.profession,
     socialPosition: input.socialPosition,
     notes: input.notes,

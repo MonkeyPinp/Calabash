@@ -39,6 +39,7 @@ describe('importExport', () => {
     });
     const c2 = await createCharacter({
       bookId: book.id, name: 'James Sheppard', role: 'witness',
+      roleReveals: [{ role: 'murderer', chapterRevealed: 27 }],
       chapterIntroduced: 1,
     });
     await createRelationship({
@@ -61,6 +62,10 @@ describe('importExport', () => {
 
     const reChars = await listCharactersByBook(newBookId);
     expect(reChars).toHaveLength(2);
+    expect(reChars.find((c) => c.name === 'James Sheppard')?.role).toBe('witness');
+    expect(reChars.find((c) => c.name === 'James Sheppard')?.roleReveals).toEqual([
+      { role: 'murderer', chapterRevealed: 27 },
+    ]);
 
     const reRels = await listRelationshipsByBook(newBookId);
     expect(reRels).toHaveLength(1);

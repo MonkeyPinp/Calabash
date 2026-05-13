@@ -1,11 +1,15 @@
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getStraightPath, type EdgeProps } from '@xyflow/react';
-import type { CertaintyLevel, RelationshipType } from '@/types';
+import type { CertaintyLevel, RelationshipType, Relationship } from '@/types';
 import { isDirected } from '@/lib/relationshipTypes';
+import { cycleCertainty } from '@/lib/certainty';
+import { updateRelationship } from '@/db/relationships';
+import { useGraphStore } from '@/stores/graphStore';
 
 export interface RelationshipEdgeData {
   certainty: CertaintyLevel;
   type: RelationshipType;
+  relationship: Relationship;
 }
 
 const BADGE_TEXT: Record<CertaintyLevel, string> = {
@@ -28,6 +32,14 @@ function RelationshipEdgeImpl(props: EdgeProps) {
   });
   const style = EDGE_STYLE[data.certainty];
   const markerEnd = isDirected(data.type) ? 'url(#arrow)' : undefined;
+  const fullRel = data.relationship;
+
+  async function handleBadgeClick() {
+    if (!fullRel) return;
+    const next = cycleCertainty(data.certainty);
+    await updateRelationship(props.id, { certainty: next });
+    useGraphStore.getState().updateRelationshipInStore({ ...fullRel, certainty: next });
+  }
 
   return (
     <>
@@ -61,6 +73,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
             pointerEvents: 'all',
             cursor: 'pointer',
           }}
+          onClick={() => { void handleBadgeClick(); }}
         >
           {BADGE_TEXT[data.certainty]}
         </div>

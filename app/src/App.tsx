@@ -110,6 +110,7 @@ export default function App() {
               characters={characters}
               relationships={relationships}
               currentChapter={currentChapter}
+              bookId={activeBookId}
             />
           )}
         </div>

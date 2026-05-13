@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, Moon, Sun } from 'lucide-react';
+import { Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2 } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
@@ -11,6 +11,21 @@ import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
 import { useUiStore } from './stores/uiStore';
 import { exportBookAsJson, importBookFromJson } from './db/importExport';
+
+const toolbarBtnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid transparent',
+  borderRadius: 4,
+  width: 28,
+  height: 28,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  color: 'var(--fg-muted)',
+  padding: 0,
+  flexShrink: 0,
+};
 
 export default function App() {
   const { loading } = useBookHydration();
@@ -26,6 +41,10 @@ export default function App() {
 
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
+  const undo = useGraphStore((s) => s.undo);
+  const redo = useGraphStore((s) => s.redo);
+  const undoStack = useGraphStore((s) => s.undoStack);
+  const redoStack = useGraphStore((s) => s.redoStack);
 
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
@@ -103,34 +122,8 @@ export default function App() {
             borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative',
           }}
         >
-          {/* Collapse toggle */}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: -16,
-              width: 16,
-              height: 32,
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border)',
-              borderLeft: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--fg-muted)',
-              padding: 0,
-              zIndex: 5,
-            }}
-            aria-label="Collapse sidebar"
-          >
-            <ChevronLeft size={12} />
-          </button>
-
           {/* App title */}
           <div
             style={{
@@ -226,30 +219,6 @@ export default function App() {
         </aside>
       )}
 
-      {/* Re-open button when sidebar is collapsed */}
-      {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          style={{
-            width: 16,
-            flexShrink: 0,
-            background: 'var(--bg-panel)',
-            borderRight: '1px solid var(--border)',
-            borderTop: 'none',
-            borderLeft: 'none',
-            borderBottom: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--fg-muted)',
-            padding: 0,
-          } as React.CSSProperties}
-          aria-label="Expand sidebar"
-        >
-          <ChevronRight size={12} />
-        </button>
-      )}
 
       {/* Centre canvas area — flex-grow */}
       <main
@@ -261,6 +230,62 @@ export default function App() {
           overflow: 'hidden',
         }}
       >
+        {/* Top toolbar: panel toggles + undo/redo */}
+        <div
+          style={{
+            height: 36,
+            flexShrink: 0,
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--bg-panel)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            padding: '0 8px',
+          }}
+        >
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            style={toolbarBtnStyle}
+          >
+            <PanelLeft size={15} />
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Undo */}
+          <button
+            onClick={() => void undo()}
+            disabled={undoStack.length === 0}
+            title="Undo (Ctrl+Z)"
+            style={toolbarBtnStyle}
+          >
+            <Undo2 size={15} />
+          </button>
+
+          {/* Redo */}
+          <button
+            onClick={() => void redo()}
+            disabled={redoStack.length === 0}
+            title="Redo (Ctrl+Shift+Z)"
+            style={toolbarBtnStyle}
+          >
+            <Redo2 size={15} />
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Inspector toggle */}
+          <button
+            onClick={() => setInspectorOpen((v) => !v)}
+            title={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
+            style={toolbarBtnStyle}
+          >
+            <PanelRight size={15} />
+          </button>
+        </div>
+
         {/* Canvas fills remaining space */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           {loading ? (
@@ -324,35 +349,9 @@ export default function App() {
             borderLeft: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative',
             overflow: 'hidden',
           }}
         >
-          {/* Collapse/expand toggle */}
-          <button
-            onClick={() => setInspectorOpen(false)}
-            style={{
-              position: 'absolute',
-              top: 8,
-              left: -16,
-              width: 16,
-              height: 32,
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border)',
-              borderRight: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--fg-muted)',
-              padding: 0,
-            }}
-            aria-label="Collapse inspector"
-          >
-            <ChevronRight size={12} />
-          </button>
-
-          {/* Inspector content */}
           <div style={{ flex: 1, overflow: 'hidden' }}>
             {selectedCharId && activeBookId ? (
               <CharacterInspector
@@ -368,31 +367,6 @@ export default function App() {
             )}
           </div>
         </aside>
-      )}
-
-      {/* Re-open button when inspector is collapsed */}
-      {!inspectorOpen && (
-        <button
-          onClick={() => setInspectorOpen(true)}
-          style={{
-            width: 16,
-            flexShrink: 0,
-            background: 'var(--bg-panel)',
-            borderLeft: '1px solid var(--border)',
-            borderTop: 'none',
-            borderRight: 'none',
-            borderBottom: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--fg-muted)',
-            padding: 0,
-          } as React.CSSProperties}
-          aria-label="Expand inspector"
-        >
-          <ChevronLeft size={12} />
-        </button>
       )}
     </div>
   );

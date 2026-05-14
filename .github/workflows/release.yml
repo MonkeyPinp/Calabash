@@ -200,6 +200,13 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: ./src-tauri -> target
+          cache-bin: "false"
+
+      - name: Verify Rust toolchain
+        shell: bash
+        run: |
+          which cargo
+          cargo --version
 
       - name: Install frontend dependencies
         working-directory: app

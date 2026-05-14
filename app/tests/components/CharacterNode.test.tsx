@@ -242,4 +242,37 @@ describe('CharacterNode', () => {
     expect(screen.getByText('[ portrait ]')).toBeInTheDocument();
     expect(screen.getByText('CH.02')).toHaveStyle({ right: '8px', bottom: '8px' });
   });
+
+  it('wraps long names in portrait mode without expanding the card', () => {
+    const name = 'The Extremely Long Double-Barrelled Duchess of the Northern Observatory';
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="c7"
+        type="character"
+        data={{
+          name,
+          role: 'suspect',
+          chapterIntroduced: 7,
+          viewMode: 'portrait',
+          width: 176,
+          height: 252,
+        }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(screen.getByTestId('portrait-character-name')).toHaveStyle({
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+    });
+    expect(container.querySelector('[data-testid="character-node"]')).toHaveStyle({ width: '176px' });
+  });
 });

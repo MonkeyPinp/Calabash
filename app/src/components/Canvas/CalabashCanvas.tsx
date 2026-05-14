@@ -50,6 +50,7 @@ const CHARACTER_NODE_MIN_HEIGHT = 76;
 const CHARACTER_NODE_TEXT_INSET = 78;
 const PORTRAIT_CHARACTER_NODE_WIDTH = 176;
 const PORTRAIT_CHARACTER_NODE_HEIGHT = 252;
+const PORTRAIT_CHARACTER_NODE_TEXT_INSET = 66;
 
 function longestWordLength(text: string) {
   return text.split(/\s+/).reduce((longest, word) => Math.max(longest, word.length), 0);
@@ -86,6 +87,17 @@ function estimateCharacterNodeSize(name: string, roleLabel: string, subtitle?: s
   return { width, height };
 }
 
+function estimatePortraitCharacterNodeSize(name: string, subtitle?: string) {
+  const textWidth = PORTRAIT_CHARACTER_NODE_WIDTH - PORTRAIT_CHARACTER_NODE_TEXT_INSET;
+  const nameLines = estimateWrappedLines(name, textWidth, 7.6);
+  const subtitleLines = estimateWrappedLines(subtitle, textWidth, 5.8);
+  const height = Math.max(
+    PORTRAIT_CHARACTER_NODE_HEIGHT,
+    211 + nameLines * 18 + (subtitleLines > 0 ? 3 + subtitleLines * 13 : 0),
+  );
+  return { width: PORTRAIT_CHARACTER_NODE_WIDTH, height };
+}
+
 function getCharacterNodeSize(
   viewMode: CharacterNodeViewMode,
   name: string,
@@ -93,7 +105,7 @@ function getCharacterNodeSize(
   subtitle?: string,
 ) {
   return viewMode === 'portrait'
-    ? { width: PORTRAIT_CHARACTER_NODE_WIDTH, height: PORTRAIT_CHARACTER_NODE_HEIGHT }
+    ? estimatePortraitCharacterNodeSize(name, subtitle)
     : estimateCharacterNodeSize(name, roleLabel, subtitle);
 }
 

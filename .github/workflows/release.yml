@@ -212,7 +212,8 @@ jobs:
         run: npm ci
 
       - name: Build and upload Tauri binaries
-        uses: tauri-apps/tauri-action@v0
+        id: tauri
+        uses: tauri-apps/tauri-action@v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -223,6 +224,36 @@ jobs:
           prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           projectPath: .
           args: ${{ matrix.args }}
-          releaseAssetNamePattern: Calabash_[version]_[platform]_[arch][setup].[ext]
+          assetNamePattern: Calabash_[version]_[platform]_[arch][setup].[ext]
           uploadPlainBinary: true
-          uploadWorkflowArtifacts: true
+          includeUpdaterJson: false
+
+      - name: Collect desktop workflow artifact
+        shell: bash
+        env:
+          ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
+        run: |
+          mkdir -p release-assets/desktop
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const artifacts = JSON.parse(process.env.ARTIFACT_PATHS || '[]');
+          let copied = 0;
+          for (const file of artifacts) {
+            if (!fs.existsSync(file)) {
+              console.warn(`Missing Tauri artifact: ${file}`);
+              continue;
+            }
+            fs.cpSync(file, path.join('release-assets', 'desktop', path.basename(file)), { recursive: true });
+            copied++;
+          }
+          if (copied === 0) {
+            throw new Error('No Tauri artifacts were available to upload.');
+          }
+          NODE
+
+      - name: Upload desktop workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: calabash-desktop-${{ github.ref_name }}-${{ matrix.label }}
+          path: release-assets/desktop/*

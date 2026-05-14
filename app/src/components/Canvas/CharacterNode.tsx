@@ -210,15 +210,15 @@ function CharacterNodeImpl(props: NodeProps) {
           }}
         >
           <div
+            data-testid="portrait-character-name"
             style={{
               fontFamily: 'var(--font-case-title)',
               fontSize: 15,
               fontWeight: 500,
               color: 'var(--ink-900)',
               lineHeight: 1.15,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
               paddingRight: data.chapterIntroduced !== undefined ? 46 : 0,
             }}
           >

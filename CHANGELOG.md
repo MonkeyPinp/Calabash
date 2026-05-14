@@ -8,6 +8,7 @@
 - Added root desktop npm scripts for Tauri development and packaging.
 - Changed desktop release automation to attach plain platform binaries instead of installers.
 - Added language selection to the first-run onboarding tutorial.
+- Added wrapping for long names in the fixed-width portrait character cards.
 - Added chapter-aware sticky note visibility and compact episode/chapter tags.
 - Added bottom-layer group regions for marking factions, locations, or clusters on the board, including chapter visibility, color, size, duplicate, delete, and demo data support.
 - Added draggable group labels and adjustable font sizes for both group labels and sticky notes.

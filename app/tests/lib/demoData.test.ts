@@ -84,6 +84,11 @@ describe('Ackroyd demo data', () => {
     const notes = await listAnnotationsByBook(bookId);
     const groups = await listGroupRangesByBook(bookId);
     const shino = characters.find((character) => character.name === '巽紫乃');
+    const ayako = characters.find((character) => character.name === '巽绫子');
+    const seimaru = characters.find((character) => character.name === '巽征丸');
+    const ryunosuke = characters.find((character) => character.name === '巽龙之介');
+    const hayato = characters.find((character) => character.name === '巽隼人');
+    const moegi = characters.find((character) => character.name === '巽萌黄');
     const headless = characters.find((character) => character.name === '首狩武者');
     const senda = characters.find((character) => character.name === '仙田猿彦');
 
@@ -92,11 +97,56 @@ describe('Ackroyd demo data', () => {
     expect(book?.totalChapters).toBe(3);
     expect(characters.map((character) => character.name)).toContain('金田一一');
     expect(characters.map((character) => character.name)).toContain('首狩武者');
+    expect(ayako?.profession).toBe('巽家已故先妻');
+    expect(seimaru?.profession).toBe('紫乃名义上的儿子');
+    expect(ryunosuke?.profession).toBe('巽家名义长子');
     expect(shino?.roleReveals).toEqual([
       { role: 'murderer', chapterRevealed: 3 },
     ]);
     expect(headless?.roleReveals).toBeUndefined();
     expect(relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: seimaru?.id,
+        chapterRevealed: 1,
+        label: '名义母子',
+      }),
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: ryunosuke?.id,
+        chapterRevealed: 1,
+        label: '继母/继子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: hayato?.id,
+        chapterRevealed: 1,
+        label: '亲生母子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: moegi?.id,
+        chapterRevealed: 1,
+        label: '亲生母女',
+      }),
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: ryunosuke?.id,
+        chapterRevealed: 3,
+        label: '亲生母子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: seimaru?.id,
+        chapterRevealed: 3,
+        label: '亲生母子',
+      }),
+      expect.objectContaining({
+        sourceId: senda?.id,
+        targetId: ryunosuke?.id,
+        chapterRevealed: 3,
+        label: '亲生父子',
+      }),
       expect.objectContaining({
         sourceId: shino?.id,
         targetId: headless?.id,
@@ -110,10 +160,11 @@ describe('Ackroyd demo data', () => {
         label: '共犯',
       }),
     ]));
-    expect(groups).toHaveLength(3);
-    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['调查组', '巽家成员', '假面威胁']));
-    expect(groups.find((group) => group.label === '假面威胁')?.chapterIntroduced).toBe(3);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['调查组', '巽家成员']));
+    expect(groups.map((group) => group.label)).not.toContain('假面威胁');
     expect(notes[0].content).toContain('按 E');
+    expect(notes[0].content).not.toContain('假面威胁');
   });
 
   it('attaches optional local portrait assets to the tutorial when available', async () => {

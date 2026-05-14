@@ -609,6 +609,7 @@ const tutorialCopy: Record<ResolvedLanguage, {
   miyuki: string;
   kenmochi: string;
   shino: string;
+  ayako: string;
   seimaru: string;
   ryunosuke: string;
   hayato: string;
@@ -619,7 +620,6 @@ const tutorialCopy: Record<ResolvedLanguage, {
   note: string;
   investigationGroup: string;
   familyGroup: string;
-  threatGroup: string;
 }> = {
   en: {
     category: 'Tutorial',
@@ -629,6 +629,7 @@ const tutorialCopy: Record<ResolvedLanguage, {
     miyuki: 'Miyuki Nanase',
     kenmochi: 'Isamu Kenmochi',
     shino: 'Shino Tatsumi',
+    ayako: 'Ayako Tatsumi',
     seimaru: 'Seimaru Tatsumi',
     ryunosuke: 'Ryunosuke Tatsumi',
     hayato: 'Hayato Tatsumi',
@@ -636,10 +637,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'The Headless Samurai',
-    note: 'TV 18: keep the mansion, the Tatsumi family, and the masked threat as separate clusters. Try selecting Kindaichi, press E, then click the Headless Samurai to add your own theory.',
+    note: 'TV 18: keep the investigation team and the Tatsumi family as separate clusters. Try selecting Kindaichi, press E, then click the Headless Samurai to add your own theory.',
     investigationGroup: 'Investigation team',
     familyGroup: 'Tatsumi family',
-    threatGroup: 'Masked threat',
   },
   'zh-CN': {
     category: '教程',
@@ -649,6 +649,7 @@ const tutorialCopy: Record<ResolvedLanguage, {
     miyuki: '七濑美雪',
     kenmochi: '剑持勇',
     shino: '巽紫乃',
+    ayako: '巽绫子',
     seimaru: '巽征丸',
     ryunosuke: '巽龙之介',
     hayato: '巽隼人',
@@ -656,10 +657,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: '冬木伦太郎',
     senda: '仙田猿彦',
     headless: '首狩武者',
-    note: 'TV 18：先别急着猜凶手。把机关宅邸、巽家成员、戴面具的威胁者分成三簇；试试看选中金田一，按 E，再点击首狩武者，补一条自己的怀疑线。',
+    note: 'TV 18：先别急着猜凶手。把调查组和巽家成员分开成两簇；试试看选中金田一，按 E，再点击首狩武者，补一条自己的怀疑线。',
     investigationGroup: '调查组',
     familyGroup: '巽家成员',
-    threatGroup: '假面威胁',
   },
   es: {
     category: 'Tutorial',
@@ -669,6 +669,7 @@ const tutorialCopy: Record<ResolvedLanguage, {
     miyuki: 'Miyuki Nanase',
     kenmochi: 'Isamu Kenmochi',
     shino: 'Shino Tatsumi',
+    ayako: 'Ayako Tatsumi',
     seimaru: 'Seimaru Tatsumi',
     ryunosuke: 'Ryunosuke Tatsumi',
     hayato: 'Hayato Tatsumi',
@@ -676,10 +677,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'El samurái sin cabeza',
-    note: 'TV 18: separa la mansión, la familia Tatsumi y la amenaza enmascarada en tres grupos. Prueba a seleccionar a Kindaichi, pulsa E y haz clic en el samurái para añadir tu propia teoría.',
+    note: 'TV 18: separa al equipo investigador y la familia Tatsumi en dos grupos. Prueba a seleccionar a Kindaichi, pulsa E y haz clic en el samurái para añadir tu propia teoría.',
     investigationGroup: 'Equipo investigador',
     familyGroup: 'Familia Tatsumi',
-    threatGroup: 'Amenaza enmascarada',
   },
   'pt-BR': {
     category: 'Tutorial',
@@ -689,6 +689,7 @@ const tutorialCopy: Record<ResolvedLanguage, {
     miyuki: 'Miyuki Nanase',
     kenmochi: 'Isamu Kenmochi',
     shino: 'Shino Tatsumi',
+    ayako: 'Ayako Tatsumi',
     seimaru: 'Seimaru Tatsumi',
     ryunosuke: 'Ryunosuke Tatsumi',
     hayato: 'Hayato Tatsumi',
@@ -696,10 +697,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'O samurai sem cabeça',
-    note: 'TV 18: separe a mansão, a família Tatsumi e a ameaça mascarada em três grupos. Selecione Kindaichi, pressione E e clique no samurai para adicionar sua própria teoria.',
+    note: 'TV 18: separe a equipe de investigação e a família Tatsumi em dois grupos. Selecione Kindaichi, pressione E e clique no samurai para adicionar sua própria teoria.',
     investigationGroup: 'Equipe de investigação',
     familyGroup: 'Família Tatsumi',
-    threatGroup: 'Ameaça mascarada',
   },
 };
 
@@ -760,11 +760,24 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     position: { x: 20, y: -120 },
   });
 
+  const ayako = await createCharacter({
+    bookId,
+    name: copy.ayako,
+    role: 'other',
+    profession: language === 'zh-CN'
+      ? '巽家已故先妻'
+      : language === 'es'
+        ? 'Primera esposa fallecida de los Tatsumi'
+        : 'Late first wife of the Tatsumi family',
+    chapterIntroduced: 1,
+    position: { x: 250, y: -330 },
+  });
+
   const seimaru = await createCharacter({
     bookId,
     name: copy.seimaru,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '紫乃之子' : language === 'es' ? 'Hijo de Shino' : "Shino's son",
+    profession: language === 'zh-CN' ? '紫乃名义上的儿子' : language === 'es' ? 'Hijo legal de Shino' : "Shino's legal son",
     chapterIntroduced: 1,
     position: { x: 260, y: -150 },
   });
@@ -773,7 +786,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.ryunosuke,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '巽家长子' : language === 'es' ? 'Hijo mayor de los Tatsumi' : "Tatsumi family's oldest son",
+    profession: language === 'zh-CN' ? '巽家名义长子' : language === 'es' ? 'Hijo mayor legal de los Tatsumi' : "Tatsumi family's legal oldest son",
     chapterIntroduced: 1,
     position: { x: 260, y: 30 },
   });
@@ -782,7 +795,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.hayato,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '巽家次子' : language === 'es' ? 'Segundo hijo de los Tatsumi' : "Tatsumi family's second son",
+    profession: language === 'zh-CN' ? '绫子之子，巽家次子' : language === 'es' ? 'Hijo de Ayako; segundo hijo de los Tatsumi' : "Ayako's son; Tatsumi family's second son",
     chapterIntroduced: 1,
     position: { x: 500, y: 20 },
   });
@@ -791,7 +804,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.moegi,
     role: 'witness',
-    profession: language === 'zh-CN' ? '巽家长女' : language === 'es' ? 'Hija mayor de los Tatsumi' : "Tatsumi family's oldest daughter",
+    profession: language === 'zh-CN' ? '绫子之女，巽家长女' : language === 'es' ? 'Hija de Ayako; hija mayor de los Tatsumi' : "Ayako's daughter; Tatsumi family's oldest daughter",
     chapterIntroduced: 2,
     position: { x: 500, y: 190 },
   });
@@ -867,7 +880,25 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '母子' : language === 'es' ? 'madre-hijo' : 'mother-son',
+    label: language === 'zh-CN' ? '名义母子' : language === 'es' ? 'madre legal-hijo' : 'legal mother-son',
+  });
+  await createRelationship({
+    bookId,
+    sourceId: ayako.id,
+    targetId: hayato.id,
+    type: 'family',
+    chapterRevealed: 1,
+    certainty: 'confirmed',
+    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+  });
+  await createRelationship({
+    bookId,
+    sourceId: ayako.id,
+    targetId: moegi.id,
+    type: 'family',
+    chapterRevealed: 1,
+    certainty: 'confirmed',
+    label: language === 'zh-CN' ? '亲生母女' : language === 'es' ? 'madre biológica-hija' : 'biological mother-daughter',
   });
   await createRelationship({
     bookId,
@@ -876,7 +907,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '兄弟' : language === 'es' ? 'hermanos' : 'brothers',
+    label: language === 'zh-CN' ? '名义兄弟' : language === 'es' ? 'hermanos legales' : 'legal brothers',
   });
   await createRelationship({
     bookId,
@@ -885,7 +916,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '巽家' : language === 'es' ? 'familia Tatsumi' : 'Tatsumi family',
+    label: language === 'zh-CN' ? '继母/继子' : language === 'es' ? 'madrastra-hijastro' : 'stepmother-stepson',
   });
   await createRelationship({
     bookId,
@@ -930,7 +961,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 2,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '兄妹' : language === 'es' ? 'hermanos' : 'siblings',
+    label: language === 'zh-CN' ? '亲生兄妹' : language === 'es' ? 'hermanos biológicos' : 'biological siblings',
   });
   await createRelationship({
     bookId,
@@ -953,6 +984,33 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
   await createRelationship({
     bookId,
     sourceId: shino.id,
+    targetId: ryunosuke.id,
+    type: 'family',
+    chapterRevealed: 3,
+    certainty: 'confirmed',
+    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+  });
+  await createRelationship({
+    bookId,
+    sourceId: ayako.id,
+    targetId: seimaru.id,
+    type: 'family',
+    chapterRevealed: 3,
+    certainty: 'confirmed',
+    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+  });
+  await createRelationship({
+    bookId,
+    sourceId: senda.id,
+    targetId: ryunosuke.id,
+    type: 'family',
+    chapterRevealed: 3,
+    certainty: 'confirmed',
+    label: language === 'zh-CN' ? '亲生父子' : language === 'es' ? 'padre biológico-hijo' : 'biological father-son',
+  });
+  await createRelationship({
+    bookId,
+    sourceId: shino.id,
     targetId: senda.id,
     type: 'other',
     chapterRevealed: 3,
@@ -961,7 +1019,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
   });
 
   const hidaPositions = new Map([
-    hajime, miyuki, kenmochi, shino, seimaru, ryunosuke,
+    hajime, miyuki, kenmochi, shino, ayako, seimaru, ryunosuke,
     hayato, moegi, fuyuki, senda, headless,
   ].map((character) => [character.id, character.position] as const));
 
@@ -978,20 +1036,11 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     createDemoGroupRange({
       bookId,
       label: copy.familyGroup,
-      characters: [shino, seimaru, ryunosuke, hayato, moegi],
+      characters: [shino, ayako, seimaru, ryunosuke, hayato, moegi],
       positions: hidaPositions,
       color: 'ochre',
       chapterIntroduced: 1,
       padding: 110,
-    }),
-    createDemoGroupRange({
-      bookId,
-      label: copy.threatGroup,
-      characters: [headless, shino, senda],
-      positions: hidaPositions,
-      color: 'red',
-      chapterIntroduced: 3,
-      padding: 95,
     }),
   ]);
 

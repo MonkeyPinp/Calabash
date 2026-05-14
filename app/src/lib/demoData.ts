@@ -8,7 +8,7 @@ import { savePortrait } from '@/db/portraits';
 import { computeForceLayout } from '@/lib/layout';
 import { publicAsset } from '@/lib/publicAsset';
 import { isRelationshipDirected } from '@/lib/relationshipTypes';
-import type { ResolvedLanguage } from '@/stores/uiStore';
+import type { CharacterNodeViewMode, ResolvedLanguage } from '@/stores/uiStore';
 import type { Character, GroupRangeColor } from '@/types';
 
 interface SeedOptions {
@@ -18,6 +18,10 @@ interface SeedOptions {
 }
 
 export type TutorialKind = 'ackroyd' | 'hida';
+
+export function getTutorialDefaultViewMode(kind: TutorialKind): CharacterNodeViewMode {
+  return kind === 'ackroyd' ? 'portrait' : 'text';
+}
 
 type HidaPortraitKey =
   | 'hajime'

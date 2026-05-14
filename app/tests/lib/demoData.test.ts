@@ -7,7 +7,7 @@ import { listRelationshipsByBook } from '@/db/relationships';
 import { listAnnotationsByBook } from '@/db/annotations';
 import { listGroupRangesByBook } from '@/db/groupRanges';
 import { getPortrait } from '@/db/portraits';
-import { seedRogerAckroyd, seedTutorialBook } from '@/lib/demoData';
+import { getTutorialDefaultViewMode, seedRogerAckroyd, seedTutorialBook } from '@/lib/demoData';
 import { getMinimumLayoutNodeDistance, MIN_LAYOUT_NODE_DISTANCE } from '@/lib/layout';
 
 describe('Ackroyd demo data', () => {
@@ -69,6 +69,11 @@ describe('Ackroyd demo data', () => {
     expect(groups).toHaveLength(3);
     expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2, 17]);
     expect(notes.map((note) => note.content).join(' ')).toContain('Exporte a biblioteca');
+  });
+
+  it('recommends contrasting default board styles for the two tutorials', () => {
+    expect(getTutorialDefaultViewMode('ackroyd')).toBe('portrait');
+    expect(getTutorialDefaultViewMode('hida')).toBe('text');
   });
 
   it('creates a localized tutorial book for the current reader', async () => {

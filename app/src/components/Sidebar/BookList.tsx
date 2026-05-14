@@ -8,7 +8,7 @@ import { useGraphStore } from '@/stores/graphStore';
 import { useUserStore } from '@/stores/userStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useT } from '@/i18n';
-import { seedTutorialBook, type TutorialKind } from '@/lib/demoData';
+import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from '@/lib/demoData';
 
 function relativeTime(ms: number, t: ReturnType<typeof useT>): string {
   const seconds = Math.floor((Date.now() - ms) / 1000);
@@ -115,6 +115,7 @@ export default function BookList() {
   const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
   const activeUserId = useUserStore((s) => s.activeUserId);
   const resolvedLanguage = useUiStore((s) => s.resolvedLanguage);
+  const setCharacterNodeViewMode = useUiStore((s) => s.setCharacterNodeViewMode);
 
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -236,6 +237,7 @@ export default function BookList() {
     const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind: 'ackroyd' });
     const book = await getBook(newBookId);
     await refresh();
+    setCharacterNodeViewMode(getTutorialDefaultViewMode('ackroyd'));
     setActiveBook(newBookId);
     if (book) {
       setCurrentChapter(book.currentChapter);
@@ -253,6 +255,7 @@ export default function BookList() {
     const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind });
     const book = await getBook(newBookId);
     await refresh();
+    setCharacterNodeViewMode(getTutorialDefaultViewMode(kind));
     setActiveBook(newBookId);
     if (book) {
       setCurrentChapter(book.currentChapter);

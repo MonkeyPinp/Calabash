@@ -23,7 +23,7 @@ import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/anno
 import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
-import { seedTutorialBook, type TutorialKind } from './lib/demoData';
+import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { useT } from './i18n';
 import type { Book } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
@@ -500,6 +500,7 @@ export default function App() {
     if (!activeUserId) return;
     const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind });
     const book = await getBook(newBookId);
+    setCharacterNodeViewMode(getTutorialDefaultViewMode(kind));
     setActiveBook(newBookId);
     if (book) applyBookShell(book);
     setCharacters([]);

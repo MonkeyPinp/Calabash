@@ -101,7 +101,7 @@ O roadmap do produto não fica no repositório público. O planejamento público
 
 ## Versão
 
-Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` (não publicado) foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro.
+Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro.
 
 ## License
 

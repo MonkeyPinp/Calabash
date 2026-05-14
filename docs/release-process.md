@@ -20,3 +20,11 @@ Starting with `0.2`, the desktop shell lives in `src-tauri/`. The same release w
 - macOS Intel
 
 A desktop release is not complete unless all configured platform binaries are present on the GitHub Release.
+
+## Signing Follow-up
+
+The current desktop binaries are unsigned, so browsers and operating systems can warn that the files are uncommon or from an unknown publisher. A future desktop hardening pass should add:
+
+- Windows Authenticode signing for the portable `.exe`, using Azure Trusted Signing or a CA-issued code signing certificate, plus `signtool verify` in CI.
+- macOS Developer ID signing and notarization, preferably publishing a signed and notarized `.app.zip` instead of a raw Mach-O binary.
+- Linux checksums, and optionally detached signatures, for the published Linux binary or AppImage.

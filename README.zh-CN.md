@@ -6,7 +6,7 @@
 
 > 给侦探小说读者使用的防剧透人物关系板。
 
-[在线 Demo](https://guesswhat-studio.github.io/Calabash/) · [反馈问题](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · 版本 `0.1.1`
+[在线 Demo](https://guesswhat-studio.github.io/Calabash/) · [反馈问题](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · 版本 `0.1.2`
 
 语言：[English](README.md) · **简体中文** · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -85,7 +85,7 @@ npm run build
 
 ## 版本
 
-当前使用 `0.x` beta 版本号。`0.1.1` 是公开仓库整理、多语言 README 拆分、issue 模板和 beta 文档优化版本。
+当前使用 `0.x` beta 版本号。`0.1.2` 修复了检查器本地化，并简化了人物详情面板。
 
 ## License
 

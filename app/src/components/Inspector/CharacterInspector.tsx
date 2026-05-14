@@ -98,7 +98,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
   if (!character) {
     return (
       <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>
-        Character not found.
+        {t('character.notFound')}
       </div>
     );
   }
@@ -295,12 +295,12 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
             {character.name}
           </div>
           <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {[character.profession, `introduced ch. ${character.chapterIntroduced}`].filter(Boolean).join(' · ')}
+            {[character.profession, t('character.introducedChapterShort', { chapter: character.chapterIntroduced })].filter(Boolean).join(' · ')}
           </div>
         </div>
         <button
           onClick={() => void handleDuplicate()}
-          title="Duplicate character"
+          title={t('character.duplicate')}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 28, height: 28,
@@ -313,7 +313,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
         </button>
         <button
           onClick={() => void handleDelete()}
-          title="Delete character"
+          title={t('character.delete')}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 28, height: 28,
@@ -326,29 +326,11 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--ink-200)', padding: '0 12px', flexShrink: 0 }}>
-        {['Details', 'Aliases', 'Notes'].map((tab, index) => (
-          <div
-            key={tab}
-            style={{
-              padding: '8px 10px 9px',
-              fontSize: 12,
-              fontWeight: index === 0 ? 600 : 500,
-              color: index === 0 ? 'var(--ink-900)' : 'var(--ink-500)',
-              borderBottom: index === 0 ? '2px solid var(--ink-900)' : '2px solid transparent',
-              marginBottom: -1,
-            }}
-          >
-            {tab}
-          </div>
-        ))}
-      </div>
-
       <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
 
       {/* Name */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Name</label>
+        <label style={labelStyle}>{t('character.name')}</label>
         <input
           style={inputStyle}
           defaultValue={character.name}
@@ -359,20 +341,20 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
 
       {/* Role */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Role</label>
+        <label style={labelStyle}>{t('character.role')}</label>
         <PresetTextInput
           style={inputStyle}
           options={roleOptions}
           defaultValue={character.role ?? ''}
           key={`role-${characterId}`}
-          placeholder="Optional"
+          placeholder={t('common.optional')}
           onValueCommit={handleRoleCommit}
         />
       </div>
 
       {/* Chapter Introduced */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Chapter Introduced</label>
+        <label style={labelStyle}>{t('character.chapterIntroduced')}</label>
         <input
           style={inputStyle}
           type="number"
@@ -385,32 +367,32 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
 
       {/* Profession */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Profession</label>
+        <label style={labelStyle}>{t('character.profession')}</label>
         <input
           style={inputStyle}
           defaultValue={character.profession ?? ''}
           key={`prof-${characterId}`}
-          placeholder="Optional"
+          placeholder={t('common.optional')}
           onBlur={handleProfessionBlur}
         />
       </div>
 
       {/* Notes */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Notes</label>
+        <label style={labelStyle}>{t('character.notes')}</label>
         <textarea
           style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
           rows={4}
           defaultValue={character.notes ?? ''}
           key={`notes-${characterId}`}
-          placeholder="Optional"
+          placeholder={t('common.optional')}
           onBlur={handleNotesBlur}
         />
       </div>
 
       {/* Aliases */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Aliases</label>
+        <label style={labelStyle}>{t('character.aliases')}</label>
         {character.aliases.map((alias, idx) => (
           <div
             key={idx}
@@ -420,7 +402,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
               style={{ ...inputStyle, flex: 2 }}
               defaultValue={alias.name}
               key={`alias-name-${characterId}-${idx}`}
-              placeholder="Alias name"
+              placeholder={t('character.aliasName')}
               onBlur={(e) => handleAliasNameBlur(idx, e)}
             />
             <input
@@ -429,12 +411,12 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
               min={1}
               defaultValue={alias.chapterRevealed}
               key={`alias-ch-${characterId}-${idx}`}
-              title="Chapter revealed"
+              title={t('character.aliasChapterRevealed')}
               onBlur={(e) => handleAliasChapterBlur(idx, e)}
             />
             <button
               onClick={() => handleRemoveAlias(idx)}
-              title="Remove alias"
+              title={t('character.removeAlias')}
               style={{
                 background: 'transparent',
                 border: '1px solid var(--ink-200)',
@@ -464,17 +446,17 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
             marginTop: 2,
           }}
         >
-          + Add alias
+          {t('character.addAlias')}
         </button>
       </div>
 
       {/* Portrait */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Portrait</label>
+        <label style={labelStyle}>{t('character.portrait')}</label>
         {portraitUrl && (
           <img
             src={portraitUrl}
-            alt="Portrait"
+            alt={t('character.portrait')}
             style={{
               display: 'block',
               width: 72,
@@ -498,7 +480,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
             cursor: 'pointer',
           }}
         >
-          Upload portrait
+          {t('character.uploadPortrait')}
           <input
             type="file"
             accept="image/*"

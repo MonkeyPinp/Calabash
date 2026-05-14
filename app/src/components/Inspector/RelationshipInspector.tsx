@@ -50,7 +50,7 @@ export default function RelationshipInspector({
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const rel = relationships.find((r) => r.id === relationshipId);
-  if (!rel) return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>Relationship not found.</div>;
+  if (!rel) return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>{t('relationship.notFound')}</div>;
 
   const sourceName = characters.find((c) => c.id === rel.sourceId)?.name ?? rel.sourceId;
   const targetName = characters.find((c) => c.id === rel.targetId)?.name ?? rel.targetId;
@@ -112,7 +112,7 @@ export default function RelationshipInspector({
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>
-              Relationship
+              {t('app.inspectRelationship')}
             </div>
             <div
               style={{
@@ -132,12 +132,12 @@ export default function RelationshipInspector({
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{targetName}</span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
-              {[rel.label || relationshipTypeLabel, rel.certainty, `revealed ch. ${rel.chapterRevealed}`].filter(Boolean).join(' · ')}
+              {[rel.label || relationshipTypeLabel, t(`certainty.${rel.certainty}`), t('relationship.revealedChapterShort', { chapter: rel.chapterRevealed })].filter(Boolean).join(' · ')}
             </div>
           </div>
           <button
             onClick={() => void handleDuplicate()}
-            title="Duplicate relationship"
+            title={t('relationship.duplicate')}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 28, height: 28,
@@ -150,7 +150,7 @@ export default function RelationshipInspector({
           </button>
           <button
             onClick={() => void handleDelete()}
-            title="Delete relationship"
+            title={t('relationship.delete')}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 28, height: 28,
@@ -176,7 +176,7 @@ export default function RelationshipInspector({
         </div>
         <button
           onClick={() => void handleDuplicate()}
-          title="Duplicate relationship"
+          title={t('relationship.duplicate')}
           style={{
             display: 'flex', alignItems: 'center', gap: 4,
             padding: '4px 8px', fontSize: 11,
@@ -185,11 +185,11 @@ export default function RelationshipInspector({
             flexShrink: 0,
           }}
         >
-          <Copy size={11} /> Duplicate
+          <Copy size={11} /> {t('relationship.duplicate')}
         </button>
         <button
           onClick={() => void handleDelete()}
-          title="Delete relationship"
+          title={t('relationship.delete')}
           style={{
             display: 'flex', alignItems: 'center', gap: 4,
             padding: '4px 8px', fontSize: 11,
@@ -198,19 +198,19 @@ export default function RelationshipInspector({
             flexShrink: 0,
           }}
         >
-          <Trash2 size={11} /> Delete
+          <Trash2 size={11} /> {t('relationship.delete')}
         </button>
       </div>
 
       {/* Type */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Type</label>
+        <label style={labelStyle}>{t('relationship.type')}</label>
         <PresetTextInput
           style={inputStyle}
           options={typeOptions}
           defaultValue={rel.type ?? ''}
           key={`type-${relationshipId}`}
-          placeholder="Optional"
+          placeholder={t('common.optional')}
           onValueCommit={handleTypeCommit}
         />
       </div>
@@ -241,7 +241,7 @@ export default function RelationshipInspector({
 
       {/* Certainty */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Certainty</label>
+        <label style={labelStyle}>{t('relationship.certainty')}</label>
         <div style={{ display: 'flex', gap: 6 }}>
           {CERTAINTY_LEVELS.map((c) => {
             const active = c === rel.certainty;
@@ -262,7 +262,7 @@ export default function RelationshipInspector({
                   cursor: 'pointer',
                 }}
               >
-                {c.charAt(0).toUpperCase() + c.slice(1)}
+                {t(`certainty.${c}`)}
               </button>
             );
           })}
@@ -271,16 +271,16 @@ export default function RelationshipInspector({
 
       {/* Label */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Label</label>
+        <label style={labelStyle}>{t('relationship.label')}</label>
         <input style={inputStyle} defaultValue={rel.label ?? ''} key={`label-${relationshipId}`}
-          placeholder="e.g. father of"
+          placeholder={t('relationship.labelInspectorPlaceholder')}
           onBlur={(e) => { const v = e.target.value; if (v !== (rel.label ?? '')) void persist({ label: v || undefined }); }}
         />
       </div>
 
       {/* Chapter Revealed */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Chapter Revealed</label>
+        <label style={labelStyle}>{t('relationship.chapterRevealed')}</label>
         <input style={inputStyle} type="number" min={1}
           defaultValue={rel.chapterRevealed} key={`ch-${relationshipId}`}
           onBlur={(e) => {
@@ -292,10 +292,10 @@ export default function RelationshipInspector({
 
       {/* Notes */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>Notes</label>
+        <label style={labelStyle}>{t('relationship.notes')}</label>
         <textarea style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
           rows={4} defaultValue={rel.notes ?? ''} key={`notes-${relationshipId}`}
-          placeholder="Optional"
+          placeholder={t('common.optional')}
           onBlur={(e) => { const v = e.target.value; if (v !== (rel.notes ?? '')) void persist({ notes: v || undefined }); }}
         />
       </div>

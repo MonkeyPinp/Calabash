@@ -6,7 +6,7 @@
 
 > A spoiler-safe relationship board for detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.1.1`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.1.2`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -117,6 +117,7 @@ Calabash uses `0.x` beta versioning for now:
 
 - `0.1.0`: first public web demo.
 - `0.1.1`: public-facing repository cleanup, multilingual README split, issue templates, and beta docs polish.
+- `0.1.2`: inspector localization polish and simplified character details panel.
 
 ## License
 

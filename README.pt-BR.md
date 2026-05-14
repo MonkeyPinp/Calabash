@@ -6,7 +6,7 @@
 
 > Um quadro de relações sem spoilers para leitores de mistério.
 
-[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.1.1`
+[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.1.2`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [Español](README.es.md) · **Português (Brasil)**
 
@@ -85,7 +85,7 @@ O roadmap do produto não fica no repositório público. O planejamento público
 
 ## Versão
 
-Calabash usa versionamento beta `0.x`. `0.1.1` corresponde à limpeza pública do repositório, separação dos READMEs multilíngues, templates de issues e melhorias da documentação beta.
+Calabash usa versionamento beta `0.x`. `0.1.2` melhora a localização do inspetor e simplifica o painel de detalhes de personagens.
 
 ## License
 

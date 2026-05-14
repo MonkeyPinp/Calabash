@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 - 2026-05-14
+
+- Removed the non-interactive Character Inspector tab strip so all character details appear as one continuous form.
+- Localized Character Inspector labels, placeholders, actions, and summary text across English, Simplified Chinese, Spanish, and Brazilian Portuguese.
+- Localized matching Relationship Inspector labels and action titles.
+
 ## 0.1.1 - 2026-05-14
 
 - Split the public README into separate English, Simplified Chinese, Spanish, and Brazilian Portuguese files.

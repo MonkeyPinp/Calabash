@@ -158,17 +158,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
+          - platform: macos-15
             label: macos-arm64
-            args: --target aarch64-apple-darwin --no-bundle
-          - platform: macos-latest
+            asset_suffix: darwin_aarch64
+            args: --no-bundle
+          - platform: macos-15-intel
             label: macos-x64
-            args: --target x86_64-apple-darwin --no-bundle
+            asset_suffix: darwin_x64
+            args: --no-bundle
           - platform: ubuntu-22.04
             label: linux-x64
+            asset_suffix: linux_x64
             args: --no-bundle
           - platform: windows-latest
             label: windows-x64
+            asset_suffix: windows_x64
             args: --no-bundle
     steps:
       - name: Checkout
@@ -189,14 +193,7 @@ jobs:
             package-lock.json
             app/package-lock.json
 
-      - name: Install Rust stable for macOS targets
-        if: startsWith(matrix.platform, 'macos')
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
-
       - name: Install Rust stable
-        if: ${{ !startsWith(matrix.platform, 'macos') }}
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
@@ -217,14 +214,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Calabash ${{ github.ref_name }}
-          releaseBody: See the release notes and assets for platform downloads.
-          releaseDraft: false
-          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           projectPath: .
           args: ${{ matrix.args }}
-          assetNamePattern: Calabash_[version]_[platform]_[arch][setup].[ext]
           uploadPlainBinary: true
           includeUpdaterJson: false
 
@@ -232,25 +223,36 @@ jobs:
         shell: bash
         env:
           ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
+          ASSET_SUFFIX: ${{ matrix.asset_suffix }}
         run: |
           mkdir -p release-assets/desktop
           node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const artifacts = JSON.parse(process.env.ARTIFACT_PATHS || '[]');
+          const version = (process.env.GITHUB_REF_NAME || 'v0.0.0').replace(/^v/, '');
+          const suffix = process.env.ASSET_SUFFIX;
           let copied = 0;
           for (const file of artifacts) {
             if (!fs.existsSync(file)) {
               console.warn(`Missing Tauri artifact: ${file}`);
               continue;
             }
-            fs.cpSync(file, path.join('release-assets', 'desktop', path.basename(file)), { recursive: true });
+            const ext = path.extname(file);
+            const name = `Calabash_${version}_${suffix}${ext}`;
+            fs.cpSync(file, path.join('release-assets', 'desktop', name), { recursive: true });
             copied++;
           }
           if (copied === 0) {
             throw new Error('No Tauri artifacts were available to upload.');
           }
           NODE
+
+      - name: Upload desktop assets to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "${GITHUB_REF_NAME}" release-assets/desktop/* --clobber
 
       - name: Upload desktop workflow artifact
         uses: actions/upload-artifact@v6

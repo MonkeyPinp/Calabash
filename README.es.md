@@ -79,6 +79,12 @@ npm test
 npm run build
 ```
 
+Builds de release:
+
+- Cada version publica debe tener un tag anotado `vX.Y.Z` y una GitHub Release.
+- Al subir un tag `v*`, se ejecuta el release workflow y se carga el web bundle.
+- A partir del shell de escritorio `0.2`, el mismo workflow tambien debe cargar assets de release para Windows, Linux y macOS.
+
 ## Roadmap
 
 El roadmap del producto no se mantiene dentro del repositorio público. La planificación pública debe vivir en [GitHub Projects](https://github.com/orgs/Guesswhat-Studio/projects); GitHub Issues queda para bugs, feedback beta y propuestas.

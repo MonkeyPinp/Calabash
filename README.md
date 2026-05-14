@@ -98,6 +98,12 @@ cd app
 VITE_BASE_PATH=/Calabash/ npm run build
 ```
 
+Release builds:
+
+- Every public version should have an annotated `vX.Y.Z` tag and a GitHub Release.
+- Pushing a `v*` tag runs the release workflow and uploads the web bundle.
+- Starting with the `0.2` desktop shell, the same workflow must also upload Windows, Linux, and macOS release assets.
+
 Optional local tutorial portraits:
 
 ```bash

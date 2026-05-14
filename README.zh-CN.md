@@ -79,6 +79,12 @@ npm test
 npm run build
 ```
 
+发布构建：
+
+- 每个公开版本都应该有一个 `vX.Y.Z` annotated tag 和 GitHub Release。
+- 推送 `v*` tag 会运行 release workflow，并上传 web bundle。
+- 从 `0.2` 桌面壳开始，同一个 workflow 必须同时上传 Windows、Linux 和 macOS release 产物。
+
 ## 路线图
 
 产品路线图不会放在公开仓库中。公开规划建议使用 [GitHub Projects](https://github.com/orgs/Guesswhat-Studio/projects)；GitHub Issues 用于 bug、beta 反馈和功能建议。

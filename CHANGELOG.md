@@ -5,6 +5,7 @@
 - Added clearer beta storage warnings in onboarding, empty-state, and Settings copy so testers know browser site data is the local library.
 - Added a fixture-style whole-library import/export regression test covering users, categories, books, characters, relationships, notes, spoiler markers, and portraits.
 - Added a board style switcher for compact text cards and large portrait cards, with auto-layout spacing aware of the active node footprint.
+- Added tag-triggered GitHub Release automation, with the Tauri desktop release matrix ready for the `0.2` shell.
 - Kept the beta-readiness work under the single `0.1.3` version line.
 
 ## 0.1.2 - 2026-05-14

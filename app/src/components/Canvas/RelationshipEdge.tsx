@@ -62,10 +62,13 @@ function getEdgePath(
 function RelationshipEdgeImpl(props: EdgeProps) {
   const t = useT();
   const data = props.data as unknown as RelationshipEdgeData;
-  const offset = data.pathOffset ?? 0;
+  const fullRel = data.relationship;
+  const rawOffset = data.pathOffset ?? 0;
+  // Offsets are assigned within an undirected pair; reverse local sign for B -> A
+  // so opposite-direction parallel relationships do not collapse onto one curve.
+  const offset = fullRel.sourceId <= fullRel.targetId ? rawOffset : -rawOffset;
   const stroke = getRelationshipTypeCssVar(data.type);
   const { strokeDasharray, opacity } = CERTAINTY_STYLE[data.certainty];
-  const fullRel = data.relationship;
   const displayLabel = fullRel?.label?.trim() || formatRelationshipType(data.type, t) || t('app.inspectRelationship');
   const labelTextDecoration = data.certainty === 'disproven' ? 'line-through' : 'none';
 

@@ -14,14 +14,30 @@ vi.mock('@xyflow/react', async (importOriginal) => {
   };
 });
 
-function renderEdge(data: { certainty: 'confirmed' | 'suspected' | 'disproven'; type?: string; label?: string }) {
+interface EdgeFixture {
+  certainty: 'confirmed' | 'suspected' | 'disproven';
+  type?: string;
+  label?: string;
+  pathOffset?: number;
+  id?: string;
+  source?: string;
+  target?: string;
+  sourceX?: number;
+  targetX?: number;
+  sourcePosition?: Position;
+  targetPosition?: Position;
+}
+
+function relationshipEdge(data: EdgeFixture) {
+  const source = data.source ?? 'a';
+  const target = data.target ?? 'b';
   const edgeData = {
     ...data,
     relationship: {
-      id: 'e1',
+      id: data.id ?? 'e1',
       bookId: 'b1',
-      sourceId: 'a',
-      targetId: 'b',
+      sourceId: source,
+      targetId: target,
       type: data.type,
       label: data.label,
       chapterRevealed: 1,
@@ -31,30 +47,41 @@ function renderEdge(data: { certainty: 'confirmed' | 'suspected' | 'disproven'; 
     },
   };
 
+  return (
+    <RelationshipEdge
+      id={data.id ?? 'e1'}
+      source={source}
+      target={target}
+      sourceX={data.sourceX ?? 0}
+      sourceY={0}
+      targetX={data.targetX ?? 100}
+      targetY={0}
+      sourcePosition={data.sourcePosition ?? Position.Bottom}
+      targetPosition={data.targetPosition ?? Position.Top}
+      data={edgeData}
+      selected={false}
+      animated={false}
+      interactionWidth={20}
+      style={{}}
+      // @ts-expect-error - minimal props for test
+      label={undefined}
+    />
+  );
+}
+
+function renderEdge(data: EdgeFixture) {
   return render(
     <ReactFlowProvider>
       <svg>
-        <RelationshipEdge
-          id="e1"
-          source="a"
-          target="b"
-          sourceX={0}
-          sourceY={0}
-          targetX={100}
-          targetY={0}
-          sourcePosition={Position.Bottom}
-          targetPosition={Position.Top}
-          data={edgeData}
-          selected={false}
-          animated={false}
-          interactionWidth={20}
-          style={{}}
-          // @ts-expect-error - minimal props for test
-          label={undefined}
-        />
+        {relationshipEdge(data)}
       </svg>
     </ReactFlowProvider>,
   );
+}
+
+function labelTransform(label: string) {
+  const badge = screen.getByText(label).closest('[title="Click to cycle certainty"]');
+  return (badge?.parentElement as HTMLElement | null)?.style.transform;
 }
 
 describe('RelationshipEdge', () => {
@@ -82,5 +109,40 @@ describe('RelationshipEdge', () => {
     const label = 'guardian of the inheritance and secret keeper of the impossible alibi';
     renderEdge({ certainty: 'confirmed', type: 'mentor', label });
     expect(screen.getByText(label)).toHaveStyle({ overflowWrap: 'anywhere' });
+  });
+
+  it('keeps opposite-direction parallel edge labels on separate sides after one sibling is deleted', () => {
+    render(
+      <ReactFlowProvider>
+        {relationshipEdge({
+          id: 'e1',
+          source: 'a',
+          target: 'b',
+          sourceX: 0,
+          targetX: 100,
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+          certainty: 'confirmed',
+          type: 'family',
+          label: 'siblings',
+          pathOffset: -22.5,
+        })}
+        {relationshipEdge({
+          id: 'e2',
+          source: 'b',
+          target: 'a',
+          sourceX: 100,
+          targetX: 0,
+          sourcePosition: Position.Left,
+          targetPosition: Position.Right,
+          certainty: 'suspected',
+          type: 'suspicion',
+          label: 'suspects',
+          pathOffset: 22.5,
+        })}
+      </ReactFlowProvider>,
+    );
+
+    expect(labelTransform('siblings')).not.toBe(labelTransform('suspects'));
   });
 });

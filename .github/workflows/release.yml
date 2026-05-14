@@ -25,7 +25,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
 
       - name: Install dependencies
         working-directory: app
@@ -58,7 +60,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
 
       - name: Install dependencies
         working-directory: app
@@ -91,7 +95,7 @@ jobs:
             echo
             echo "Assets:"
             echo "- Web bundle: static browser build for self-hosting or archive validation."
-            echo "- Desktop installers: added automatically by the Tauri release job once the desktop shell lands in 0.2."
+            echo "- Desktop binaries: Windows, Linux, and macOS builds are attached by the Tauri release job."
           } > release-notes.md
 
       - name: Create or update GitHub Release
@@ -156,16 +160,16 @@ jobs:
         include:
           - platform: macos-latest
             label: macos-arm64
-            args: --target aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --no-bundle
           - platform: macos-latest
             label: macos-x64
-            args: --target x86_64-apple-darwin
+            args: --target x86_64-apple-darwin --no-bundle
           - platform: ubuntu-22.04
             label: linux-x64
-            args: ''
+            args: --no-bundle
           - platform: windows-latest
             label: windows-x64
-            args: ''
+            args: --no-bundle
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -181,7 +185,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
 
       - name: Install Rust stable for macOS targets
         if: startsWith(matrix.platform, 'macos')
@@ -202,7 +208,10 @@ jobs:
         working-directory: app
         run: npm ci
 
-      - name: Build and upload Tauri bundles
+      - name: Install Tauri CLI dependencies
+        run: npm ci
+
+      - name: Build and upload Tauri binaries
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -215,4 +224,5 @@ jobs:
           projectPath: .
           args: ${{ matrix.args }}
           releaseAssetNamePattern: Calabash_[version]_[platform]_[arch][setup].[ext]
+          uploadPlainBinary: true
           uploadWorkflowArtifacts: true

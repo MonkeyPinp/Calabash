@@ -79,11 +79,21 @@ npm test
 npm run build
 ```
 
+Shell de escritorio:
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+Los builds de escritorio requieren Rust y usan el shell Tauri 2 en `src-tauri/`. La app React sigue siendo el unico frontend para web y escritorio.
+
 Builds de release:
 
 - Cada version publica debe tener un tag anotado `vX.Y.Z` y una GitHub Release.
 - Al subir un tag `v*`, se ejecuta el release workflow y se carga el web bundle.
-- A partir del shell de escritorio `0.2`, el mismo workflow tambien debe cargar assets de release para Windows, Linux y macOS.
+- A partir del shell de escritorio `0.2`, el mismo workflow tambien debe cargar binarios desktop para Windows, Linux y macOS.
 
 ## Roadmap
 

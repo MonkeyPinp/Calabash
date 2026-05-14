@@ -1,7 +1,8 @@
-import { CheckCircle2, MousePointer2, Network, Shield, X } from 'lucide-react';
+import { CheckCircle2, Languages, MousePointer2, Network, Shield, X } from 'lucide-react';
 import { useT } from '@/i18n';
 import CalabashLogo from '@/components/Brand/CalabashLogo';
 import type { TutorialKind } from '@/lib/demoData';
+import { useUiStore, type LanguagePreference } from '@/stores/uiStore';
 
 export interface OnboardingPanelProps {
   onClose: () => void;
@@ -10,6 +11,15 @@ export interface OnboardingPanelProps {
 
 export default function OnboardingPanel({ onClose, onCreateTutorial }: OnboardingPanelProps) {
   const t = useT();
+  const language = useUiStore((s) => s.language);
+  const setLanguage = useUiStore((s) => s.setLanguage);
+  const languageOptions: Array<{ value: LanguagePreference; label: string }> = [
+    { value: 'system', label: t('settings.langSystem') },
+    { value: 'en', label: t('settings.langEn') },
+    { value: 'zh-CN', label: t('settings.langZh') },
+    { value: 'es', label: t('settings.langEs') },
+    { value: 'pt-BR', label: t('settings.langPtBr') },
+  ];
   const steps = [
     { icon: <CheckCircle2 size={15} />, text: t('onboarding.step1') },
     { icon: <MousePointer2 size={15} />, text: t('onboarding.step2') },
@@ -75,6 +85,23 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
           ))}
         </div>
 
+        <div style={{ padding: '0 22px 18px' }}>
+          <label htmlFor="onboarding-language" style={languageLabelStyle}>
+            <Languages size={14} />
+            {t('settings.language')}
+          </label>
+          <select
+            id="onboarding-language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as LanguagePreference)}
+            style={languageSelectStyle}
+          >
+            {languageOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={onClose} style={secondaryButtonStyle}>
             {t('onboarding.done')}
@@ -102,6 +129,29 @@ const iconButtonStyle: React.CSSProperties = {
   display: 'grid',
   placeItems: 'center',
   padding: 0,
+};
+
+const languageLabelStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 7,
+  color: 'var(--ink-600)',
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0,
+  textTransform: 'uppercase',
+  marginBottom: 7,
+};
+
+const languageSelectStyle: React.CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 5,
+  background: 'var(--bg-canvas)',
+  color: 'var(--ink-900)',
+  padding: '8px 10px',
+  fontSize: 13,
+  minHeight: 36,
 };
 
 const secondaryButtonStyle: React.CSSProperties = {

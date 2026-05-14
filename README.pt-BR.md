@@ -79,11 +79,21 @@ npm test
 npm run build
 ```
 
+Shell desktop:
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+Os builds desktop exigem Rust e usam o shell Tauri 2 em `src-tauri/`. O app React continua sendo o unico frontend para web e desktop.
+
 Builds de release:
 
 - Toda versao publica deve ter uma tag anotada `vX.Y.Z` e uma GitHub Release.
 - Ao enviar uma tag `v*`, o release workflow roda e publica o web bundle.
-- A partir do shell desktop `0.2`, o mesmo workflow tambem deve publicar assets de release para Windows, Linux e macOS.
+- A partir do shell desktop `0.2`, o mesmo workflow tambem deve publicar binarios desktop para Windows, Linux e macOS.
 
 ## Roadmap
 

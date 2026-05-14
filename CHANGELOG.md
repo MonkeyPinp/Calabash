@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 - Unreleased
+
+- Added the Tauri 2 desktop shell at `src-tauri/` with Windows, Linux, and macOS binary release configuration.
+- Added root desktop npm scripts for Tauri development and packaging.
+- Changed desktop release automation to attach plain platform binaries instead of installers.
+- Added language selection to the first-run onboarding tutorial.
+
 ## 0.1.3 - 2026-05-14
 
 - Added clearer beta storage warnings in onboarding, empty-state, and Settings copy so testers know browser site data is the local library.

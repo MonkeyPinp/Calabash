@@ -98,11 +98,21 @@ cd app
 VITE_BASE_PATH=/Calabash/ npm run build
 ```
 
+Desktop shell:
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+Desktop builds require Rust and use the Tauri 2 shell in `src-tauri/`. The React app remains the single frontend for both web and desktop.
+
 Release builds:
 
 - Every public version should have an annotated `vX.Y.Z` tag and a GitHub Release.
 - Pushing a `v*` tag runs the release workflow and uploads the web bundle.
-- Starting with the `0.2` desktop shell, the same workflow must also upload Windows, Linux, and macOS release assets.
+- Starting with the `0.2` desktop shell, the same workflow must also upload Windows, Linux, and macOS desktop binaries.
 
 Optional local tutorial portraits:
 

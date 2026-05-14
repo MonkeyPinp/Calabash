@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "Default desktop permissions for the Calabash main window.",
+  "windows": ["main"],
+  "permissions": ["core:default", "opener:default"]
+}

@@ -79,11 +79,21 @@ npm test
 npm run build
 ```
 
+桌面壳：
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+桌面构建需要 Rust，并使用 `src-tauri/` 中的 Tauri 2 壳。React app 仍然是 web 和 desktop 共用的唯一前端。
+
 发布构建：
 
 - 每个公开版本都应该有一个 `vX.Y.Z` annotated tag 和 GitHub Release。
 - 推送 `v*` tag 会运行 release workflow，并上传 web bundle。
-- 从 `0.2` 桌面壳开始，同一个 workflow 必须同时上传 Windows、Linux 和 macOS release 产物。
+- 从 `0.2` 桌面壳开始，同一个 workflow 必须同时上传 Windows、Linux 和 macOS desktop binary。
 
 ## 路线图
 

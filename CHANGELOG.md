@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-05-14
 
 0.2 prepares Calabash for desktop distribution while keeping the board workflow focused on lightweight case-file annotation rather than heavier membership management.
 

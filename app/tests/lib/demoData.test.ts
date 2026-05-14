@@ -228,8 +228,16 @@ describe('Ackroyd demo data', () => {
     expect(groups).toHaveLength(2);
     expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['调查组', '巽家成员']));
     expect(groups.map((group) => group.label)).not.toContain('假面威胁');
-    expect(notes[0].content).toContain('按 E');
-    expect(notes[0].content).not.toContain('假面威胁');
+    expect(notes).toHaveLength(4);
+    expect(notes.every((note) => note.chapterIntroduced === 1)).toBe(true);
+    expect(notes.map((note) => note.color).sort()).toEqual(['blue', 'green', 'purple', 'yellow']);
+    const noteText = notes.map((note) => note.content).join(' ');
+    expect(noteText).toContain('文字版/大图版');
+    expect(noteText).toContain('自动保存在这个浏览器');
+    expect(noteText).toContain('章节滑杆');
+    expect(noteText).toContain('按 E');
+    expect(noteText).toContain('分组位于角色和关系线下方');
+    expect(noteText).not.toContain('假面威胁');
   });
 
   it('attaches optional local portrait assets to the tutorial when available', async () => {

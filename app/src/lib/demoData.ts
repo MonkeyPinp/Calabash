@@ -618,7 +618,12 @@ const tutorialCopy: Record<ResolvedLanguage, {
   fuyuki: string;
   senda: string;
   headless: string;
-  note: string;
+  notes: {
+    start: string;
+    chapters: string;
+    edit: string;
+    groups: string;
+  };
   investigationGroup: string;
   familyGroup: string;
 }> = {
@@ -638,7 +643,12 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'The Headless Samurai',
-    note: 'TV 18: keep the investigation team and the Tatsumi family as separate clusters. Try selecting Kindaichi, press E, then click the Headless Samurai to add your own theory.',
+    notes: {
+      start: 'Start here: this is your local tutorial copy. Move cards, change labels, switch between text and portrait styles, and your edits autosave in this browser. Export Library when you want a backup.',
+      chapters: 'Use the chapter slider for TV 18-20. New facts, aliases, and relationship lines appear as the case unfolds; chapter 3 is protected by Spoiler Shield before the culprit reveal.',
+      edit: 'Try a theory line: select Kindaichi, press E, then click the Headless Samurai. Open the right sidebar to change the label, direction, certainty, or notes.',
+      groups: 'Groups sit behind characters and edges. Use them for factions like the investigation team or Tatsumi family; the sidebar can edit color, label position, font size, copy, or delete.',
+    },
     investigationGroup: 'Investigation team',
     familyGroup: 'Tatsumi family',
   },
@@ -658,7 +668,12 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: '冬木伦太郎',
     senda: '仙田猿彦',
     headless: '首狩武者',
-    note: 'TV 18：先别急着猜凶手。把调查组和巽家成员分开成两簇；试试看选中金田一，按 E，再点击首狩武者，补一条自己的怀疑线。',
+    notes: {
+      start: '从这里开始：这是你的本地教程副本。拖动卡片、改标签、切换文字版/大图版，都会自动保存在这个浏览器里；需要备份时导出书库。',
+      chapters: '试试章节滑杆：TV 18-20 会逐步出现新事实、别名和关系线；第 3 集揭示凶手前会由防剧透保护。',
+      edit: '动手试试：选中金田一，按 E，再点击首狩武者，画一条自己的推理线。右侧边栏可以修改标签、方向、确定度和备注。',
+      groups: '分组位于角色和关系线下方，适合表示调查组、巽家成员这类阵营。右侧边栏可以改颜色、拖动标签、调字号、复制或删除。',
+    },
     investigationGroup: '调查组',
     familyGroup: '巽家成员',
   },
@@ -678,7 +693,12 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'El samurái sin cabeza',
-    note: 'TV 18: separa al equipo investigador y la familia Tatsumi en dos grupos. Prueba a seleccionar a Kindaichi, pulsa E y haz clic en el samurái para añadir tu propia teoría.',
+    notes: {
+      start: 'Empieza aquí: esta es tu copia local del tutorial. Mueve tarjetas, cambia etiquetas, alterna entre texto y retratos, y los cambios se guardan en este navegador. Exporta la biblioteca para hacer copia.',
+      chapters: 'Usa el control de capítulos para TV 18-20. Los datos, alias y relaciones aparecen poco a poco; el capítulo 3 queda protegido antes de revelar al culpable.',
+      edit: 'Prueba una teoría: selecciona a Kindaichi, pulsa E y haz clic en el samurái. En la barra derecha puedes cambiar etiqueta, dirección, certeza y notas.',
+      groups: 'Los grupos quedan debajo de personajes y líneas. Úsalos para facciones como investigadores o familia Tatsumi; la barra derecha edita color, etiqueta, tamaño, copia o borrado.',
+    },
     investigationGroup: 'Equipo investigador',
     familyGroup: 'Familia Tatsumi',
   },
@@ -698,7 +718,12 @@ const tutorialCopy: Record<ResolvedLanguage, {
     fuyuki: 'Rintaro Fuyuki',
     senda: 'Saruhiko Senda',
     headless: 'O samurai sem cabeça',
-    note: 'TV 18: separe a equipe de investigação e a família Tatsumi em dois grupos. Selecione Kindaichi, pressione E e clique no samurai para adicionar sua própria teoria.',
+    notes: {
+      start: 'Comece aqui: esta é sua cópia local do tutorial. Mova cartões, edite rótulos, alterne entre texto e retratos, e tudo fica salvo neste navegador. Exporte a biblioteca para backup.',
+      chapters: 'Use o controle de capítulos para TV 18-20. Fatos, aliases e relações aparecem aos poucos; o capítulo 3 fica protegido antes da revelação do culpado.',
+      edit: 'Teste uma teoria: selecione Kindaichi, pressione E e clique no samurai. Na barra lateral direita você muda rótulo, direção, certeza e notas.',
+      groups: 'Grupos ficam atrás de personagens e linhas. Use-os para facções como investigação ou família Tatsumi; a barra lateral edita cor, rótulo, tamanho, cópia ou remoção.',
+    },
     investigationGroup: 'Equipe de investigação',
     familyGroup: 'Família Tatsumi',
   },
@@ -1082,14 +1107,44 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     }),
   ]);
 
-  await createAnnotation({
-    bookId,
-    content: copy.note,
-    position: { x: -420, y: 210 },
-    width: 260,
-    height: 128,
-    chapterIntroduced: 1,
-  });
+  await Promise.all([
+    createAnnotation({
+      bookId,
+      content: copy.notes.start,
+      position: { x: -470, y: -520 },
+      width: 320,
+      height: 150,
+      color: 'yellow',
+      chapterIntroduced: 1,
+    }),
+    createAnnotation({
+      bookId,
+      content: copy.notes.chapters,
+      position: { x: 480, y: -430 },
+      width: 320,
+      height: 148,
+      color: 'blue',
+      chapterIntroduced: 1,
+    }),
+    createAnnotation({
+      bookId,
+      content: copy.notes.edit,
+      position: { x: -470, y: 250 },
+      width: 320,
+      height: 140,
+      color: 'green',
+      chapterIntroduced: 1,
+    }),
+    createAnnotation({
+      bookId,
+      content: copy.notes.groups,
+      position: { x: 480, y: 410 },
+      width: 320,
+      height: 148,
+      color: 'purple',
+      chapterIntroduced: 1,
+    }),
+  ]);
 
   return bookId;
 }

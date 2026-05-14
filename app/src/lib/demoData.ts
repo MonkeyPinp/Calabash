@@ -3,12 +3,13 @@ import { createCharacter, updateCharacter } from '@/db/characters';
 import { findOrCreateCategory } from '@/db/categories';
 import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
 import { createAnnotation } from '@/db/annotations';
+import { createGroupRange } from '@/db/groupRanges';
 import { savePortrait } from '@/db/portraits';
 import { computeForceLayout } from '@/lib/layout';
 import { publicAsset } from '@/lib/publicAsset';
 import { isRelationshipDirected } from '@/lib/relationshipTypes';
 import type { ResolvedLanguage } from '@/stores/uiStore';
-import type { Character } from '@/types';
+import type { Character, GroupRangeColor } from '@/types';
 
 interface SeedOptions {
   userId?: string;
@@ -42,6 +43,50 @@ type AckroydPortraitKey =
   | 'ralph'
   | 'ursula'
   | 'caroline';
+
+const DEMO_GROUP_NODE_WIDTH = 210;
+const DEMO_GROUP_NODE_HEIGHT = 270;
+
+function boundsForCharacters(
+  characters: Character[],
+  positions: Map<string, { x: number; y: number }>,
+  padding = 90,
+) {
+  const points = characters
+    .map((character) => positions.get(character.id) ?? character.position)
+    .filter(Boolean);
+  if (points.length === 0) return { position: { x: -180, y: -120 }, width: 360, height: 240 };
+
+  const minX = Math.min(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxX = Math.max(...points.map((point) => point.x + DEMO_GROUP_NODE_WIDTH));
+  const maxY = Math.max(...points.map((point) => point.y + DEMO_GROUP_NODE_HEIGHT));
+
+  return {
+    position: { x: Math.round(minX - padding), y: Math.round(minY - padding) },
+    width: Math.round(maxX - minX + padding * 2),
+    height: Math.round(maxY - minY + padding * 2),
+  };
+}
+
+async function createDemoGroupRange(input: {
+  bookId: string;
+  label: string;
+  characters: Character[];
+  positions: Map<string, { x: number; y: number }>;
+  color: GroupRangeColor;
+  chapterIntroduced?: number;
+  padding?: number;
+}) {
+  const bounds = boundsForCharacters(input.characters, input.positions, input.padding);
+  await createGroupRange({
+    bookId: input.bookId,
+    label: input.label,
+    color: input.color,
+    chapterIntroduced: input.chapterIntroduced ?? 1,
+    ...bounds,
+  });
+}
 
 const hidaPortraitPaths: Record<HidaPortraitKey, string> = {
   hajime: publicAsset('demo-portraits/kindaichi/hajime-kindaichi.png'),
@@ -223,26 +268,41 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
   start: string;
   chapters: string;
   edit: string;
+  detectiveGroup: string;
+  householdGroup: string;
+  secretGroup: string;
 }> = {
   en: {
     start: 'Start here: this is your local tutorial copy. Move characters, edit labels, and delete anything; the public demo will stay unchanged for everyone else.',
     chapters: 'Try the chapter slider: chapter 2 shows the Fernly Park circle. Chapters 10 and 17 are highlighted, and chapter 27 is protected by Spoiler Shield.',
     edit: 'Try it: select Poirot, press E, then click another character to sketch a theory. Export Library when you want to keep your own backup.',
+    detectiveGroup: 'Investigation view',
+    householdGroup: 'Fernly Park circle',
+    secretGroup: 'Hidden marriage thread',
   },
   'zh-CN': {
     start: '从这里开始：这是你的本地教程副本。拖动人物、修改标签、删除内容，都只影响你自己的浏览器，公开 demo 不会被改动。',
     chapters: '试试章节滑杆：第 2 章展示 Fernly Park 的主要人物圈；第 10、17 章被高亮，第 27 章由防剧透保护。',
     edit: '动手试试：选中 Poirot，按 E，再点击另一个人物，画一条自己的推理线。想保存时导出书库。',
+    detectiveGroup: '调查视角',
+    householdGroup: 'Fernly Park 人物圈',
+    secretGroup: '隐藏婚姻线',
   },
   es: {
     start: 'Empieza aquí: esta es tu copia local del tutorial. Mueve personajes, edita etiquetas y borra lo que quieras; la demo pública no cambia para nadie más.',
     chapters: 'Prueba el control de capítulos: el capítulo 2 muestra el círculo de Fernly Park. Los capítulos 10 y 17 están destacados, y el 27 está protegido por el escudo anti-spoilers.',
     edit: 'Pruébalo: selecciona a Poirot, pulsa E y haz clic en otro personaje para dibujar una teoría. Exporta la biblioteca cuando quieras guardar una copia.',
+    detectiveGroup: 'Mirada investigadora',
+    householdGroup: 'Círculo de Fernly Park',
+    secretGroup: 'Matrimonio oculto',
   },
   'pt-BR': {
     start: 'Comece aqui: esta é sua cópia local do tutorial. Mova personagens, edite rótulos e apague qualquer coisa; a demo pública continua igual para as outras pessoas.',
     chapters: 'Teste o controle de capítulos: o capítulo 2 mostra o círculo de Fernly Park. Os capítulos 10 e 17 ficam destacados, e o 27 é protegido pelo escudo anti-spoiler.',
     edit: 'Experimente: selecione Poirot, pressione E e clique em outro personagem para desenhar uma teoria. Exporte a biblioteca quando quiser guardar seu backup.',
+    detectiveGroup: 'Ponto de vista da investigação',
+    householdGroup: 'Círculo de Fernly Park',
+    secretGroup: 'Casamento oculto',
   },
 };
 
@@ -475,6 +535,36 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   );
 
   await Promise.all([
+    createDemoGroupRange({
+      bookId,
+      label: guide.detectiveGroup,
+      characters: [poirot, sheppard, caroline],
+      positions,
+      color: 'blue',
+      chapterIntroduced: 1,
+      padding: 110,
+    }),
+    createDemoGroupRange({
+      bookId,
+      label: guide.householdGroup,
+      characters: [ackroyd, flora, mrsAckroyd, blunt, raymond, ralph, ursula],
+      positions,
+      color: 'ochre',
+      chapterIntroduced: 2,
+      padding: 120,
+    }),
+    createDemoGroupRange({
+      bookId,
+      label: guide.secretGroup,
+      characters: [ralph, ursula],
+      positions,
+      color: 'violet',
+      chapterIntroduced: 17,
+      padding: 95,
+    }),
+  ]);
+
+  await Promise.all([
     createAnnotation({
       bookId,
       content: guide.start,
@@ -523,6 +613,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
   senda: string;
   headless: string;
   note: string;
+  investigationGroup: string;
+  familyGroup: string;
+  threatGroup: string;
 }> = {
   en: {
     category: 'Tutorial',
@@ -540,6 +633,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     senda: 'Saruhiko Senda',
     headless: 'The Headless Samurai',
     note: 'TV 18: keep the mansion, the Tatsumi family, and the masked threat as separate clusters. Try selecting Kindaichi, press E, then click the Headless Samurai to add your own theory.',
+    investigationGroup: 'Investigation team',
+    familyGroup: 'Tatsumi family',
+    threatGroup: 'Masked threat',
   },
   'zh-CN': {
     category: '教程',
@@ -557,6 +653,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     senda: '仙田猿彦',
     headless: '首狩武者',
     note: 'TV 18：先别急着猜凶手。把机关宅邸、巽家成员、戴面具的威胁者分成三簇；试试看选中金田一，按 E，再点击首狩武者，补一条自己的怀疑线。',
+    investigationGroup: '调查组',
+    familyGroup: '巽家成员',
+    threatGroup: '假面威胁',
   },
   es: {
     category: 'Tutorial',
@@ -574,6 +673,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     senda: 'Saruhiko Senda',
     headless: 'El samurái sin cabeza',
     note: 'TV 18: separa la mansión, la familia Tatsumi y la amenaza enmascarada en tres grupos. Prueba a seleccionar a Kindaichi, pulsa E y haz clic en el samurái para añadir tu propia teoría.',
+    investigationGroup: 'Equipo investigador',
+    familyGroup: 'Familia Tatsumi',
+    threatGroup: 'Amenaza enmascarada',
   },
   'pt-BR': {
     category: 'Tutorial',
@@ -591,6 +693,9 @@ const tutorialCopy: Record<ResolvedLanguage, {
     senda: 'Saruhiko Senda',
     headless: 'O samurai sem cabeça',
     note: 'TV 18: separe a mansão, a família Tatsumi e a ameaça mascarada em três grupos. Selecione Kindaichi, pressione E e clique no samurai para adicionar sua própria teoria.',
+    investigationGroup: 'Equipe de investigação',
+    familyGroup: 'Família Tatsumi',
+    threatGroup: 'Ameaça mascarada',
   },
 };
 
@@ -850,6 +955,41 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     certainty: 'confirmed',
     label: language === 'zh-CN' ? '共犯' : language === 'es' ? 'cómplices' : 'co-conspirators',
   });
+
+  const hidaPositions = new Map([
+    hajime, miyuki, kenmochi, shino, seimaru, ryunosuke,
+    hayato, moegi, fuyuki, senda, headless,
+  ].map((character) => [character.id, character.position] as const));
+
+  await Promise.all([
+    createDemoGroupRange({
+      bookId,
+      label: copy.investigationGroup,
+      characters: [hajime, miyuki],
+      positions: hidaPositions,
+      color: 'blue',
+      chapterIntroduced: 1,
+      padding: 100,
+    }),
+    createDemoGroupRange({
+      bookId,
+      label: copy.familyGroup,
+      characters: [shino, seimaru, ryunosuke, hayato, moegi],
+      positions: hidaPositions,
+      color: 'ochre',
+      chapterIntroduced: 1,
+      padding: 110,
+    }),
+    createDemoGroupRange({
+      bookId,
+      label: copy.threatGroup,
+      characters: [headless, shino, senda],
+      positions: hidaPositions,
+      color: 'red',
+      chapterIntroduced: 3,
+      padding: 95,
+    }),
+  ]);
 
   await createAnnotation({
     bookId,

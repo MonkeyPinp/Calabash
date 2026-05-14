@@ -5,6 +5,7 @@ import { listCategories } from '@/db/categories';
 import { listCharactersByBook } from '@/db/characters';
 import { listRelationshipsByBook } from '@/db/relationships';
 import { listAnnotationsByBook } from '@/db/annotations';
+import { listGroupRangesByBook } from '@/db/groupRanges';
 import { getPortrait } from '@/db/portraits';
 import { seedRogerAckroyd, seedTutorialBook } from '@/lib/demoData';
 import { getMinimumLayoutNodeDistance, MIN_LAYOUT_NODE_DISTANCE } from '@/lib/layout';
@@ -56,6 +57,7 @@ describe('Ackroyd demo data', () => {
     const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'pt-BR', kind: 'ackroyd' });
     const book = await getBook(bookId);
     const notes = await listAnnotationsByBook(bookId);
+    const groups = await listGroupRangesByBook(bookId);
 
     expect(book?.userId).toBe('reader-1');
     expect(book?.title).toBe('The Murder of Roger Ackroyd');
@@ -64,6 +66,8 @@ describe('Ackroyd demo data', () => {
     expect(book?.highlightedChapters).toEqual([2, 10, 17]);
     expect(book?.spoilerChapters).toEqual([27]);
     expect(notes).toHaveLength(3);
+    expect(groups).toHaveLength(3);
+    expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2, 17]);
     expect(notes.map((note) => note.content).join(' ')).toContain('Exporte a biblioteca');
   });
 
@@ -73,6 +77,7 @@ describe('Ackroyd demo data', () => {
     const characters = await listCharactersByBook(bookId);
     const relationships = await listRelationshipsByBook(bookId);
     const notes = await listAnnotationsByBook(bookId);
+    const groups = await listGroupRangesByBook(bookId);
     const shino = characters.find((character) => character.name === '巽紫乃');
     const headless = characters.find((character) => character.name === '首狩武者');
     const senda = characters.find((character) => character.name === '仙田猿彦');
@@ -100,6 +105,9 @@ describe('Ackroyd demo data', () => {
         label: '共犯',
       }),
     ]));
+    expect(groups).toHaveLength(3);
+    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['调查组', '巽家成员', '假面威胁']));
+    expect(groups.find((group) => group.label === '假面威胁')?.chapterIntroduced).toBe(3);
     expect(notes[0].content).toContain('按 E');
   });
 

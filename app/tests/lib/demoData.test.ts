@@ -91,6 +91,7 @@ describe('Ackroyd demo data', () => {
     const moegi = characters.find((character) => character.name === '巽萌黄');
     const headless = characters.find((character) => character.name === '首狩武者');
     const senda = characters.find((character) => character.name === '仙田猿彦');
+    const kenmochi = characters.find((character) => character.name === '剑持勇');
 
     expect(book?.userId).toBe('reader-1');
     expect(book?.title).toBe('飞驒机关宅邸杀人事件');
@@ -104,6 +105,11 @@ describe('Ackroyd demo data', () => {
       { role: 'murderer', chapterRevealed: 3 },
     ]);
     expect(headless?.roleReveals).toBeUndefined();
+    expect(headless?.aliases).toEqual([
+      { name: '首狩武者', chapterRevealed: 1 },
+      { name: '巽紫乃（首狩武者）', chapterRevealed: 3 },
+    ]);
+    expect(kenmochi?.notes).toContain('巽紫乃');
     expect(relationships).toEqual(expect.arrayContaining([
       expect.objectContaining({
         sourceId: shino?.id,
@@ -152,6 +158,13 @@ describe('Ackroyd demo data', () => {
         targetId: headless?.id,
         chapterRevealed: 3,
         label: '真实身份',
+        notes: '第 3 集揭示：首狩武者的真实身份是巽紫乃。',
+      }),
+      expect.objectContaining({
+        sourceId: kenmochi?.id,
+        targetId: shino?.id,
+        chapterRevealed: 2,
+        label: '儿时好友',
       }),
       expect.objectContaining({
         sourceId: shino?.id,

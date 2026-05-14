@@ -748,6 +748,11 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     profession: language === 'zh-CN' ? '搜查一课警部' : language === 'es' ? 'Inspector de homicidios' : 'Tokyo homicide detective',
     chapterIntroduced: 2,
     position: { x: -80, y: 260 },
+    notes: language === 'zh-CN'
+      ? `剑持与${copy.shino}是儿时好友，所以才会带金田一来到巽家。`
+      : language === 'es'
+        ? `Kenmochi y ${copy.shino} son amigos de la infancia; por eso lleva a Kindaichi a la casa Tatsumi.`
+        : `Kenmochi and ${copy.shino} are childhood friends, which is why he brings Kindaichi to the Tatsumi house.`,
   });
 
   const shino = await createCharacter({
@@ -834,6 +839,15 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     profession: language === 'zh-CN' ? '怪人别名' : language === 'es' ? 'Alias enmascarado' : 'Masked alias',
     chapterIntroduced: 1,
     position: { x: -90, y: -300 },
+    aliases: [
+      { name: copy.headless, chapterRevealed: 1 },
+      {
+        name: language === 'zh-CN'
+          ? `${copy.shino}（${copy.headless}）`
+          : `${copy.shino} (${copy.headless})`,
+        chapterRevealed: 3,
+      },
+    ],
     notes: language === 'zh-CN'
       ? '教程里先把它当作“身份未知的威胁”记录；第 3 集再连接到真实人物。'
       : language === 'es'
@@ -947,6 +961,24 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
   });
   await createRelationship({
     bookId,
+    sourceId: kenmochi.id,
+    targetId: shino.id,
+    type: 'other',
+    chapterRevealed: 2,
+    certainty: 'confirmed',
+    label: language === 'zh-CN'
+      ? '儿时好友'
+      : language === 'es'
+        ? 'amigos de infancia'
+        : 'childhood friends',
+    notes: language === 'zh-CN'
+      ? `剑持与${copy.shino}是儿时好友；她收到${copy.headless}的威胁后请他介入。`
+      : language === 'es'
+        ? `Kenmochi conoce a ${copy.shino} desde la infancia; ella le pide ayuda tras recibir la amenaza del ${copy.headless}.`
+        : `Kenmochi has known ${copy.shino} since childhood; she asks him for help after receiving the ${copy.headless} threat.`,
+  });
+  await createRelationship({
+    bookId,
     sourceId: fuyuki.id,
     targetId: shino.id,
     type: 'professional',
@@ -980,6 +1012,11 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     chapterRevealed: 3,
     certainty: 'confirmed',
     label: language === 'zh-CN' ? '真实身份' : language === 'es' ? 'identidad real' : 'true identity',
+    notes: language === 'zh-CN'
+      ? `第 3 集揭示：${copy.headless}的真实身份是${copy.shino}。`
+      : language === 'es'
+        ? `El episodio 3 revela que ${copy.shino} es la identidad real del ${copy.headless}.`
+        : `Episode 3 reveals that ${copy.shino} is the real identity behind ${copy.headless}.`,
   });
   await createRelationship({
     bookId,

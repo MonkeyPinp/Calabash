@@ -1,6 +1,10 @@
 import { db } from './schema';
 import type { GroupRange, GroupRangeColor } from '@/types';
-import { normalizeGroupRange } from '@/lib/groupRanges';
+import {
+  GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE,
+  GROUP_RANGE_DEFAULT_LABEL_POSITION,
+  normalizeGroupRange,
+} from '@/lib/groupRanges';
 
 export interface CreateGroupRangeInput {
   bookId: string;
@@ -9,6 +13,8 @@ export interface CreateGroupRangeInput {
   width?: number;
   height?: number;
   color?: GroupRangeColor;
+  labelFontSize?: number;
+  labelPosition?: { x: number; y: number };
   chapterIntroduced?: number;
 }
 
@@ -22,6 +28,8 @@ export async function createGroupRange(input: CreateGroupRangeInput): Promise<Gr
     width: input.width ?? 360,
     height: input.height ?? 220,
     color: input.color ?? 'ochre',
+    labelFontSize: input.labelFontSize ?? GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE,
+    labelPosition: input.labelPosition ?? GROUP_RANGE_DEFAULT_LABEL_POSITION,
     chapterIntroduced: input.chapterIntroduced ?? 1,
     createdAt: now,
     updatedAt: now,

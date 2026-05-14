@@ -1,6 +1,11 @@
 import { db } from './schema';
 import type { StickyNote, StickyNoteColor } from '@/types';
-import { inferStickyNoteChapter, normalizeStickyNote, normalizeStickyNoteChapter } from '@/lib/stickyNotes';
+import {
+  inferStickyNoteChapter,
+  normalizeStickyNote,
+  normalizeStickyNoteChapter,
+  STICKY_NOTE_DEFAULT_FONT_SIZE,
+} from '@/lib/stickyNotes';
 
 export interface CreateAnnotationInput {
   bookId: string;
@@ -9,6 +14,7 @@ export interface CreateAnnotationInput {
   width?: number;
   height?: number;
   color?: StickyNoteColor;
+  fontSize?: number;
   chapterIntroduced?: number;
 }
 
@@ -22,6 +28,7 @@ export async function createAnnotation(input: CreateAnnotationInput): Promise<St
     width: input.width ?? 200,
     height: input.height ?? 150,
     color: input.color ?? 'yellow',
+    fontSize: input.fontSize ?? STICKY_NOTE_DEFAULT_FONT_SIZE,
     chapterIntroduced: normalizeStickyNoteChapter(
       input.chapterIntroduced,
       inferStickyNoteChapter(input.content) ?? 1,

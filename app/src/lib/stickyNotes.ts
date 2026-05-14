@@ -1,9 +1,22 @@
 import type { StickyNote } from '@/types';
 
+export const STICKY_NOTE_DEFAULT_FONT_SIZE = 13;
+export const STICKY_NOTE_MIN_FONT_SIZE = 11;
+export const STICKY_NOTE_MAX_FONT_SIZE = 28;
+
 export function normalizeStickyNoteChapter(value: unknown, fallback = 1): number {
   const parsed = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(1, Math.trunc(parsed));
+}
+
+export function normalizeStickyNoteFontSize(
+  value: unknown,
+  fallback = STICKY_NOTE_DEFAULT_FONT_SIZE,
+): number {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
+  const size = Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
+  return Math.min(STICKY_NOTE_MAX_FONT_SIZE, Math.max(STICKY_NOTE_MIN_FONT_SIZE, size));
 }
 
 export function inferStickyNoteChapter(content?: string): number | undefined {
@@ -22,6 +35,7 @@ export function inferStickyNoteChapter(content?: string): number | undefined {
 export function normalizeStickyNote(note: StickyNote): StickyNote {
   return {
     ...note,
+    fontSize: normalizeStickyNoteFontSize(note.fontSize),
     chapterIntroduced: normalizeStickyNoteChapter(
       note.chapterIntroduced,
       inferStickyNoteChapter(note.content) ?? 1,

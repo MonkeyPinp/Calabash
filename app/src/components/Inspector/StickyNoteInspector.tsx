@@ -2,7 +2,8 @@ import { Trash2 } from 'lucide-react';
 import type { StickyNoteColor } from '@/types';
 import { deleteAnnotation, restoreAnnotation, updateAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
-import { normalizeStickyNoteChapter } from '@/lib/stickyNotes';
+import { normalizeStickyNoteChapter, normalizeStickyNoteFontSize } from '@/lib/stickyNotes';
+import { useT } from '@/i18n';
 
 const COLORS: StickyNoteColor[] = ['yellow', 'green', 'blue', 'pink', 'purple'];
 
@@ -38,6 +39,7 @@ export interface StickyNoteInspectorProps {
 }
 
 export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyNoteInspectorProps) {
+  const t = useT();
   const stickyNotes = useGraphStore((s) => s.stickyNotes);
   const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
@@ -47,10 +49,11 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
   const note = stickyNotes.find((n) => n.id === stickyNoteId);
 
   if (!note) {
-    return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>Sticky note not found.</div>;
+    return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>{t('stickyNote.notFound')}</div>;
   }
 
   const visibleFromChapter = normalizeStickyNoteChapter(note.chapterIntroduced);
+  const fontSize = normalizeStickyNoteFontSize(note.fontSize);
 
   async function persist(patch: Parameters<typeof updateAnnotation>[1]) {
     const updated = await updateAnnotation(stickyNoteId, patch);
@@ -108,6 +111,23 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     );
   }
 
+  async function handleFontSizeBlur(value: string) {
+    const parsed = normalizeStickyNoteFontSize(value, note!.fontSize);
+    if (parsed === note!.fontSize) return;
+    const before = note!.fontSize;
+    await persist({ fontSize: parsed });
+    pushUndo(
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { fontSize: before });
+        updateStickyNoteInStore(updated);
+      },
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { fontSize: parsed });
+        updateStickyNoteInStore(updated);
+      },
+    );
+  }
+
   async function handleChapterBlur(value: string) {
     const parsed = normalizeStickyNoteChapter(value);
     if (parsed === visibleFromChapter) return;
@@ -146,11 +166,11 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 16px 12px', borderBottom: '1px solid var(--ink-200)' }}>
         <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink-900)' }}>
-          Sticky Note
+          {t('stickyNote.title')}
         </div>
         <button
           onClick={() => void handleDelete()}
-          title="Delete note"
+          title={t('stickyNote.delete')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -165,14 +185,14 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
             flexShrink: 0,
           }}
         >
-          <Trash2 size={11} /> Delete
+          <Trash2 size={11} /> {t('stickyNote.delete')}
         </button>
       </div>
 
       <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
 
       <div style={fieldStyle}>
-        <label style={labelStyle}>Visible From Chapter</label>
+        <label style={labelStyle}>{t('stickyNote.chapterIntroduced')}</label>
         <input
           style={inputStyle}
           type="number"
@@ -184,18 +204,18 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
       </div>
 
       <div style={fieldStyle}>
-        <label style={labelStyle}>Content</label>
+        <label style={labelStyle}>{t('stickyNote.content')}</label>
         <textarea
-          style={{ ...inputStyle, minHeight: 220, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+          style={{ ...inputStyle, minHeight: 220, resize: 'vertical', fontFamily: 'inherit', fontSize, lineHeight: 1.5 }}
           defaultValue={note.content}
           key={`content-${stickyNoteId}`}
-          placeholder="Write a note..."
+          placeholder={t('stickyNote.contentPlaceholder')}
           onBlur={(e) => void handleContentBlur(e)}
         />
       </div>
 
       <div style={fieldStyle}>
-        <label style={labelStyle}>Color</label>
+        <label style={labelStyle}>{t('stickyNote.color')}</label>
         <select
           style={inputStyle}
           defaultValue={note.color}
@@ -204,7 +224,7 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
         >
           {COLORS.map((color) => (
             <option key={color} value={color}>
-              {color.charAt(0).toUpperCase() + color.slice(1)}
+              {t(`stickyNote.color.${color}`)}
             </option>
           ))}
         </select>
@@ -212,7 +232,7 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
 
       <div style={{ display: 'flex', gap: 8 }}>
         <div style={{ ...fieldStyle, flex: 1 }}>
-          <label style={labelStyle}>Width</label>
+          <label style={labelStyle}>{t('stickyNote.width')}</label>
           <input
             style={inputStyle}
             type="number"
@@ -223,7 +243,7 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
           />
         </div>
         <div style={{ ...fieldStyle, flex: 1 }}>
-          <label style={labelStyle}>Height</label>
+          <label style={labelStyle}>{t('stickyNote.height')}</label>
           <input
             style={inputStyle}
             type="number"
@@ -233,6 +253,19 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
             onBlur={(e) => void handleSizeBlur('height', e.target.value)}
           />
         </div>
+      </div>
+
+      <div style={fieldStyle}>
+        <label style={labelStyle}>{t('stickyNote.fontSize')}</label>
+        <input
+          style={inputStyle}
+          type="number"
+          min={11}
+          max={28}
+          defaultValue={fontSize}
+          key={`font-size-${stickyNoteId}`}
+          onBlur={(e) => void handleFontSizeBlur(e.target.value)}
+        />
       </div>
       </div>
     </div>

@@ -1,8 +1,13 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
 import type { GroupRange } from '@/types';
 import { updateGroupRange } from '@/db/groupRanges';
-import { getGroupRangeDisplayTag, GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
+import {
+  getGroupRangeDisplayTag,
+  GROUP_RANGE_COLOR_MAP,
+  normalizeGroupRangeLabelFontSize,
+  normalizeGroupRangeLabelPosition,
+} from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 
 export interface GroupRangeNodeData {
@@ -15,9 +20,94 @@ function GroupRangeNodeImpl(props: NodeProps) {
   const selected = props.selected ?? false;
   const colors = GROUP_RANGE_COLOR_MAP[range.color];
   const displayTag = getGroupRangeDisplayTag(range);
+  const labelFontSize = normalizeGroupRangeLabelFontSize(range.labelFontSize);
+  const normalizedLabelPosition = normalizeGroupRangeLabelPosition(range.labelPosition);
+  const [draftLabelPosition, setDraftLabelPosition] = useState(normalizedLabelPosition);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const labelDragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const labelPointerOffsetRef = useRef({ x: 0, y: 0 });
+  const latestLabelPositionRef = useRef(normalizedLabelPosition);
 
   const updateGroupRangeInStore = useGraphStore((s) => s.updateGroupRangeInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
+
+  useEffect(() => {
+    setDraftLabelPosition(normalizedLabelPosition);
+    latestLabelPositionRef.current = normalizedLabelPosition;
+  }, [range.id, normalizedLabelPosition.x, normalizedLabelPosition.y]);
+
+  function readPointerPosition(e: React.PointerEvent): { x: number; y: number } {
+    const bounds = nodeRef.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) return latestLabelPositionRef.current;
+    return {
+      x: (e.clientX - bounds.left) / bounds.width,
+      y: (e.clientY - bounds.top) / bounds.height,
+    };
+  }
+
+  function readLabelPosition(e: React.PointerEvent): { x: number; y: number } {
+    const pointer = readPointerPosition(e);
+    return normalizeGroupRangeLabelPosition({
+      x: pointer.x - labelPointerOffsetRef.current.x,
+      y: pointer.y - labelPointerOffsetRef.current.y,
+    });
+  }
+
+  function applyDraftLabelPosition(position: { x: number; y: number }) {
+    latestLabelPositionRef.current = position;
+    setDraftLabelPosition(position);
+  }
+
+  function handleLabelPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    labelDragStartRef.current = normalizedLabelPosition;
+    const pointer = readPointerPosition(e);
+    labelPointerOffsetRef.current = {
+      x: pointer.x - normalizedLabelPosition.x,
+      y: pointer.y - normalizedLabelPosition.y,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    applyDraftLabelPosition(normalizedLabelPosition);
+  }
+
+  function handleLabelPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!labelDragStartRef.current) return;
+    e.stopPropagation();
+    applyDraftLabelPosition(readLabelPosition(e));
+  }
+
+  function handleLabelPointerCancel(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    labelDragStartRef.current = null;
+    applyDraftLabelPosition(normalizedLabelPosition);
+  }
+
+  async function persistLabelPosition(before: { x: number; y: number }, after: { x: number; y: number }) {
+    if (before.x === after.x && before.y === after.y) return;
+    const updated = await updateGroupRange(range.id, { labelPosition: after });
+    updateGroupRangeInStore(updated);
+    pushUndo(
+      async () => {
+        const restored = await updateGroupRange(range.id, { labelPosition: before });
+        updateGroupRangeInStore(restored);
+      },
+      async () => {
+        const redone = await updateGroupRange(range.id, { labelPosition: after });
+        updateGroupRangeInStore(redone);
+      },
+    );
+  }
+
+  function handleLabelPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    const before = labelDragStartRef.current;
+    if (!before) return;
+    e.stopPropagation();
+    labelDragStartRef.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    const after = latestLabelPositionRef.current;
+    void persistLabelPosition(before, after);
+  }
 
   async function handleResizeEnd(_: unknown, params: { width: number; height: number }) {
     const oldWidth = range.width;
@@ -51,6 +141,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
         onResizeEnd={handleResizeEnd}
       />
       <div
+        ref={nodeRef}
         data-testid="group-range-node"
         style={{
           width: '100%',
@@ -68,11 +159,17 @@ function GroupRangeNodeImpl(props: NodeProps) {
         }}
       >
         <div
+          className="nodrag nopan"
+          data-testid="group-range-label"
+          onPointerDown={handleLabelPointerDown}
+          onPointerMove={handleLabelPointerMove}
+          onPointerUp={handleLabelPointerUp}
+          onPointerCancel={handleLabelPointerCancel}
           style={{
             position: 'absolute',
-            left: '50%',
-            top: 16,
-            transform: 'translateX(-50%)',
+            left: `${draftLabelPosition.x * 100}%`,
+            top: `${draftLabelPosition.y * 100}%`,
+            transform: 'translate(-50%, -50%)',
             maxWidth: '70%',
             padding: '3px 9px',
             borderRadius: 999,
@@ -80,13 +177,16 @@ function GroupRangeNodeImpl(props: NodeProps) {
             background: 'color-mix(in srgb, var(--bg-panel) 82%, transparent)',
             color: colors.text,
             fontFamily: 'var(--font-case-title)',
-            fontSize: 12,
+            fontSize: labelFontSize,
             fontWeight: 600,
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            pointerEvents: 'none',
+            cursor: 'move',
+            pointerEvents: 'auto',
+            userSelect: 'none',
+            touchAction: 'none',
             boxShadow: '0 1px 3px rgba(40, 28, 12, 0.10)',
           }}
           title={range.label}

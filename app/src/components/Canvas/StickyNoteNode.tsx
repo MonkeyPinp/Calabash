@@ -4,7 +4,7 @@ import { Trash2 } from 'lucide-react';
 import type { StickyNote, StickyNoteColor } from '@/types';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
-import { getStickyNoteDisplayTag, normalizeStickyNoteChapter } from '@/lib/stickyNotes';
+import { getStickyNoteDisplayTag, normalizeStickyNoteChapter, normalizeStickyNoteFontSize } from '@/lib/stickyNotes';
 
 export interface StickyNoteNodeData {
   note: StickyNote;
@@ -27,6 +27,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
   const colors = COLOR_MAP[note.color];
   const displayTag = getStickyNoteDisplayTag(note);
   const visibleFromChapter = normalizeStickyNoteChapter(note.chapterIntroduced);
+  const fontSize = normalizeStickyNoteFontSize(note.fontSize);
 
   const [content, setContent] = useState(note.content);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -233,7 +234,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
             resize: 'none',
             padding: sel ? '8px 10px 10px' : '25px 10px 10px',
             fontFamily: 'var(--font-case-title)',
-            fontSize: 13,
+            fontSize,
             lineHeight: 1.55,
             color: colors.text,
             cursor: 'text',

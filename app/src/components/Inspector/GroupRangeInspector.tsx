@@ -1,7 +1,12 @@
 import { Copy, Trash2 } from 'lucide-react';
 import type { GroupRangeColor } from '@/types';
 import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
-import { GROUP_RANGE_COLORS, GROUP_RANGE_COLOR_MAP, normalizeGroupRangeChapter } from '@/lib/groupRanges';
+import {
+  GROUP_RANGE_COLORS,
+  GROUP_RANGE_COLOR_MAP,
+  normalizeGroupRangeChapter,
+  normalizeGroupRangeLabelFontSize,
+} from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 
@@ -115,6 +120,23 @@ export default function GroupRangeInspector({
     );
   }
 
+  async function handleLabelFontSizeBlur(value: string) {
+    const parsed = normalizeGroupRangeLabelFontSize(value, range!.labelFontSize);
+    if (parsed === range!.labelFontSize) return;
+    const before = range!.labelFontSize;
+    await persist({ labelFontSize: parsed });
+    pushUndo(
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { labelFontSize: before });
+        updateGroupRangeInStore(updated);
+      },
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { labelFontSize: parsed });
+        updateGroupRangeInStore(updated);
+      },
+    );
+  }
+
   async function handleChapterBlur(value: string) {
     const parsed = normalizeGroupRangeChapter(value);
     if (parsed === range!.chapterIntroduced) return;
@@ -140,6 +162,8 @@ export default function GroupRangeInspector({
       color: current.color,
       width: current.width,
       height: current.height,
+      labelFontSize: current.labelFontSize,
+      labelPosition: current.labelPosition,
       chapterIntroduced: current.chapterIntroduced,
       position: { x: current.position.x + 36, y: current.position.y + 36 },
     });
@@ -294,6 +318,19 @@ export default function GroupRangeInspector({
           </div>
         </div>
 
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('groupRange.labelFontSize')}</label>
+          <input
+            style={inputStyle}
+            type="number"
+            min={12}
+            max={30}
+            defaultValue={range.labelFontSize}
+            key={`label-font-size-${groupRangeId}`}
+            onBlur={(e) => void handleLabelFontSizeBlur(e.target.value)}
+          />
+        </div>
+
         <div
           aria-hidden="true"
           style={{
@@ -306,7 +343,7 @@ export default function GroupRangeInspector({
             placeItems: 'center',
             color: colors.text,
             fontFamily: 'var(--font-case-title)',
-            fontSize: 13,
+            fontSize: normalizeGroupRangeLabelFontSize(range.labelFontSize),
             fontWeight: 600,
           }}
         >

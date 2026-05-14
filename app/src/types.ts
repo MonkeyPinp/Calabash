@@ -99,6 +99,7 @@ export interface StickyNote {
   width: number;
   height: number;
   color: StickyNoteColor;
+  fontSize: number;
   chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;
@@ -112,6 +113,8 @@ export interface GroupRange {
   width: number;
   height: number;
   color: GroupRangeColor;
+  labelFontSize: number;
+  labelPosition: { x: number; y: number };
   chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;

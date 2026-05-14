@@ -15,6 +15,7 @@ const baseNote: StickyNote = {
   width: 220,
   height: 120,
   color: 'green',
+  fontSize: 13,
   chapterIntroduced: 5,
   createdAt: 0,
   updatedAt: 0,
@@ -39,7 +40,14 @@ describe('sticky note chapter tags', () => {
     const normalized = normalizeStickyNote(legacyNote);
 
     expect(normalized.chapterIntroduced).toBe(5);
+    expect(normalized.fontSize).toBe(13);
     expect(isStickyNoteVisibleAtChapter(normalized, 4)).toBe(false);
     expect(isStickyNoteVisibleAtChapter(normalized, 5)).toBe(true);
+  });
+
+  it('clamps note font sizes for old or malformed records', () => {
+    expect(normalizeStickyNote({ ...baseNote, fontSize: 8 }).fontSize).toBe(11);
+    expect(normalizeStickyNote({ ...baseNote, fontSize: 40 }).fontSize).toBe(28);
+    expect(normalizeStickyNote({ ...baseNote, fontSize: undefined } as unknown as StickyNote).fontSize).toBe(13);
   });
 });

@@ -92,6 +92,25 @@ export class CalabashDB extends Dexie {
         Object.assign(range, normalizeGroupRange(range));
       }),
     );
+    this.version(8).stores({
+      users:         'id, updatedAt',
+      books:         'id, userId, updatedAt, categoryId',
+      categories:    'id, userId, order',
+      characters:    'id, bookId, chapterIntroduced',
+      relationships: 'id, bookId, sourceId, targetId, chapterRevealed',
+      portraits:     'id, bookId',
+      annotations:   'id, bookId, chapterIntroduced',
+      groupRanges:   'id, bookId, chapterIntroduced',
+    }).upgrade((tx) =>
+      Promise.all([
+        tx.table('annotations').toCollection().modify((note: StickyNote) => {
+          Object.assign(note, normalizeStickyNote(note));
+        }),
+        tx.table('groupRanges').toCollection().modify((range: GroupRange) => {
+          Object.assign(range, normalizeGroupRange(range));
+        }),
+      ]),
+    );
   }
 }
 

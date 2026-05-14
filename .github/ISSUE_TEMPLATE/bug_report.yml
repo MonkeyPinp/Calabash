@@ -1,0 +1,65 @@
+name: Bug report
+description: Report something that is broken or confusing in Calabash.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping test Calabash. Please avoid including private reading notes or spoilers unless they are needed to reproduce the issue.
+  - type: input
+    id: version
+    attributes:
+      label: Calabash version
+      description: You can find this in Settings.
+      placeholder: "0.1.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where did this happen?
+      options:
+        - GitHub Pages demo
+        - Local development build
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: "Chrome on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do before the problem happened?
+      placeholder: |
+        1. Opened the Ackroyd tutorial
+        2. Moved the chapter slider to chapter 3
+        3. Clicked ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect Calabash to do?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or notes
+      description: Drag screenshots here if they help. Please hide spoilers or private notes first.
+

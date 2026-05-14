@@ -16,7 +16,7 @@ import { useT } from '@/i18n';
 import CalabashLogo from '@/components/Brand/CalabashLogo';
 import type { TutorialKind } from '@/lib/demoData';
 
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.1.1';
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const STUDIO_URL = 'https://guesswhat.studio';
 

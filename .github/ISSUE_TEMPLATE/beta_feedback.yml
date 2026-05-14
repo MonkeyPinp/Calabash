@@ -1,0 +1,53 @@
+name: Beta feedback
+description: Share reading-session feedback from using Calabash.
+title: "[Beta feedback]: "
+labels: ["beta feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for reader experience feedback. Please avoid major plot spoilers, or mark them clearly.
+  - type: input
+    id: version
+    attributes:
+      label: Calabash version
+      placeholder: "0.1.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: usage
+    attributes:
+      label: How did you use it?
+      options:
+        - Built-in Ackroyd tutorial
+        - Built-in Kindaichi tutorial
+        - My own book
+        - Just explored the interface
+    validations:
+      required: true
+  - type: textarea
+    id: reading-context
+    attributes:
+      label: Reading context
+      description: What kind of book or session did you try it with?
+      placeholder: "A 20-chapter detective novel, about one hour of use..."
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked well?
+      description: Which parts felt useful, clear, or enjoyable?
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: What felt confusing or slow?
+      description: Where did you hesitate, get lost, or wish the app behaved differently?
+    validations:
+      required: true
+  - type: textarea
+    id: backup
+    attributes:
+      label: Did the local storage and Export/Import model feel clear?
+      description: Tell us whether the no-account, browser-local data story made sense.
+

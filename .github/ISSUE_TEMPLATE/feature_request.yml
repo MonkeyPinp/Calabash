@@ -1,0 +1,41 @@
+name: Feature proposal
+description: Suggest a focused improvement for Calabash.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Calabash is intentionally local-first and manual. Please do not propose AI extraction, cloud sync, login systems, or server-side reader data for the current beta.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Reader problem
+      description: What reading problem would this solve?
+      placeholder: "When I read a long mystery, I lose track of..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like Calabash to add or change?
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Small polish
+        - Workflow improvement
+        - New view or tool
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Have you tried another workaround inside Calabash?
+

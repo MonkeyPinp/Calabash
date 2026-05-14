@@ -1,15 +1,13 @@
 import { createBook, updateBook } from '@/db/books';
 import { createCharacter, updateCharacter } from '@/db/characters';
 import { findOrCreateCategory } from '@/db/categories';
-import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
+import { createRelationship } from '@/db/relationships';
 import { createAnnotation } from '@/db/annotations';
 import { createGroupRange } from '@/db/groupRanges';
 import { savePortrait } from '@/db/portraits';
-import { computeForceLayout } from '@/lib/layout';
 import { publicAsset } from '@/lib/publicAsset';
-import { isRelationshipDirected } from '@/lib/relationshipTypes';
 import type { CharacterNodeViewMode, ResolvedLanguage } from '@/stores/uiStore';
-import type { Character, GroupRangeColor } from '@/types';
+import type { Character } from '@/types';
 
 interface SeedOptions {
   userId?: string;
@@ -47,50 +45,6 @@ type AckroydPortraitKey =
   | 'ralph'
   | 'ursula'
   | 'caroline';
-
-const DEMO_GROUP_NODE_WIDTH = 210;
-const DEMO_GROUP_NODE_HEIGHT = 270;
-
-function boundsForCharacters(
-  characters: Character[],
-  positions: Map<string, { x: number; y: number }>,
-  padding = 90,
-) {
-  const points = characters
-    .map((character) => positions.get(character.id) ?? character.position)
-    .filter(Boolean);
-  if (points.length === 0) return { position: { x: -180, y: -120 }, width: 360, height: 240 };
-
-  const minX = Math.min(...points.map((point) => point.x));
-  const minY = Math.min(...points.map((point) => point.y));
-  const maxX = Math.max(...points.map((point) => point.x + DEMO_GROUP_NODE_WIDTH));
-  const maxY = Math.max(...points.map((point) => point.y + DEMO_GROUP_NODE_HEIGHT));
-
-  return {
-    position: { x: Math.round(minX - padding), y: Math.round(minY - padding) },
-    width: Math.round(maxX - minX + padding * 2),
-    height: Math.round(maxY - minY + padding * 2),
-  };
-}
-
-async function createDemoGroupRange(input: {
-  bookId: string;
-  label: string;
-  characters: Character[];
-  positions: Map<string, { x: number; y: number }>;
-  color: GroupRangeColor;
-  chapterIntroduced?: number;
-  padding?: number;
-}) {
-  const bounds = boundsForCharacters(input.characters, input.positions, input.padding);
-  await createGroupRange({
-    bookId: input.bookId,
-    label: input.label,
-    color: input.color,
-    chapterIntroduced: input.chapterIntroduced ?? 1,
-    ...bounds,
-  });
-}
 
 const hidaPortraitPaths: Record<HidaPortraitKey, string> = {
   hajime: publicAsset('demo-portraits/kindaichi/hajime-kindaichi.png'),
@@ -274,7 +228,6 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
   edit: string;
   detectiveGroup: string;
   householdGroup: string;
-  secretGroup: string;
 }> = {
   en: {
     start: 'Start here: this is your local tutorial copy. Move characters, edit labels, and delete anything; the public demo will stay unchanged for everyone else.',
@@ -282,7 +235,6 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
     edit: 'Try it: select Poirot, press E, then click another character to sketch a theory. Export Library when you want to keep your own backup.',
     detectiveGroup: 'Investigation view',
     householdGroup: 'Fernly Park circle',
-    secretGroup: 'Hidden marriage thread',
   },
   'zh-CN': {
     start: '从这里开始：这是你的本地教程副本。拖动人物、修改标签、删除内容，都只影响你自己的浏览器，公开 demo 不会被改动。',
@@ -290,7 +242,6 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
     edit: '动手试试：选中 Poirot，按 E，再点击另一个人物，画一条自己的推理线。想保存时导出书库。',
     detectiveGroup: '调查视角',
     householdGroup: 'Fernly Park 人物圈',
-    secretGroup: '隐藏婚姻线',
   },
   es: {
     start: 'Empieza aquí: esta es tu copia local del tutorial. Mueve personajes, edita etiquetas y borra lo que quieras; la demo pública no cambia para nadie más.',
@@ -298,7 +249,6 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
     edit: 'Pruébalo: selecciona a Poirot, pulsa E y haz clic en otro personaje para dibujar una teoría. Exporta la biblioteca cuando quieras guardar una copia.',
     detectiveGroup: 'Mirada investigadora',
     householdGroup: 'Círculo de Fernly Park',
-    secretGroup: 'Matrimonio oculto',
   },
   'pt-BR': {
     start: 'Comece aqui: esta é sua cópia local do tutorial. Mova personagens, edite rótulos e apague qualquer coisa; a demo pública continua igual para as outras pessoas.',
@@ -306,7 +256,6 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
     edit: 'Experimente: selecione Poirot, pressione E e clique em outro personagem para desenhar uma teoria. Exporte a biblioteca quando quiser guardar seu backup.',
     detectiveGroup: 'Ponto de vista da investigação',
     householdGroup: 'Círculo de Fernly Park',
-    secretGroup: 'Casamento oculto',
   },
 };
 
@@ -338,7 +287,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   const poirot = await createCharacter({
     bookId, name: 'Hercule Poirot', role: 'detective',
     profession: 'Retired detective', chapterIntroduced: 1,
-    position: { x: 0, y: 0 },
+    position: { x: 1038.361, y: 244.189 },
     notes: 'Belgian detective, recently retired to King\'s Abbot to grow vegetable marrows.',
   });
 
@@ -346,7 +295,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     bookId, name: 'Dr. James Sheppard', role: 'witness',
     roleReveals: [{ role: 'murderer', chapterRevealed: 25 }],
     profession: 'Village doctor', chapterIntroduced: 1,
-    position: { x: -280, y: 80 },
+    position: { x: 736.734, y: 55.144 },
     aliases: [{ name: 'Dr. James Sheppard', chapterRevealed: 1 }],
     notes: 'Village doctor and narrator. Assists Poirot with the investigation.',
   });
@@ -355,49 +304,49 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     bookId, name: 'Roger Ackroyd', role: 'other',
     roleReveals: [{ role: 'victim', chapterRevealed: 5 }],
     profession: 'Wealthy businessman', chapterIntroduced: 1,
-    position: { x: 280, y: 80 },
+    position: { x: 253.062, y: 71.41 },
     notes: 'Found murdered in his study at Fernly Park in chapter 5.',
   });
 
   const flora = await createCharacter({
     bookId, name: 'Flora Ackroyd', role: 'suspect',
     profession: "Roger's niece", chapterIntroduced: 2,
-    position: { x: 420, y: 220 },
+    position: { x: -181.651, y: -38.904 },
     notes: 'Roger\'s niece, engaged to Ralph Paton. Claims she saw Roger alive at 9:45pm.',
   });
 
   const mrsAckroyd = await createCharacter({
     bookId, name: 'Mrs. Cecil Ackroyd', role: 'suspect',
     profession: "Roger's sister-in-law", chapterIntroduced: 2,
-    position: { x: 180, y: 280 },
+    position: { x: 14.667, y: 428.492 },
     notes: 'Roger\'s sister-in-law, dependent on his generosity.',
   });
 
   const blunt = await createCharacter({
     bookId, name: 'Major Hector Blunt', role: 'suspect',
     profession: 'Big-game hunter', chapterIntroduced: 2,
-    position: { x: -160, y: 300 },
+    position: { x: -495.079, y: 110.54 },
     notes: 'Old friend of Ackroyd. Taciturn man with feelings for Flora.',
   });
 
   const raymond = await createCharacter({
     bookId, name: 'Geoffrey Raymond', role: 'suspect',
     profession: "Roger's secretary", chapterIntroduced: 2,
-    position: { x: 80, y: 360 },
+    position: { x: -364.11, y: 411.523 },
     notes: 'Ackroyd\'s efficient young secretary.',
   });
 
   const ralph = await createCharacter({
     bookId, name: 'Ralph Paton', role: 'suspect',
     profession: 'Stepson', chapterIntroduced: 1,
-    position: { x: -60, y: 220 },
+    position: { x: 47.776, y: -318.047 },
     notes: 'Roger\'s stepson, heavily in debt. Disappears the night of the murder.',
   });
 
   const ursula = await createCharacter({
     bookId, name: 'the parlour maid', role: 'suspect',
     profession: 'Parlour maid at Fernly Park', chapterIntroduced: 2,
-    position: { x: 60, y: 480 },
+    position: { x: -397.014, y: -323.961 },
     aliases: [
       { name: 'the parlour maid', chapterRevealed: 2 },
       { name: 'Ursula Bourne', chapterRevealed: 10 },
@@ -409,22 +358,9 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   const caroline = await createCharacter({
     bookId, name: 'Caroline Sheppard', role: 'bystander',
     profession: "James's sister", chapterIntroduced: 1,
-    position: { x: -420, y: 200 },
+    position: { x: 1013.329, y: -56.097 },
     notes: 'James\'s sharp-tongued sister, the village oracle of gossip.',
   });
-  const characters = [
-    poirot,
-    sheppard,
-    ackroyd,
-    flora,
-    mrsAckroyd,
-    blunt,
-    raymond,
-    ralph,
-    ursula,
-    caroline,
-  ];
-
   await attachAckroydPortraits(bookId, [
     { character: poirot, key: 'poirot' },
     { character: sheppard, key: 'sheppard' },
@@ -523,49 +459,28 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     label: 'unmasks',
   });
 
-  const relationships = await listRelationshipsByBook(bookId);
-  const positions = computeForceLayout(
-    characters.map((character) => character.id),
-    relationships.map((relationship) => ({
-      source: relationship.sourceId,
-      target: relationship.targetId,
-      directed: isRelationshipDirected(relationship),
-    })),
-  );
-  await Promise.all(
-    characters.map(async (character) => {
-      const position = positions.get(character.id);
-      if (position) await updateCharacter(character.id, { position });
-    }),
-  );
-
   await Promise.all([
-    createDemoGroupRange({
+    createGroupRange({
       bookId,
       label: guide.detectiveGroup,
-      characters: [poirot, sheppard, caroline],
-      positions,
       color: 'blue',
+      position: { x: 673.679, y: -279.191 },
+      width: 650,
+      height: 831,
+      labelFontSize: 32,
+      labelPosition: { x: 0.5, y: 0.18 },
       chapterIntroduced: 1,
-      padding: 110,
     }),
-    createDemoGroupRange({
+    createGroupRange({
       bookId,
       label: guide.householdGroup,
-      characters: [ackroyd, flora, mrsAckroyd, blunt, raymond, ralph, ursula],
-      positions,
       color: 'ochre',
+      position: { x: -542.699, y: -640.016 },
+      width: 1008,
+      height: 1457,
+      labelFontSize: 32,
+      labelPosition: { x: 0.5, y: 0.18 },
       chapterIntroduced: 2,
-      padding: 120,
-    }),
-    createDemoGroupRange({
-      bookId,
-      label: guide.secretGroup,
-      characters: [ralph, ursula],
-      positions,
-      color: 'violet',
-      chapterIntroduced: 21,
-      padding: 95,
     }),
   ]);
 
@@ -573,28 +488,31 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     createAnnotation({
       bookId,
       content: guide.start,
-      position: { x: -600, y: -300 },
-      width: 300,
-      height: 128,
+      position: { x: -1062.933, y: -518.649 },
+      width: 516,
+      height: 259,
       color: 'yellow',
+      fontSize: 26,
       chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
       content: guide.chapters,
-      position: { x: 340, y: -300 },
-      width: 300,
-      height: 140,
+      position: { x: -1036.734, y: 680.15 },
+      width: 635,
+      height: 274,
       color: 'blue',
+      fontSize: 26,
       chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
       content: guide.edit,
-      position: { x: -600, y: 390 },
-      width: 300,
-      height: 132,
+      position: { x: 716.417, y: 576.983 },
+      width: 578,
+      height: 315,
       color: 'green',
+      fontSize: 26,
       chapterIntroduced: 1,
     }),
   ]);
@@ -750,7 +668,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'detective',
     profession: language === 'zh-CN' ? '高中生侦探' : language === 'es' ? 'Detective de instituto' : 'High school detective',
     chapterIntroduced: 1,
-    position: { x: -340, y: -80 },
+    position: { x: -689.025, y: 60.356 },
     notes: language === 'zh-CN'
       ? '把他放在图的左侧，当作推理视角的锚点。'
       : language === 'es'
@@ -764,7 +682,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'witness',
     profession: language === 'zh-CN' ? '金田一的青梅竹马' : language === 'es' ? 'Amiga de la infancia de Kindaichi' : "Kindaichi's childhood friend",
     chapterIntroduced: 1,
-    position: { x: -330, y: 110 },
+    position: { x: -1017.701, y: 79.148 },
   });
 
   const kenmochi = await createCharacter({
@@ -773,7 +691,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'detective',
     profession: language === 'zh-CN' ? '搜查一课警部' : language === 'es' ? 'Inspector de homicidios' : 'Tokyo homicide detective',
     chapterIntroduced: 2,
-    position: { x: -80, y: 260 },
+    position: { x: -916.68, y: -245.119 },
     notes: language === 'zh-CN'
       ? `剑持与${copy.shino}是儿时好友，所以才会带金田一来到巽家。`
       : language === 'es'
@@ -788,7 +706,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     roleReveals: [{ role: 'murderer', chapterRevealed: 3 }],
     profession: language === 'zh-CN' ? '巽家遗孀' : language === 'es' ? 'Viuda de la familia Tatsumi' : 'Widow of the Tatsumi family',
     chapterIntroduced: 1,
-    position: { x: 20, y: -120 },
+    position: { x: -275.553, y: -279.84 },
   });
 
   const ayako = await createCharacter({
@@ -801,7 +719,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
         ? 'Primera esposa fallecida de los Tatsumi'
         : 'Late first wife of the Tatsumi family',
     chapterIntroduced: 1,
-    position: { x: 250, y: -330 },
+    position: { x: 81.113, y: 215.868 },
   });
 
   const seimaru = await createCharacter({
@@ -810,7 +728,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'suspect',
     profession: language === 'zh-CN' ? '紫乃名义上的儿子' : language === 'es' ? 'Hijo legal de Shino' : "Shino's legal son",
     chapterIntroduced: 1,
-    position: { x: 260, y: -150 },
+    position: { x: -213.488, y: 202.854 },
   });
 
   const ryunosuke = await createCharacter({
@@ -819,7 +737,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'suspect',
     profession: language === 'zh-CN' ? '巽家名义长子' : language === 'es' ? 'Hijo mayor legal de los Tatsumi' : "Tatsumi family's legal oldest son",
     chapterIntroduced: 1,
-    position: { x: 260, y: 30 },
+    position: { x: 333.888, y: -318.33 },
   });
 
   const hayato = await createCharacter({
@@ -828,7 +746,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'suspect',
     profession: language === 'zh-CN' ? '绫子之子，巽家次子' : language === 'es' ? 'Hijo de Ayako; segundo hijo de los Tatsumi' : "Ayako's son; Tatsumi family's second son",
     chapterIntroduced: 1,
-    position: { x: 500, y: 20 },
+    position: { x: 631.189, y: -25.238 },
   });
 
   const moegi = await createCharacter({
@@ -837,7 +755,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'witness',
     profession: language === 'zh-CN' ? '绫子之女，巽家长女' : language === 'es' ? 'Hija de Ayako; hija mayor de los Tatsumi' : "Ayako's daughter; Tatsumi family's oldest daughter",
     chapterIntroduced: 2,
-    position: { x: 500, y: 190 },
+    position: { x: 435.159, y: 303.094 },
   });
 
   const fuyuki = await createCharacter({
@@ -846,7 +764,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'suspect',
     profession: language === 'zh-CN' ? '巽家医生' : language === 'es' ? 'Médico de la familia Tatsumi' : 'Tatsumi family doctor',
     chapterIntroduced: 2,
-    position: { x: 20, y: 220 },
+    position: { x: 83.333, y: -476.661 },
   });
 
   const senda = await createCharacter({
@@ -855,7 +773,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'suspect',
     profession: language === 'zh-CN' ? '巽家佣人' : language === 'es' ? 'Sirviente de los Tatsumi' : 'Servant to the Tatsumi family',
     chapterIntroduced: 1,
-    position: { x: 20, y: 60 },
+    position: { x: 68.254, y: -113.411 },
   });
 
   const headless = await createCharacter({
@@ -864,7 +782,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     role: 'other',
     profession: language === 'zh-CN' ? '怪人别名' : language === 'es' ? 'Alias enmascarado' : 'Masked alias',
     chapterIntroduced: 1,
-    position: { x: -90, y: -300 },
+    position: { x: -500.155, y: -669.441 },
     aliases: [
       { name: copy.headless, chapterRevealed: 1 },
       {
@@ -1081,29 +999,28 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     label: language === 'zh-CN' ? '共犯' : language === 'es' ? 'cómplices' : 'co-conspirators',
   });
 
-  const hidaPositions = new Map([
-    hajime, miyuki, kenmochi, shino, ayako, seimaru, ryunosuke,
-    hayato, moegi, fuyuki, senda, headless,
-  ].map((character) => [character.id, character.position] as const));
-
   await Promise.all([
-    createDemoGroupRange({
+    createGroupRange({
       bookId,
       label: copy.investigationGroup,
-      characters: [hajime, miyuki],
-      positions: hidaPositions,
       color: 'blue',
+      position: { x: -1064.181, y: -440.126 },
+      width: 635,
+      height: 889,
+      labelFontSize: 32,
+      labelPosition: { x: 0.5, y: 0.18 },
       chapterIntroduced: 1,
-      padding: 100,
     }),
-    createDemoGroupRange({
+    createGroupRange({
       bookId,
       label: copy.familyGroup,
-      characters: [shino, ayako, seimaru, ryunosuke, hayato, moegi],
-      positions: hidaPositions,
       color: 'ochre',
+      position: { x: -364.442, y: -492.777 },
+      width: 1345,
+      height: 1074,
+      labelFontSize: 32,
+      labelPosition: { x: 0.76, y: 0.201 },
       chapterIntroduced: 1,
-      padding: 110,
     }),
   ]);
 
@@ -1111,37 +1028,41 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     createAnnotation({
       bookId,
       content: copy.notes.start,
-      position: { x: -470, y: -520 },
-      width: 320,
-      height: 150,
+      position: { x: -1003.805, y: -627.063 },
+      width: 432,
+      height: 232,
       color: 'yellow',
+      fontSize: 20,
       chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
       content: copy.notes.chapters,
-      position: { x: 480, y: -430 },
-      width: 320,
-      height: 148,
+      position: { x: 706.189, y: -629.046 },
+      width: 510,
+      height: 202,
       color: 'blue',
+      fontSize: 20,
       chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
       content: copy.notes.edit,
-      position: { x: -470, y: 250 },
-      width: 320,
-      height: 140,
+      position: { x: -979.678, y: 519.918 },
+      width: 515,
+      height: 186,
       color: 'green',
+      fontSize: 20,
       chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
       content: copy.notes.groups,
-      position: { x: 480, y: 410 },
-      width: 320,
-      height: 148,
+      position: { x: 979.752, y: 463.577 },
+      width: 452,
+      height: 220,
       color: 'purple',
+      fontSize: 20,
       chapterIntroduced: 1,
     }),
   ]);

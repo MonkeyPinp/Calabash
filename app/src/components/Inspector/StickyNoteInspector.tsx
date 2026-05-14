@@ -33,6 +33,12 @@ const fieldStyle: React.CSSProperties = {
   marginBottom: 14,
 };
 
+function blurOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  e.currentTarget.blur();
+}
+
 export interface StickyNoteInspectorProps {
   stickyNoteId: string;
   onDeleted?: () => void;
@@ -264,6 +270,7 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
           max={28}
           defaultValue={fontSize}
           key={`font-size-${stickyNoteId}`}
+          onKeyDown={blurOnEnter}
           onBlur={(e) => void handleFontSizeBlur(e.target.value)}
         />
       </div>

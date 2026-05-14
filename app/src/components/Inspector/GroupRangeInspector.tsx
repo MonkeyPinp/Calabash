@@ -36,6 +36,12 @@ const fieldStyle: React.CSSProperties = {
   marginBottom: 14,
 };
 
+function blurOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  e.currentTarget.blur();
+}
+
 export interface GroupRangeInspectorProps {
   groupRangeId: string;
   bookId: string;
@@ -327,6 +333,7 @@ export default function GroupRangeInspector({
             max={64}
             defaultValue={range.labelFontSize}
             key={`label-font-size-${groupRangeId}`}
+            onKeyDown={blurOnEnter}
             onBlur={(e) => void handleLabelFontSizeBlur(e.target.value)}
           />
         </div>

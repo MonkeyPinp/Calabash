@@ -36,7 +36,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.1.3');
+    expect(json.calabashVersion).toBe('0.2.0');
     expect(json.book.title).toBe('Empty');
     expect(json.characters).toEqual([]);
     expect(json.relationships).toEqual([]);
@@ -221,7 +221,7 @@ describe('importExport', () => {
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.1.3');
+    expect(exported.calabashVersion).toBe('0.2.0');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,

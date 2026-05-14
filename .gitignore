@@ -50,3 +50,5 @@ Thumbs.db
 *.db-*
 *.sqlite
 *.sqlite3
+docs/assets/*.calabash.json
+docs/assets/low-iq-crime/

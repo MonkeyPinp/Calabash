@@ -863,7 +863,16 @@ function CalabashCanvasInner({
           z-index: -20 !important;
         }
         .react-flow__node-groupRange.selected {
-          z-index: -10 !important;
+          z-index: 1 !important;
+          pointer-events: none;
+        }
+        .react-flow__node-groupRange.selected [data-testid="group-range-node"] {
+          background: transparent !important;
+          pointer-events: none;
+        }
+        .react-flow__node-groupRange.selected [data-testid="group-range-label"],
+        .react-flow__node-groupRange.selected .react-flow__resize-control {
+          pointer-events: auto !important;
         }
         .shortcut-legend {
           pointer-events: auto !important;

@@ -41,6 +41,10 @@ describe('Ackroyd demo data', () => {
 
     expect(characters).toHaveLength(10);
     expect(getMinimumLayoutNodeDistance(positions)).toBeGreaterThanOrEqual(MIN_LAYOUT_NODE_DISTANCE - 1);
+    expect(characters.find((character) => character.name === 'Hercule Poirot')?.position)
+      .toEqual({ x: 1038.361, y: 244.189 });
+    expect(characters.find((character) => character.name === 'the parlour maid')?.position)
+      .toEqual({ x: -397.014, y: -323.961 });
   });
 
   it('adds generated portrait avatars to the Ackroyd tutorial', async () => {
@@ -118,8 +122,10 @@ describe('Ackroyd demo data', () => {
     expect(book?.highlightedChapters).toEqual([2, 5, 10, 21]);
     expect(book?.spoilerChapters).toEqual([25, 27]);
     expect(notes).toHaveLength(3);
-    expect(groups).toHaveLength(3);
-    expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2, 21]);
+    expect(notes.map((note) => note.fontSize)).toEqual([26, 26, 26]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2]);
+    expect(groups.map((group) => group.labelFontSize)).toEqual([32, 32]);
     expect(notes.map((note) => note.content).join(' ')).toContain('Exporte a biblioteca');
   });
 
@@ -150,6 +156,10 @@ describe('Ackroyd demo data', () => {
     expect(book?.totalChapters).toBe(3);
     expect(characters.map((character) => character.name)).toContain('金田一一');
     expect(characters.map((character) => character.name)).toContain('首狩武者');
+    expect(characters.find((character) => character.name === '金田一一')?.position)
+      .toEqual({ x: -689.025, y: 60.356 });
+    expect(characters.find((character) => character.name === '首狩武者')?.position)
+      .toEqual({ x: -500.155, y: -669.441 });
     expect(ayako?.profession).toBe('巽家已故先妻');
     expect(seimaru?.profession).toBe('紫乃名义上的儿子');
     expect(ryunosuke?.profession).toBe('巽家名义长子');
@@ -228,9 +238,17 @@ describe('Ackroyd demo data', () => {
     expect(groups).toHaveLength(2);
     expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['调查组', '巽家成员']));
     expect(groups.map((group) => group.label)).not.toContain('假面威胁');
+    expect(groups.map((group) => group.labelFontSize)).toEqual([32, 32]);
+    expect(groups.find((group) => group.label === '巽家成员')).toMatchObject({
+      position: { x: -364.442, y: -492.777 },
+      width: 1345,
+      height: 1074,
+      labelPosition: { x: 0.76, y: 0.201 },
+    });
     expect(notes).toHaveLength(4);
     expect(notes.every((note) => note.chapterIntroduced === 1)).toBe(true);
     expect(notes.map((note) => note.color).sort()).toEqual(['blue', 'green', 'purple', 'yellow']);
+    expect(notes.map((note) => note.fontSize)).toEqual([20, 20, 20, 20]);
     const noteText = notes.map((note) => note.content).join(' ');
     expect(noteText).toContain('文字版/大图版');
     expect(noteText).toContain('自动保存在这个浏览器');

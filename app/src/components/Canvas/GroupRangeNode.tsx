@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { NodeResizer, type NodeProps } from '@xyflow/react';
+import { NodeResizer, type NodeProps, type ResizeParams } from '@xyflow/react';
 import type { GroupRange } from '@/types';
 import { updateGroupRange } from '@/db/groupRanges';
 import {
@@ -109,22 +109,29 @@ function GroupRangeNodeImpl(props: NodeProps) {
     void persistLabelPosition(before, after);
   }
 
-  async function handleResizeEnd(_: unknown, params: { width: number; height: number }) {
+  async function handleResizeEnd(_: unknown, params: ResizeParams) {
+    const oldPosition = range.position;
     const oldWidth = range.width;
     const oldHeight = range.height;
+    const position = { x: Math.round(params.x), y: Math.round(params.y) };
     const width = Math.max(160, Math.round(params.width));
     const height = Math.max(120, Math.round(params.height));
-    if (oldWidth === width && oldHeight === height) return;
+    const positionChanged = oldPosition.x !== position.x || oldPosition.y !== position.y;
+    if (!positionChanged && oldWidth === width && oldHeight === height) return;
 
-    const updated = await updateGroupRange(range.id, { width, height });
+    const updated = await updateGroupRange(range.id, { position, width, height });
     updateGroupRangeInStore(updated);
     pushUndo(
       async () => {
-        const restored = await updateGroupRange(range.id, { width: oldWidth, height: oldHeight });
+        const restored = await updateGroupRange(range.id, {
+          position: oldPosition,
+          width: oldWidth,
+          height: oldHeight,
+        });
         updateGroupRangeInStore(restored);
       },
       async () => {
-        const redone = await updateGroupRange(range.id, { width, height });
+        const redone = await updateGroupRange(range.id, { position, width, height });
         updateGroupRangeInStore(redone);
       },
     );

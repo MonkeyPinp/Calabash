@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Book, Category, Character, GroupRange, Relationship, StickyNote, User } from '@/types';
 import { normalizeStickyNote } from '@/lib/stickyNotes';
+import { normalizeGroupRange } from '@/lib/groupRanges';
 
 // Internal DB row: stores blobBuffer (ArrayBuffer) instead of Blob
 // so fake-indexeddb can serialize it in tests. The DAO converts at the boundary.
@@ -77,6 +78,20 @@ export class CalabashDB extends Dexie {
       annotations:   'id, bookId, chapterIntroduced',
       groupRanges:   'id, bookId',
     });
+    this.version(7).stores({
+      users:         'id, updatedAt',
+      books:         'id, userId, updatedAt, categoryId',
+      categories:    'id, userId, order',
+      characters:    'id, bookId, chapterIntroduced',
+      relationships: 'id, bookId, sourceId, targetId, chapterRevealed',
+      portraits:     'id, bookId',
+      annotations:   'id, bookId, chapterIntroduced',
+      groupRanges:   'id, bookId, chapterIntroduced',
+    }).upgrade((tx) =>
+      tx.table('groupRanges').toCollection().modify((range: GroupRange) => {
+        Object.assign(range, normalizeGroupRange(range));
+      }),
+    );
   }
 }
 

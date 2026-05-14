@@ -21,9 +21,11 @@ describe('groupRanges DAO', () => {
       width: 420,
       height: 240,
       color: 'blue',
+      chapterIntroduced: 4,
     });
 
     expect(range.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(range.chapterIntroduced).toBe(4);
     expect(await listGroupRangesByBook('book-1')).toHaveLength(1);
 
     const updated = await updateGroupRange(range.id, {
@@ -31,12 +33,14 @@ describe('groupRanges DAO', () => {
       width: 80,
       height: 90,
       color: 'green',
+      chapterIntroduced: 6,
     });
     expect(updated).toMatchObject({
       label: 'Police station',
       width: 160,
       height: 120,
       color: 'green',
+      chapterIntroduced: 6,
     });
 
     await deleteGroupRange(range.id);

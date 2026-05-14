@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
 import type { GroupRange } from '@/types';
 import { updateGroupRange } from '@/db/groupRanges';
-import { GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
+import { getGroupRangeDisplayTag, GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 
 export interface GroupRangeNodeData {
@@ -14,6 +14,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
   const range = data.range;
   const selected = props.selected ?? false;
   const colors = GROUP_RANGE_COLOR_MAP[range.color];
+  const displayTag = getGroupRangeDisplayTag(range);
 
   const updateGroupRangeInStore = useGraphStore((s) => s.updateGroupRangeInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
@@ -91,6 +92,28 @@ function GroupRangeNodeImpl(props: NodeProps) {
           title={range.label}
         >
           {range.label}
+        </div>
+        <div
+          title={`Visible from chapter ${range.chapterIntroduced}`}
+          style={{
+            position: 'absolute',
+            right: 28,
+            bottom: 18,
+            padding: '2px 7px',
+            borderRadius: 2,
+            border: `1px solid color-mix(in srgb, ${colors.border} 58%, transparent)`,
+            background: 'color-mix(in srgb, var(--bg-panel) 78%, transparent)',
+            color: colors.text,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: 0,
+            lineHeight: 1.25,
+            pointerEvents: 'none',
+            boxShadow: '0 1px 2px rgba(40, 28, 12, 0.10)',
+          }}
+        >
+          {displayTag}
         </div>
       </div>
     </>

@@ -535,6 +535,7 @@ export default function App() {
       bookId: activeBookId,
       label: t('groupRange.defaultLabel'),
       position: { x: -180 + (Math.random() - 0.5) * 120, y: -110 + (Math.random() - 0.5) * 120 },
+      chapterIntroduced: currentChapter,
     });
     addGroupRange(range);
     setSelectedCharId(null);

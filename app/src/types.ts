@@ -112,6 +112,7 @@ export interface GroupRange {
   width: number;
   height: number;
   color: GroupRangeColor;
+  chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;
 }

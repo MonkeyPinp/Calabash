@@ -106,6 +106,7 @@ const groupRanges: GroupRange[] = [
     width: 360,
     height: 220,
     color: 'ochre',
+    chapterIntroduced: 3,
     createdAt: 0,
     updatedAt: 0,
   },
@@ -183,6 +184,37 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('N')).toBeInTheDocument();
     expect(screen.getByText('New character')).toBeInTheDocument();
     expect(screen.getByText('Ctrl Z')).toBeInTheDocument();
+  });
+
+  it('shows group ranges only after their display chapter and renders their chapter tag', () => {
+    const { rerender } = render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          groupRanges={groupRanges}
+          currentChapter={2}
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.queryByText('Village suspects')).not.toBeInTheDocument();
+
+    rerender(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          groupRanges={groupRanges}
+          currentChapter={3}
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('Village suspects')).toBeInTheDocument();
+    expect(screen.getByText('CH.03')).toBeInTheDocument();
   });
 
   it('renders group ranges as selectable canvas nodes', () => {

@@ -34,7 +34,7 @@ import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/anno
 import { deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
 import { computeForceLayout } from '@/lib/layout';
 import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
-import { GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
+import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -260,17 +260,19 @@ function CalabashCanvasInner({
   // Group range nodes stay visually behind characters, notes, and relationship edges.
   const groupRangeNodes: Node[] = useMemo(
     () =>
-      groupRanges.map((r) => ({
-        id: r.id,
-        type: 'groupRange',
-        position: r.position,
-        width: r.width,
-        height: r.height,
-        zIndex: -20,
-        style: { width: r.width, height: r.height, zIndex: -20 },
-        data: { range: r },
-      })),
-    [groupRanges],
+      groupRanges
+        .filter((r) => isGroupRangeVisibleAtChapter(r, currentChapter))
+        .map((r) => ({
+          id: r.id,
+          type: 'groupRange',
+          position: r.position,
+          width: r.width,
+          height: r.height,
+          zIndex: -20,
+          style: { width: r.width, height: r.height, zIndex: -20 },
+          data: { range: r },
+        })),
+    [groupRanges, currentChapter],
   );
 
   const allComputedNodes: Node[] = useMemo(

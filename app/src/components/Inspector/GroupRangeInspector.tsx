@@ -1,7 +1,7 @@
 import { Copy, Trash2 } from 'lucide-react';
 import type { GroupRangeColor } from '@/types';
 import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
-import { GROUP_RANGE_COLORS, GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
+import { GROUP_RANGE_COLORS, GROUP_RANGE_COLOR_MAP, normalizeGroupRangeChapter } from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 
@@ -115,6 +115,23 @@ export default function GroupRangeInspector({
     );
   }
 
+  async function handleChapterBlur(value: string) {
+    const parsed = normalizeGroupRangeChapter(value);
+    if (parsed === range!.chapterIntroduced) return;
+    const before = range!.chapterIntroduced;
+    await persist({ chapterIntroduced: parsed });
+    pushUndo(
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { chapterIntroduced: before });
+        updateGroupRangeInStore(updated);
+      },
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { chapterIntroduced: parsed });
+        updateGroupRangeInStore(updated);
+      },
+    );
+  }
+
   async function handleDuplicate() {
     const current = range!;
     const copy = await createGroupRange({
@@ -123,6 +140,7 @@ export default function GroupRangeInspector({
       color: current.color,
       width: current.width,
       height: current.height,
+      chapterIntroduced: current.chapterIntroduced,
       position: { x: current.position.x + 36, y: current.position.y + 36 },
     });
     addGroupRange(copy);
@@ -167,7 +185,7 @@ export default function GroupRangeInspector({
               {range.label}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
-              {range.width} x {range.height}
+              {t('groupRange.chapterIntroducedShort', { chapter: range.chapterIntroduced })} · {range.width} x {range.height}
             </div>
           </div>
           <button
@@ -200,6 +218,18 @@ export default function GroupRangeInspector({
       </div>
 
       <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('groupRange.chapterIntroduced')}</label>
+          <input
+            style={inputStyle}
+            type="number"
+            min={1}
+            defaultValue={range.chapterIntroduced}
+            key={`chapter-${groupRangeId}`}
+            onBlur={(e) => void handleChapterBlur(e.target.value)}
+          />
+        </div>
+
         <div style={fieldStyle}>
           <label style={labelStyle}>{t('groupRange.label')}</label>
           <input

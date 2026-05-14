@@ -71,6 +71,7 @@ describe('importExport', () => {
       width: 420,
       height: 260,
       color: 'green',
+      chapterIntroduced: 5,
     });
 
     const exported = await exportBookAsJson(book.id);
@@ -115,7 +116,7 @@ describe('importExport', () => {
 
     const reRanges = await listGroupRangesByBook(newBookId);
     expect(reRanges).toHaveLength(1);
-    expect(reRanges[0]).toMatchObject({ label: 'Village circle', color: 'green', width: 420, height: 260 });
+    expect(reRanges[0]).toMatchObject({ label: 'Village circle', color: 'green', width: 420, height: 260, chapterIntroduced: 5 });
     expect(reRanges[0].id).not.toBe(exported.groupRanges?.[0].id);
   });
 

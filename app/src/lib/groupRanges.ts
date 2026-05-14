@@ -10,6 +10,19 @@ export const GROUP_RANGE_COLOR_MAP: Record<GroupRangeColor, { fill: string; bord
   violet: { fill: 'rgba(112, 82, 143, 0.12)', border: '#70528f', text: '#4d3865' },
 };
 
+export function normalizeGroupRangeChapter(value: unknown, fallback = 1): number {
+  const parsed = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : fallback;
+}
+
+export function getGroupRangeDisplayTag(range: Pick<GroupRange, 'chapterIntroduced'>): string {
+  return `CH.${String(normalizeGroupRangeChapter(range.chapterIntroduced)).padStart(2, '0')}`;
+}
+
+export function isGroupRangeVisibleAtChapter(range: GroupRange, chapter: number): boolean {
+  return normalizeGroupRangeChapter(range.chapterIntroduced) <= chapter;
+}
+
 export function normalizeGroupRange(range: GroupRange): GroupRange {
   return {
     ...range,
@@ -17,5 +30,6 @@ export function normalizeGroupRange(range: GroupRange): GroupRange {
     width: Math.max(160, Number.isFinite(range.width) ? range.width : 360),
     height: Math.max(120, Number.isFinite(range.height) ? range.height : 220),
     color: GROUP_RANGE_COLORS.includes(range.color) ? range.color : 'ochre',
+    chapterIntroduced: normalizeGroupRangeChapter(range.chapterIntroduced),
   };
 }

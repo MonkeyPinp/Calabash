@@ -9,6 +9,7 @@ export interface CreateGroupRangeInput {
   width?: number;
   height?: number;
   color?: GroupRangeColor;
+  chapterIntroduced?: number;
 }
 
 export async function createGroupRange(input: CreateGroupRangeInput): Promise<GroupRange> {
@@ -21,6 +22,7 @@ export async function createGroupRange(input: CreateGroupRangeInput): Promise<Gr
     width: input.width ?? 360,
     height: input.height ?? 220,
     color: input.color ?? 'ochre',
+    chapterIntroduced: input.chapterIntroduced ?? 1,
     createdAt: now,
     updatedAt: now,
   });

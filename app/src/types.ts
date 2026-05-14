@@ -89,6 +89,8 @@ export interface Portrait {
 
 export type StickyNoteColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
 
+export type GroupRangeColor = 'ochre' | 'blue' | 'green' | 'red' | 'violet';
+
 export interface StickyNote {
   id: string;
   bookId: string;
@@ -98,6 +100,18 @@ export interface StickyNote {
   height: number;
   color: StickyNoteColor;
   chapterIntroduced: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface GroupRange {
+  id: string;
+  bookId: string;
+  label: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+  color: GroupRangeColor;
   createdAt: number;
   updatedAt: number;
 }

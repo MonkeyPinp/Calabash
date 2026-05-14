@@ -1,7 +1,8 @@
 import { db, type PortraitRow } from './schema';
-import type { Book, Category, Character, Relationship, StickyNote, User } from '@/types';
+import type { Book, Category, Character, GroupRange, Relationship, StickyNote, User } from '@/types';
 import { APP_VERSION } from '@/version';
 import { normalizeStickyNote } from '@/lib/stickyNotes';
+import { normalizeGroupRange } from '@/lib/groupRanges';
 
 const CALABASH_VERSION = APP_VERSION;
 
@@ -20,6 +21,7 @@ export interface CalabashExport {
   relationships: Relationship[];
   portraits: PortraitExport[];
   annotations?: StickyNote[];
+  groupRanges?: GroupRange[];
 }
 
 export interface CalabashLibraryExport {
@@ -32,6 +34,7 @@ export interface CalabashLibraryExport {
   characters: Character[];
   relationships: Relationship[];
   annotations: StickyNote[];
+  groupRanges: GroupRange[];
   portraits: PortraitExport[];
 }
 
@@ -81,6 +84,7 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
   const relationships = await db.relationships.where('bookId').equals(bookId).toArray();
   const portraitRows  = await db.portraits.where('bookId').equals(bookId).toArray();
   const annotations   = (await db.annotations.where('bookId').equals(bookId).toArray()).map(normalizeStickyNote);
+  const groupRanges   = (await db.groupRanges.where('bookId').equals(bookId).toArray()).map(normalizeGroupRange);
   const portraits: PortraitExport[] = portraitRows.map((p) => ({
     id: p.id,
     bookId: p.bookId,
@@ -88,11 +92,11 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
     dataUrl: bufferToDataUrl(p.blobBuffer, p.mimeType),
     createdAt: p.createdAt,
   }));
-  return { calabashVersion: CALABASH_VERSION, book: normalizeBookForPortableData(book), characters, relationships, portraits, annotations };
+  return { calabashVersion: CALABASH_VERSION, book: normalizeBookForPortableData(book), characters, relationships, portraits, annotations, groupRanges };
 }
 
 export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
-  const [users, categories, books, characters, relationships, portraitRows, annotations] = await Promise.all([
+  const [users, categories, books, characters, relationships, portraitRows, annotations, groupRanges] = await Promise.all([
     db.users.toArray(),
     db.categories.toArray(),
     db.books.toArray(),
@@ -100,6 +104,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     db.relationships.toArray(),
     db.portraits.toArray(),
     db.annotations.toArray(),
+    db.groupRanges.toArray(),
   ]);
   const portraits: PortraitExport[] = portraitRows.map((p) => ({
     id: p.id,
@@ -118,6 +123,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     characters,
     relationships,
     annotations: annotations.map(normalizeStickyNote),
+    groupRanges: groupRanges.map(normalizeGroupRange),
     portraits,
   };
 }
@@ -166,7 +172,15 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
     updatedAt: now,
   }));
 
-  await db.transaction('rw', [db.books, db.characters, db.relationships, db.portraits, db.annotations], async () => {
+  const newGroupRanges = (payload.groupRanges ?? []).map((range) => ({
+    ...normalizeGroupRange(range),
+    id: crypto.randomUUID(),
+    bookId: newBookId,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  await db.transaction('rw', [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges], async () => {
     await db.books.put({
       ...payload.book,
       id: newBookId,
@@ -182,6 +196,7 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
     if (newCharacters.length)    await db.characters.bulkAdd(newCharacters);
     if (newRelationships.length) await db.relationships.bulkAdd(newRelationships);
     if (newAnnotations.length)   await db.annotations.bulkAdd(newAnnotations);
+    if (newGroupRanges.length)   await db.groupRanges.bulkAdd(newGroupRanges);
   });
 
   return newBookId;
@@ -202,10 +217,11 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
   });
   const books = (payload.books ?? []).map(normalizeBookForPortableData);
   const annotations = (payload.annotations ?? []).map(normalizeStickyNote);
+  const groupRanges = (payload.groupRanges ?? []).map(normalizeGroupRange);
 
   await db.transaction(
     'rw',
-    [db.users, db.categories, db.books, db.characters, db.relationships, db.portraits, db.annotations],
+    [db.users, db.categories, db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges],
     async () => {
       if (payload.users?.length) await db.users.bulkPut(payload.users);
       if (payload.categories?.length) await db.categories.bulkPut(payload.categories);
@@ -213,6 +229,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
       if (payload.characters?.length) await db.characters.bulkPut(payload.characters);
       if (payload.relationships?.length) await db.relationships.bulkPut(payload.relationships);
       if (annotations.length) await db.annotations.bulkPut(annotations);
+      if (groupRanges.length) await db.groupRanges.bulkPut(groupRanges);
       if (portraits.length) await db.portraits.bulkPut(portraits);
     },
   );

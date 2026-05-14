@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowRight, BookOpen, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, CircleDashed, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider, { type ChapterSliderMark } from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
 import CharacterInspector from './components/Inspector/CharacterInspector';
 import RelationshipInspector from './components/Inspector/RelationshipInspector';
 import StickyNoteInspector from './components/Inspector/StickyNoteInspector';
+import GroupRangeInspector from './components/Inspector/GroupRangeInspector';
 import SettingsPanel from './components/Settings/SettingsPanel';
 import OnboardingPanel from './components/Onboarding/OnboardingPanel';
 import CalabashLogo from './components/Brand/CalabashLogo';
@@ -19,6 +20,7 @@ import { exportLibraryAsJson, importBookFromJson, importLibraryFromJson, isLibra
 import GlobalSearch from './components/CommandBar/GlobalSearch';
 import { createBook, getBook, updateBook } from './db/books';
 import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
+import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { seedTutorialBook, type TutorialKind } from './lib/demoData';
@@ -188,6 +190,11 @@ function EmptyInspectorGuide({ t }: { t: ReturnType<typeof useT> }) {
       title: t('app.inspectNote'),
       body: t('app.inspectNoteBody'),
     },
+    {
+      icon: <CircleDashed size={13} />,
+      title: t('app.inspectGroupRange'),
+      body: t('app.inspectGroupRangeBody'),
+    },
   ];
 
   return (
@@ -356,11 +363,15 @@ export default function App() {
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
   const stickyNotes = useGraphStore((s) => s.stickyNotes);
+  const groupRanges = useGraphStore((s) => s.groupRanges);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
+  const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
+  const addGroupRange = useGraphStore((s) => s.addGroupRange);
+  const removeGroupRange = useGraphStore((s) => s.removeGroupRange);
   const pushUndo = useGraphStore((s) => s.pushUndo);
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
@@ -398,12 +409,14 @@ export default function App() {
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [selectedRelId, setSelectedRelId] = useState<string | null>(null);
   const [selectedStickyNoteId, setSelectedStickyNoteId] = useState<string | null>(null);
+  const [selectedGroupRangeId, setSelectedGroupRangeId] = useState<string | null>(null);
 
   // Reset selection when active book changes
   useEffect(() => {
     setSelectedCharId(null);
     setSelectedRelId(null);
     setSelectedStickyNoteId(null);
+    setSelectedGroupRangeId(null);
     setRevealedSpoilerKey(null);
     setSpoilerConfirmOpen(false);
   }, [activeBookId]);
@@ -415,8 +428,8 @@ export default function App() {
 
   // Auto-open inspector panel when a node or edge is selected
   useEffect(() => {
-    if (selectedCharId || selectedRelId || selectedStickyNoteId) setInspectorOpen(true);
-  }, [selectedCharId, selectedRelId, selectedStickyNoteId]);
+    if (selectedCharId || selectedRelId || selectedStickyNoteId || selectedGroupRangeId) setInspectorOpen(true);
+  }, [selectedCharId, selectedRelId, selectedStickyNoteId, selectedGroupRangeId]);
 
   // fitView ref — populated by CalabashCanvas on mount
   const fitViewRef = useRef<((opts?: { padding?: number }) => void) | undefined>(undefined);
@@ -480,6 +493,7 @@ export default function App() {
     setCharacters([]);
     setRelationships([]);
     setStickyNotes([]);
+    setGroupRanges([]);
   }
 
   async function handleCreateTutorialBook(kind: TutorialKind = 'ackroyd') {
@@ -491,6 +505,7 @@ export default function App() {
     setCharacters([]);
     setRelationships([]);
     setStickyNotes([]);
+    setGroupRanges([]);
   }
 
   function closeOnboarding() {
@@ -511,6 +526,24 @@ export default function App() {
     pushUndo(
       async () => { await deleteAnnotation(note.id); removeStickyNote(note.id); },
       async () => { await restoreAnnotation(note); addStickyNote(note); },
+    );
+  }
+
+  async function handleAddGroupRange() {
+    if (!activeBookId) return;
+    const range = await createGroupRange({
+      bookId: activeBookId,
+      label: t('groupRange.defaultLabel'),
+      position: { x: -180 + (Math.random() - 0.5) * 120, y: -110 + (Math.random() - 0.5) * 120 },
+    });
+    addGroupRange(range);
+    setSelectedCharId(null);
+    setSelectedRelId(null);
+    setSelectedStickyNoteId(null);
+    setSelectedGroupRangeId(range.id);
+    pushUndo(
+      async () => { await deleteGroupRange(range.id); removeGroupRange(range.id); },
+      async () => { await restoreGroupRange(range); addGroupRange(range); },
     );
   }
 
@@ -942,6 +975,17 @@ export default function App() {
               <StickyNote size={13} />
               {t('app.note')}
             </button>
+
+            <button
+              className="toolbar-btn"
+              onClick={() => void handleAddGroupRange()}
+              disabled={!activeBookId}
+              title={t('app.range')}
+              style={{ ...toolbarBtnStyle, border: 'none' }}
+            >
+              <CircleDashed size={13} />
+              {t('app.range')}
+            </button>
           </div>
 
           <div style={historyClusterStyle}>
@@ -1212,6 +1256,7 @@ export default function App() {
                   characters={characters}
                   relationships={relationships}
                   stickyNotes={stickyNotes}
+                  groupRanges={groupRanges}
                   characterNodeViewMode={characterNodeViewMode}
                   currentChapter={currentChapter}
                   bookId={activeBookId}
@@ -1223,6 +1268,7 @@ export default function App() {
                     if (id) {
                       setSelectedRelId(null);
                       setSelectedStickyNoteId(null);
+                      setSelectedGroupRangeId(null);
                     }
                   }}
                   onEdgeSelect={(id) => {
@@ -1230,6 +1276,7 @@ export default function App() {
                     if (id) {
                       setSelectedCharId(null);
                       setSelectedStickyNoteId(null);
+                      setSelectedGroupRangeId(null);
                     }
                   }}
                   onStickyNoteSelect={(id) => {
@@ -1237,6 +1284,15 @@ export default function App() {
                     if (id) {
                       setSelectedCharId(null);
                       setSelectedRelId(null);
+                      setSelectedGroupRangeId(null);
+                    }
+                  }}
+                  onGroupRangeSelect={(id) => {
+                    setSelectedGroupRangeId(id);
+                    if (id) {
+                      setSelectedCharId(null);
+                      setSelectedRelId(null);
+                      setSelectedStickyNoteId(null);
                     }
                   }}
                   onFitViewReady={handleFitViewReady}
@@ -1324,6 +1380,13 @@ export default function App() {
                 stickyNoteId={selectedStickyNoteId}
                 onDeleted={() => setSelectedStickyNoteId(null)}
               />
+            ) : selectedGroupRangeId && activeBookId ? (
+              <GroupRangeInspector
+                groupRangeId={selectedGroupRangeId}
+                bookId={activeBookId}
+                onDeleted={() => setSelectedGroupRangeId(null)}
+                onDuplicated={(id) => setSelectedGroupRangeId(id)}
+              />
             ) : (
               <EmptyInspectorGuide t={t} />
             )}
@@ -1337,11 +1400,15 @@ export default function App() {
           onSelectCharacter={(id) => {
             setSelectedCharId(id);
             setSelectedRelId(null);
+            setSelectedStickyNoteId(null);
+            setSelectedGroupRangeId(null);
             setInspectorOpen(true);
           }}
           onSelectRelationship={(id) => {
             setSelectedRelId(id);
             setSelectedCharId(null);
+            setSelectedStickyNoteId(null);
+            setSelectedGroupRangeId(null);
             setInspectorOpen(true);
           }}
           onClose={() => setSearchOpen(false)}

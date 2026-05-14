@@ -17,6 +17,7 @@ describe('Ackroyd demo data', () => {
       db.characters.clear(),
       db.relationships.clear(),
       db.annotations.clear(),
+      db.groupRanges.clear(),
       db.portraits.clear(),
       db.users.clear(),
     ]);

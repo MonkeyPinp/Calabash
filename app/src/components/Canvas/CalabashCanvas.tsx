@@ -18,10 +18,11 @@ import {
   type EdgeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { Character, Relationship, StickyNote } from '@/types';
+import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
 import RelationshipEdge from './RelationshipEdge';
 import StickyNoteNode from './StickyNoteNode';
+import GroupRangeNode from './GroupRangeNode';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
@@ -30,15 +31,18 @@ import { getRelationshipTypeMarkerColor, isRelationshipDirected } from '@/lib/re
 import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
+import { deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
 import { computeForceLayout } from '@/lib/layout';
 import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
+import { GROUP_RANGE_COLOR_MAP } from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
 
-const nodeTypes = { character: CharacterNode, stickyNote: StickyNoteNode };
+const nodeTypes = { groupRange: GroupRangeNode, character: CharacterNode, stickyNote: StickyNoteNode };
 const edgeTypes = { relationship: RelationshipEdge };
 const EMPTY_STICKY_NOTES: StickyNote[] = [];
+const EMPTY_GROUP_RANGES: GroupRange[] = [];
 
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
@@ -127,6 +131,7 @@ export interface CalabashCanvasProps {
   characters: Character[];
   relationships: Relationship[];
   stickyNotes?: StickyNote[];
+  groupRanges?: GroupRange[];
   characterNodeViewMode?: CharacterNodeViewMode;
   currentChapter: number;
   bookId: string | null;
@@ -136,6 +141,7 @@ export interface CalabashCanvasProps {
   onNodeSelect?: (id: string | null) => void;
   onEdgeSelect?: (id: string | null) => void;
   onStickyNoteSelect?: (id: string | null) => void;
+  onGroupRangeSelect?: (id: string | null) => void;
   onFitViewReady?: (fn: () => void) => void;
   onLayoutReady?: (fn: () => Promise<void>) => void;
 }
@@ -144,6 +150,7 @@ function CalabashCanvasInner({
   characters,
   relationships,
   stickyNotes = EMPTY_STICKY_NOTES,
+  groupRanges = EMPTY_GROUP_RANGES,
   characterNodeViewMode = 'text',
   currentChapter,
   bookId,
@@ -153,6 +160,7 @@ function CalabashCanvasInner({
   onNodeSelect,
   onEdgeSelect,
   onStickyNoteSelect,
+  onGroupRangeSelect,
   onFitViewReady,
   onLayoutReady,
 }: CalabashCanvasProps) {
@@ -177,6 +185,9 @@ function CalabashCanvasInner({
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
   const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
+  const addGroupRange = useGraphStore((s) => s.addGroupRange);
+  const removeGroupRange = useGraphStore((s) => s.removeGroupRange);
+  const updateGroupRangeInStore = useGraphStore((s) => s.updateGroupRangeInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
@@ -246,9 +257,25 @@ function CalabashCanvasInner({
     [stickyNotes, currentChapter],
   );
 
+  // Group range nodes stay visually behind characters, notes, and relationship edges.
+  const groupRangeNodes: Node[] = useMemo(
+    () =>
+      groupRanges.map((r) => ({
+        id: r.id,
+        type: 'groupRange',
+        position: r.position,
+        width: r.width,
+        height: r.height,
+        zIndex: -20,
+        style: { width: r.width, height: r.height, zIndex: -20 },
+        data: { range: r },
+      })),
+    [groupRanges],
+  );
+
   const allComputedNodes: Node[] = useMemo(
-    () => [...characterNodes, ...stickyNoteNodes],
-    [characterNodes, stickyNoteNodes],
+    () => [...groupRangeNodes, ...characterNodes, ...stickyNoteNodes],
+    [groupRangeNodes, characterNodes, stickyNoteNodes],
   );
 
   const visibleCharIds = useMemo(() => new Set(characterNodes.map((n) => n.id)), [characterNodes]);
@@ -392,9 +419,20 @@ function CalabashCanvasInner({
         onNodeSelect?.(null);
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(node.id);
+        onGroupRangeSelect?.(null);
         return;
       }
-      if (edgeStartId && edgeStartId !== node.id) {
+      if (node.type === 'groupRange') {
+        setSelectedNodeIds(new Set([node.id]));
+        setSelectedEdgeIds(new Set());
+        setEdgeStartId(null);
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(node.id);
+        return;
+      }
+      if (edgeStartId && edgeStartId !== node.id && node.type === 'character') {
         setPendingConnection({ sourceId: edgeStartId, targetId: node.id });
         setEdgeStartId(null);
         setSelectedNodeIds(new Set([node.id]));
@@ -407,8 +445,9 @@ function CalabashCanvasInner({
       onNodeSelect?.(node.id);
       onEdgeSelect?.(null);
       onStickyNoteSelect?.(null);
+      onGroupRangeSelect?.(null);
     },
-    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect],
+    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect],
   );
 
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
@@ -418,8 +457,9 @@ function CalabashCanvasInner({
       onEdgeSelect?.(edge.id);
       onNodeSelect?.(null);
       onStickyNoteSelect?.(null);
+      onGroupRangeSelect?.(null);
     },
-    [onEdgeSelect, onNodeSelect, onStickyNoteSelect],
+    [onEdgeSelect, onNodeSelect, onStickyNoteSelect, onGroupRangeSelect],
   );
 
   const handlePaneClick = useCallback(() => {
@@ -429,7 +469,8 @@ function CalabashCanvasInner({
     onNodeSelect?.(null);
     onEdgeSelect?.(null);
     onStickyNoteSelect?.(null);
-  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect]);
+    onGroupRangeSelect?.(null);
+  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect]);
 
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
@@ -438,21 +479,29 @@ function CalabashCanvasInner({
       const edgeIds = new Set(selEdges.map((e) => e.id));
       setSelectedNodeIds(nodeIds);
       setSelectedEdgeIds(edgeIds);
-      if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type !== 'stickyNote') {
+      if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'character') {
         onNodeSelect?.(selNodes[0].id);
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(null);
       } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'stickyNote') {
         onNodeSelect?.(null);
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(selNodes[0].id);
+        onGroupRangeSelect?.(null);
+      } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'groupRange') {
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(selNodes[0].id);
       } else if (selEdges.length === 1 && selNodes.length === 0) {
         onEdgeSelect?.(selEdges[0].id);
         onNodeSelect?.(null);
         onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(null);
       }
     },
-    [onNodeSelect, onEdgeSelect, onStickyNoteSelect],
+    [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect],
   );
 
   // ── Delete key ─────────────────────────────────────────────────────────────
@@ -469,23 +518,28 @@ function CalabashCanvasInner({
       if (selectedNodeIds.size > 0) {
         const charsToDelete = characters.filter((c) => selectedNodeIds.has(c.id));
         const stickiesToDelete = stickyNotes.filter((s) => selectedNodeIds.has(s.id));
+        const rangesToDelete = groupRanges.filter((r) => selectedNodeIds.has(r.id));
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
         for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
         for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
         for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
+        for (const range of rangesToDelete) { await deleteGroupRange(range.id); removeGroupRange(range.id); }
         if (stickiesToDelete.length > 0) onStickyNoteSelect?.(null);
+        if (rangesToDelete.length > 0) onGroupRangeSelect?.(null);
         pushUndo(
           async () => {
             for (const char of charsToDelete) { await restoreCharacter(char); addCharacter(char); }
             for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); }
             for (const note of stickiesToDelete) { await restoreAnnotation(note); addStickyNote(note); }
+            for (const range of rangesToDelete) { await restoreGroupRange(range); addGroupRange(range); }
           },
           async () => {
             for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
             for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
             for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
+            for (const range of rangesToDelete) { await deleteGroupRange(range.id); removeGroupRange(range.id); }
           },
         );
       }
@@ -499,9 +553,9 @@ function CalabashCanvasInner({
         );
       }
     },
-    [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes,
+    [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes, groupRanges,
      addCharacter, removeCharacter, addRelationship, removeRelationship,
-     addStickyNote, removeStickyNote, pushUndo, onStickyNoteSelect],
+     addStickyNote, removeStickyNote, addGroupRange, removeGroupRange, pushUndo, onStickyNoteSelect, onGroupRangeSelect],
   );
 
   // ── Node add + drag ────────────────────────────────────────────────────────
@@ -588,9 +642,20 @@ function CalabashCanvasInner({
             async () => { await updateAnnotation(node.id, { position: newPos }); updateStickyNoteInStore({ ...note, position: newPos }); },
           );
         }
+      } else if (node.type === 'groupRange') {
+        const range = groupRanges.find((r) => r.id === node.id);
+        if (!range) return;
+        void updateGroupRange(node.id, { position: newPos });
+        updateGroupRangeInStore({ ...range, position: newPos });
+        if (oldPos && (oldPos.x !== newPos.x || oldPos.y !== newPos.y)) {
+          pushUndo(
+            async () => { await updateGroupRange(node.id, { position: oldPos }); updateGroupRangeInStore({ ...range, position: oldPos }); },
+            async () => { await updateGroupRange(node.id, { position: newPos }); updateGroupRangeInStore({ ...range, position: newPos }); },
+          );
+        }
       }
     },
-    [bookId, characters, stickyNotes, updateCharacterInStore, updateStickyNoteInStore, pushUndo],
+    [bookId, characters, stickyNotes, groupRanges, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, pushUndo],
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -624,9 +689,7 @@ function CalabashCanvasInner({
         proOptions={{ hideAttribution: true }}
         onConnect={(connection) => {
           if (!bookId || !connection.source || !connection.target) return;
-          const sourceIsStickyNote = stickyNotes.some((s) => s.id === connection.source);
-          const targetIsStickyNote = stickyNotes.some((s) => s.id === connection.target);
-          if (sourceIsStickyNote || targetIsStickyNote) return;
+          if (!visibleCharIds.has(connection.source) || !visibleCharIds.has(connection.target)) return;
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
@@ -635,6 +698,10 @@ function CalabashCanvasInner({
         <MiniMap
           position="bottom-right"
           nodeColor={(node) => {
+            if (node.type === 'groupRange') {
+              const range = (node.data as { range?: GroupRange }).range;
+              return GROUP_RANGE_COLOR_MAP[range?.color ?? 'ochre'].border;
+            }
             if (node.type === 'stickyNote') {
               const note = (node.data as { note?: { color?: string } }).note;
               const colorMap: Record<string, string> = {
@@ -778,6 +845,12 @@ function CalabashCanvasInner({
       )}
 
       <style>{`
+        .react-flow__node-groupRange {
+          z-index: -20 !important;
+        }
+        .react-flow__node-groupRange.selected {
+          z-index: -10 !important;
+        }
         .shortcut-legend {
           pointer-events: auto !important;
         }

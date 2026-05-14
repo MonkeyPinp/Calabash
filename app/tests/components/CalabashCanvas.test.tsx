@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { Character, Relationship, StickyNote } from '@/types';
+import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
 import CalabashCanvas from '@/components/Canvas/CalabashCanvas';
 
 // In jsdom React Flow's layout cycle doesn't complete, so edges are never drawn.
@@ -97,6 +97,20 @@ const stickyNotes: StickyNote[] = [
   },
 ];
 
+const groupRanges: GroupRange[] = [
+  {
+    id: 'range-1',
+    bookId: 'b',
+    label: 'Village suspects',
+    position: { x: -40, y: -30 },
+    width: 360,
+    height: 220,
+    color: 'ochre',
+    createdAt: 0,
+    updatedAt: 0,
+  },
+];
+
 describe('CalabashCanvas', () => {
   it('renders nodes for every character and the certainty badge for every edge', () => {
     render(
@@ -171,6 +185,26 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('Ctrl Z')).toBeInTheDocument();
   });
 
+  it('renders group ranges as selectable canvas nodes', () => {
+    const onGroupRangeSelect = vi.fn();
+    render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={characters}
+          relationships={[]}
+          groupRanges={groupRanges}
+          currentChapter={10}
+          bookId={null}
+          onGroupRangeSelect={onGroupRangeSelect}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('Village suspects')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('flow-node-range-1'));
+    expect(onGroupRangeSelect).toHaveBeenCalledWith('range-1');
+  });
+
   it('exits keyboard edge mode after creating one relationship', () => {
     render(
       <div style={{ width: 800, height: 600 }}>
@@ -192,6 +226,25 @@ describe('CalabashCanvas', () => {
     expect(screen.queryByTestId('new-relationship-modal')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('flow-node-b'));
+    expect(screen.queryByTestId('new-relationship-modal')).not.toBeInTheDocument();
+  });
+
+  it('does not create a relationship from keyboard edge mode when clicking a group range', () => {
+    render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={characters}
+          relationships={[]}
+          groupRanges={groupRanges}
+          currentChapter={10}
+          bookId="b"
+          startEdgeRequestId={1}
+          startEdgeSourceId="a"
+        />
+      </div>,
+    );
+
+    fireEvent.click(screen.getByTestId('flow-node-range-1'));
     expect(screen.queryByTestId('new-relationship-modal')).not.toBeInTheDocument();
   });
 });

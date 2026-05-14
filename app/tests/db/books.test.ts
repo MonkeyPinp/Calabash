@@ -5,6 +5,7 @@ import { createCharacter, listCharactersByBook } from '@/db/characters';
 import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
 import { savePortrait } from '@/db/portraits';
 import { createAnnotation, listAnnotationsByBook } from '@/db/annotations';
+import { createGroupRange, listGroupRangesByBook } from '@/db/groupRanges';
 
 describe('books DAO', () => {
   beforeEach(async () => {
@@ -15,6 +16,7 @@ describe('books DAO', () => {
       db.relationships.clear(),
       db.portraits.clear(),
       db.annotations.clear(),
+      db.groupRanges.clear(),
       db.users.clear(),
     ]);
   });
@@ -117,6 +119,7 @@ describe('books DAO', () => {
       chapterRevealed: 1,
     });
     await createAnnotation({ bookId: book.id, content: 'case note' });
+    await createGroupRange({ bookId: book.id, label: 'Club', position: { x: 0, y: 0 } });
     await createCharacter({
       bookId: other.id,
       name: 'Other character',
@@ -131,6 +134,7 @@ describe('books DAO', () => {
     expect(await listRelationshipsByBook(book.id)).toEqual([]);
     expect(await db.portraits.where('bookId').equals(book.id).count()).toBe(0);
     expect(await listAnnotationsByBook(book.id)).toEqual([]);
+    expect(await listGroupRangesByBook(book.id)).toEqual([]);
     expect(await getBook(other.id)).toBeDefined();
     expect(await listCharactersByBook(other.id)).toHaveLength(1);
   });

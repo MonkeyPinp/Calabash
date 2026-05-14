@@ -8,6 +8,7 @@ import { createCharacter, listCharactersByBook } from '@/db/characters';
 import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
 import { savePortrait, getPortrait } from '@/db/portraits';
 import { createAnnotation, listAnnotationsByBook } from '@/db/annotations';
+import { createGroupRange, listGroupRangesByBook } from '@/db/groupRanges';
 import { createUser } from '@/db/users';
 import {
   exportBookAsJson,
@@ -27,6 +28,7 @@ describe('importExport', () => {
       db.relationships.clear(),
       db.portraits.clear(),
       db.annotations.clear(),
+      db.groupRanges.clear(),
       db.users.clear(),
     ]);
   });
@@ -41,7 +43,7 @@ describe('importExport', () => {
     expect(json.portraits).toEqual([]);
   });
 
-  it('round-trips a book with characters, relationships, and a portrait', async () => {
+  it('round-trips a book with characters, relationships, a portrait, notes, and ranges', async () => {
     const book = await createBook({ title: 'Murder of Roger Ackroyd', highlightedChapters: [3, 8] });
     const portrait = await savePortrait({
       bookId: book.id,
@@ -62,15 +64,24 @@ describe('importExport', () => {
       type: 'professional', chapterRevealed: 1, certainty: 'confirmed',
     });
     await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 }, chapterIntroduced: 7 });
+    await createGroupRange({
+      bookId: book.id,
+      label: 'Village circle',
+      position: { x: -80, y: -40 },
+      width: 420,
+      height: 260,
+      color: 'green',
+    });
 
     const exported = await exportBookAsJson(book.id);
     expect(exported.portraits).toHaveLength(1);
     expect(exported.book.highlightedChapters).toEqual([3, 8]);
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
     expect(exported.annotations).toHaveLength(1);
+    expect(exported.groupRanges).toHaveLength(1);
 
     await Promise.all([
-      db.books.clear(), db.characters.clear(), db.relationships.clear(), db.portraits.clear(), db.annotations.clear(),
+      db.books.clear(), db.characters.clear(), db.relationships.clear(), db.portraits.clear(), db.annotations.clear(), db.groupRanges.clear(),
     ]);
 
     const newBookId = await importBookFromJson(exported, 'reader-1');
@@ -101,6 +112,11 @@ describe('importExport', () => {
     expect(reNotes).toHaveLength(1);
     expect(reNotes[0].content).toBe('check alibi');
     expect(reNotes[0].chapterIntroduced).toBe(7);
+
+    const reRanges = await listGroupRangesByBook(newBookId);
+    expect(reRanges).toHaveLength(1);
+    expect(reRanges[0]).toMatchObject({ label: 'Village circle', color: 'green', width: 420, height: 260 });
+    expect(reRanges[0].id).not.toBe(exported.groupRanges?.[0].id);
   });
 
   it('exports and imports the whole local library as collection JSON', async () => {
@@ -143,6 +159,7 @@ describe('importExport', () => {
       label: 'tracks the mask',
     });
     await createAnnotation({ bookId: book.id, content: 'TV 18 note', position: { x: 0, y: 0 } });
+    await createGroupRange({ bookId: book.id, label: 'Samurai inn', position: { x: -20, y: 40 }, color: 'red' });
 
     const exported = await exportLibraryAsJson();
     expect(isLibraryExport(exported)).toBe(true);
@@ -154,6 +171,7 @@ describe('importExport', () => {
     expect(exported.characters).toHaveLength(2);
     expect(exported.relationships).toHaveLength(1);
     expect(exported.annotations).toHaveLength(1);
+    expect(exported.groupRanges).toHaveLength(1);
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
 
     await Promise.all([
@@ -164,6 +182,7 @@ describe('importExport', () => {
       db.relationships.clear(),
       db.portraits.clear(),
       db.annotations.clear(),
+      db.groupRanges.clear(),
     ]);
 
     const result = await importLibraryFromJson(exported);
@@ -178,6 +197,7 @@ describe('importExport', () => {
     expect(reChars.find((character) => character.name === 'The Headless Samurai')?.roleReveals).toEqual([
       { role: 'murderer', chapterRevealed: 3 },
     ]);
+    expect(await listGroupRangesByBook(book.id)).toHaveLength(1);
 
     const rePortrait = await getPortrait(portrait.id);
     expect(rePortrait).toBeDefined();
@@ -195,6 +215,7 @@ describe('importExport', () => {
     expect(await db.characters.count()).toBe(3);
     expect(await db.relationships.count()).toBe(2);
     expect(await db.annotations.count()).toBe(1);
+    expect(await db.groupRanges.count()).toBe(0);
     const reNotes = await listAnnotationsByBook('book-beta-case');
     expect(reNotes[0].chapterIntroduced).toBe(1);
 

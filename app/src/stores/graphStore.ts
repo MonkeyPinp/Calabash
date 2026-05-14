@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Character, Relationship, StickyNote } from '@/types';
+import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
 
 const MAX_UNDO = 100;
 
@@ -12,9 +12,11 @@ interface GraphStoreState {
   characters: Character[];
   relationships: Relationship[];
   stickyNotes: StickyNote[];
+  groupRanges: GroupRange[];
   setCharacters: (cs: Character[]) => void;
   setRelationships: (rs: Relationship[]) => void;
   setStickyNotes: (notes: StickyNote[]) => void;
+  setGroupRanges: (ranges: GroupRange[]) => void;
   addCharacter: (char: Character) => void;
   removeCharacter: (id: string) => void;
   updateCharacterInStore: (char: Character) => void;
@@ -24,6 +26,9 @@ interface GraphStoreState {
   addStickyNote: (note: StickyNote) => void;
   removeStickyNote: (id: string) => void;
   updateStickyNoteInStore: (note: StickyNote) => void;
+  addGroupRange: (range: GroupRange) => void;
+  removeGroupRange: (id: string) => void;
+  updateGroupRangeInStore: (range: GroupRange) => void;
 
   undoStack: UndoEntry[];
   redoStack: UndoEntry[];
@@ -36,12 +41,14 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   characters: [],
   relationships: [],
   stickyNotes: [],
+  groupRanges: [],
   undoStack: [],
   redoStack: [],
 
   setCharacters: (characters) => set({ characters }),
   setRelationships: (relationships) => set({ relationships }),
   setStickyNotes: (stickyNotes) => set({ stickyNotes }),
+  setGroupRanges: (groupRanges) => set({ groupRanges }),
   addCharacter: (char) =>
     set((state) => ({ characters: [...state.characters, char] })),
   removeCharacter: (id) =>
@@ -72,6 +79,14 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   updateStickyNoteInStore: (note) =>
     set((state) => ({
       stickyNotes: state.stickyNotes.map((n) => (n.id === note.id ? note : n)),
+    })),
+  addGroupRange: (range) =>
+    set((state) => ({ groupRanges: [...state.groupRanges, range] })),
+  removeGroupRange: (id) =>
+    set((state) => ({ groupRanges: state.groupRanges.filter((r) => r.id !== id) })),
+  updateGroupRangeInStore: (range) =>
+    set((state) => ({
+      groupRanges: state.groupRanges.map((r) => (r.id === range.id ? range : r)),
     })),
 
   pushUndo: (undoFn, redoFn) =>

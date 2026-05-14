@@ -112,6 +112,7 @@ export default function BookList() {
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
+  const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
   const activeUserId = useUserStore((s) => s.activeUserId);
   const resolvedLanguage = useUiStore((s) => s.resolvedLanguage);
 
@@ -189,6 +190,7 @@ export default function BookList() {
     setCharacters([]);
     setRelationships([]);
     setStickyNotes([]);
+    setGroupRanges([]);
   }
 
   async function handleCreate() {

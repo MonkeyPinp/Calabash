@@ -135,6 +135,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.1.1`: public-facing repository cleanup, multilingual README split, issue templates, and beta docs polish.
 - `0.1.2`: inspector localization polish and simplified character details panel.
 - `0.1.3`: beta-readiness storage warnings, import/export fixture regression coverage, and release validation.
+- `0.2.0` (unreleased): desktop shell, cross-platform binary release setup, onboarding language selection, chapter-aware notes/groups, relationship rendering fixes, and adjustable board annotations.
 
 ## License
 

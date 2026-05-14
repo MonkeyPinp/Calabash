@@ -2,10 +2,18 @@
 
 ## 0.2.0 - Unreleased
 
+0.2 prepares Calabash for desktop distribution while keeping the board workflow focused on lightweight case-file annotation rather than heavier membership management.
+
 - Added the Tauri 2 desktop shell at `src-tauri/` with Windows, Linux, and macOS binary release configuration.
 - Added root desktop npm scripts for Tauri development and packaging.
 - Changed desktop release automation to attach plain platform binaries instead of installers.
 - Added language selection to the first-run onboarding tutorial.
+- Added chapter-aware sticky note visibility and compact episode/chapter tags.
+- Added bottom-layer group regions for marking factions, locations, or clusters on the board, including chapter visibility, color, size, duplicate, delete, and demo data support.
+- Added draggable group labels and adjustable font sizes for both group labels and sticky notes.
+- Restored relationship direction choices, including source-to-target, target-to-source, and undirected relationships.
+- Improved dense relationship rendering so multiple edges between the same characters fan out instead of covering each other.
+- Fixed character click targeting after highlight/edge states and let the add-character role menu escape the modal clipping area.
 
 ## 0.1.3 - 2026-05-14
 

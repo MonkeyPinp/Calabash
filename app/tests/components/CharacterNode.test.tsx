@@ -142,6 +142,52 @@ describe('CharacterNode', () => {
     expect(container.querySelector('[data-testid="character-node"]')!.innerHTML).toMatch(/--node-other/);
   });
 
+  it('keeps hidden handles from intercepting clicks on neighboring characters', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="c-handle"
+        type="character"
+        data={{ name: 'Handle Test', role: 'suspect' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    const handles = container.querySelectorAll('.react-flow__handle');
+    expect(handles.length).toBeGreaterThan(0);
+    handles.forEach((handle) => expect(handle).toHaveStyle({ pointerEvents: 'none' }));
+  });
+
+  it('enables handles only on the selected character', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="c-selected-handle"
+        type="character"
+        data={{ name: 'Selected Handle Test', role: 'suspect' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    const handles = container.querySelectorAll('.react-flow__handle');
+    expect(handles.length).toBeGreaterThan(0);
+    handles.forEach((handle) => expect(handle).toHaveStyle({ pointerEvents: 'all' }));
+  });
+
   it('wraps long names instead of truncating them', () => {
     const name = 'The Extremely Long Double-Barrelled Duchess of the Northern Observatory';
     renderInFlow(

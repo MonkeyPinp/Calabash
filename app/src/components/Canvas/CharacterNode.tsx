@@ -51,12 +51,13 @@ function CharacterNodeImpl(props: NodeProps) {
       id={id}
       type={type}
       position={pos}
-      className={`${sel ? '' : 'opacity-0'} group-hover:opacity-100 transition-opacity`}
+      className={`${sel ? '' : 'opacity-0'} transition-opacity`}
       style={{
         width: data.viewMode === 'portrait' ? 10 : 9,
         height: data.viewMode === 'portrait' ? 10 : 9,
         background: 'var(--bg-panel)',
         border: `1.5px solid ${roleVar}`,
+        pointerEvents: sel ? 'all' : 'none',
       }}
     />
   ));

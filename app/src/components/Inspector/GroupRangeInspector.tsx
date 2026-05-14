@@ -324,7 +324,7 @@ export default function GroupRangeInspector({
             style={inputStyle}
             type="number"
             min={12}
-            max={30}
+            max={64}
             defaultValue={range.labelFontSize}
             key={`label-font-size-${groupRangeId}`}
             onBlur={(e) => void handleLabelFontSizeBlur(e.target.value)}

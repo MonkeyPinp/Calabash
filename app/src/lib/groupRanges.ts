@@ -3,7 +3,7 @@ import type { GroupRange, GroupRangeColor } from '@/types';
 export const GROUP_RANGE_COLORS: GroupRangeColor[] = ['ochre', 'blue', 'green', 'red', 'violet'];
 export const GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE = 16;
 export const GROUP_RANGE_MIN_LABEL_FONT_SIZE = 12;
-export const GROUP_RANGE_MAX_LABEL_FONT_SIZE = 30;
+export const GROUP_RANGE_MAX_LABEL_FONT_SIZE = 64;
 export const GROUP_RANGE_DEFAULT_LABEL_POSITION = { x: 0.5, y: 0.18 };
 
 export const GROUP_RANGE_COLOR_MAP: Record<GroupRangeColor, { fill: string; border: string; text: string }> = {

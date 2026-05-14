@@ -46,7 +46,7 @@ describe('groupRanges DAO', () => {
       width: 160,
       height: 120,
       color: 'green',
-      labelFontSize: 30,
+      labelFontSize: 64,
       chapterIntroduced: 6,
     });
     expect(updated.labelPosition.x).toBeGreaterThanOrEqual(0.08);

@@ -325,6 +325,7 @@ export default function BookList() {
 
   function handleRowClick(book: Book) {
     if (renamingBookId === book.id) return;
+    if (book.id === activeBookId) return;
     clearGraphSelection();
     setCurrentChapter(book.currentChapter);
     setTotalChapters(book.totalChapters);

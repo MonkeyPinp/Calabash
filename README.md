@@ -6,7 +6,7 @@
 
 > A spoiler-safe relationship board for detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.1.3`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.2.0`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -29,12 +29,14 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Chapter slider**: move through the book and only see what you knew at that chapter.
 - **Spoiler Shield**: cover reveal-heavy chapters until you choose to uncover them.
 - **Character board**: track portraits, aliases, roles, occupations, introductions, and notes.
+- **Board styles**: switch between compact text cards and large portrait case-file cards.
 - **Relationship certainty**: mark connections as confirmed, suspected, or disproven.
 - **Open text fields**: roles and relationship types are suggestions, not hard limits.
-- **Sticky notes**: keep clues, alibis, theories, and reminders near the board.
+- **Sticky notes and groups**: keep clues near the board and draw colored group regions behind characters.
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Spanish, and Brazilian Portuguese.
+- **Desktop beta**: `v0.2.0` ships unsigned plain binaries for Windows, macOS, and Linux.
 
 ## Data And Privacy
 
@@ -112,7 +114,7 @@ Release builds:
 
 - Every public version should have an annotated `vX.Y.Z` tag and a GitHub Release.
 - Pushing a `v*` tag runs the release workflow and uploads the web bundle.
-- Starting with the `0.2` desktop shell, the same workflow must also upload Windows, Linux, and macOS desktop binaries.
+- Starting with the `0.2` desktop shell, the same workflow also uploads unsigned plain Windows, Linux, and macOS desktop binaries.
 
 Optional local tutorial portraits:
 
@@ -121,7 +123,7 @@ cd app
 npm run fetch:kindaichi-portraits
 ```
 
-This downloads Kindaichi wiki thumbnails into `app/public/demo-portraits/`, which is gitignored and intended for local demo use only. The Ackroyd tutorial uses original generated case-file avatars.
+The public demo includes the Kindaichi tutorial portraits in `app/public/demo-portraits/`. The Ackroyd tutorial uses original generated case-file avatars.
 
 ## Roadmap
 

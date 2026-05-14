@@ -6,7 +6,7 @@
 
 > Um quadro de relações sem spoilers para leitores de mistério.
 
-[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.1.3`
+[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.2.0`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [Español](README.es.md) · **Português (Brasil)**
 
@@ -29,12 +29,14 @@ Calabash é deliberadamente manual. Ele não extrai personagens automaticamente,
 - **Controle de capítulos**: avance pelo livro e veja apenas o que você sabia naquele capítulo.
 - **Escudo anti-spoiler**: cubra capítulos com revelações até decidir abrir.
 - **Quadro de personagens**: acompanhe retratos, aliases, papéis, ocupações, entradas e notas.
+- **Dois estilos de cartão**: alterne entre cartões compactos de texto e cartões grandes com retrato.
 - **Certeza de relações**: marque conexões como confirmadas, suspeitas ou descartadas.
 - **Campos abertos**: papéis e tipos de relação são sugestões, não limites.
-- **Notas adesivas**: mantenha pistas, álibis, teorias e lembretes perto do quadro.
+- **Notas e grupos**: mantenha pistas perto do quadro e desenhe regiões coloridas atrás dos personagens.
 - **Biblioteca local**: salve livros no IndexedDB e faça backup com Exportar/Importar.
 - **Tutoriais incluídos**: teste *The Murder of Roger Ackroyd* ou *Hida Trick House Murder Case*.
 - **Interface multilíngue**: inglês, chinês simplificado, espanhol e português do Brasil.
+- **Beta desktop**: `v0.2.0` publica binários simples sem assinatura para Windows, macOS e Linux.
 
 ## Dados E Privacidade
 
@@ -93,7 +95,7 @@ Builds de release:
 
 - Toda versao publica deve ter uma tag anotada `vX.Y.Z` e uma GitHub Release.
 - Ao enviar uma tag `v*`, o release workflow roda e publica o web bundle.
-- A partir do shell desktop `0.2`, o mesmo workflow tambem deve publicar binarios desktop para Windows, Linux e macOS.
+- A partir do shell desktop `0.2`, o mesmo workflow tambem publica binarios desktop simples e sem assinatura para Windows, Linux e macOS.
 
 ## Roadmap
 

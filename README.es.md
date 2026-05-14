@@ -6,7 +6,7 @@
 
 > Un tablero de relaciones sin spoilers para lectores de misterio.
 
-[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.1.3`
+[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.2.0`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · **Español** · [Português (Brasil)](README.pt-BR.md)
 
@@ -29,12 +29,14 @@ Calabash es deliberadamente manual. No extrae personajes automáticamente, no re
 - **Control de capítulos**: avanza por el libro y ve solo lo que sabías en ese capítulo.
 - **Escudo anti-spoilers**: cubre capítulos con revelaciones hasta que decidas descubrirlos.
 - **Mapa de personajes**: registra retratos, alias, roles, ocupaciones, apariciones y notas.
+- **Dos estilos de tarjetas**: cambia entre tarjetas compactas de texto y tarjetas grandes con retrato.
 - **Certeza de relaciones**: marca conexiones como confirmadas, sospechadas o descartadas.
 - **Campos abiertos**: los roles y tipos de relación son sugerencias, no límites.
-- **Notas adhesivas**: guarda pistas, coartadas, teorías y recordatorios cerca del tablero.
+- **Notas y grupos**: guarda pistas cerca del tablero y dibuja regiones de grupo detrás de los personajes.
 - **Biblioteca local**: guarda libros en IndexedDB y respáldalos con Exportar/Importar.
 - **Tutoriales incluidos**: prueba *The Murder of Roger Ackroyd* o *Hida Trick House Murder Case*.
 - **Interfaz multilingüe**: inglés, chino simplificado, español y portugués de Brasil.
+- **Beta de escritorio**: `v0.2.0` publica binarios simples sin firma para Windows, macOS y Linux.
 
 ## Datos Y Privacidad
 
@@ -93,7 +95,7 @@ Builds de release:
 
 - Cada version publica debe tener un tag anotado `vX.Y.Z` y una GitHub Release.
 - Al subir un tag `v*`, se ejecuta el release workflow y se carga el web bundle.
-- A partir del shell de escritorio `0.2`, el mismo workflow tambien debe cargar binarios desktop para Windows, Linux y macOS.
+- A partir del shell de escritorio `0.2`, el mismo workflow tambien carga binarios desktop simples y sin firma para Windows, Linux y macOS.
 
 ## Roadmap
 

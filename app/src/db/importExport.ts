@@ -1,6 +1,7 @@
 import { db, type PortraitRow } from './schema';
 import type { Book, Category, Character, Relationship, StickyNote, User } from '@/types';
 import { APP_VERSION } from '@/version';
+import { normalizeStickyNote } from '@/lib/stickyNotes';
 
 const CALABASH_VERSION = APP_VERSION;
 
@@ -79,7 +80,7 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
   const characters    = await db.characters.where('bookId').equals(bookId).toArray();
   const relationships = await db.relationships.where('bookId').equals(bookId).toArray();
   const portraitRows  = await db.portraits.where('bookId').equals(bookId).toArray();
-  const annotations   = await db.annotations.where('bookId').equals(bookId).toArray();
+  const annotations   = (await db.annotations.where('bookId').equals(bookId).toArray()).map(normalizeStickyNote);
   const portraits: PortraitExport[] = portraitRows.map((p) => ({
     id: p.id,
     bookId: p.bookId,
@@ -116,7 +117,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     books: books.map(normalizeBookForPortableData),
     characters,
     relationships,
-    annotations,
+    annotations: annotations.map(normalizeStickyNote),
     portraits,
   };
 }
@@ -158,7 +159,7 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
   }));
 
   const newAnnotations = (payload.annotations ?? []).map((annotation) => ({
-    ...annotation,
+    ...normalizeStickyNote(annotation),
     id: crypto.randomUUID(),
     bookId: newBookId,
     createdAt: now,
@@ -200,6 +201,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
     };
   });
   const books = (payload.books ?? []).map(normalizeBookForPortableData);
+  const annotations = (payload.annotations ?? []).map(normalizeStickyNote);
 
   await db.transaction(
     'rw',
@@ -210,7 +212,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
       if (books.length) await db.books.bulkPut(books);
       if (payload.characters?.length) await db.characters.bulkPut(payload.characters);
       if (payload.relationships?.length) await db.relationships.bulkPut(payload.relationships);
-      if (payload.annotations?.length) await db.annotations.bulkPut(payload.annotations);
+      if (annotations.length) await db.annotations.bulkPut(annotations);
       if (portraits.length) await db.portraits.bulkPut(portraits);
     },
   );

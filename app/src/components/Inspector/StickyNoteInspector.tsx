@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react';
 import type { StickyNoteColor } from '@/types';
 import { deleteAnnotation, restoreAnnotation, updateAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
+import { normalizeStickyNoteChapter } from '@/lib/stickyNotes';
 
 const COLORS: StickyNoteColor[] = ['yellow', 'green', 'blue', 'pink', 'purple'];
 
@@ -48,6 +49,8 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
   if (!note) {
     return <div style={{ padding: 16, color: 'var(--ink-500)', fontSize: 13 }}>Sticky note not found.</div>;
   }
+
+  const visibleFromChapter = normalizeStickyNoteChapter(note.chapterIntroduced);
 
   async function persist(patch: Parameters<typeof updateAnnotation>[1]) {
     const updated = await updateAnnotation(stickyNoteId, patch);
@@ -105,6 +108,23 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     );
   }
 
+  async function handleChapterBlur(value: string) {
+    const parsed = normalizeStickyNoteChapter(value);
+    if (parsed === visibleFromChapter) return;
+    const before = visibleFromChapter;
+    await persist({ chapterIntroduced: parsed });
+    pushUndo(
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { chapterIntroduced: before });
+        updateStickyNoteInStore(updated);
+      },
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { chapterIntroduced: parsed });
+        updateStickyNoteInStore(updated);
+      },
+    );
+  }
+
   async function handleDelete() {
     const snapshot = note!;
     await deleteAnnotation(stickyNoteId);
@@ -150,6 +170,18 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
       </div>
 
       <div style={{ padding: 16, overflowY: 'auto', flex: 1, boxSizing: 'border-box' }}>
+
+      <div style={fieldStyle}>
+        <label style={labelStyle}>Visible From Chapter</label>
+        <input
+          style={inputStyle}
+          type="number"
+          min={1}
+          defaultValue={visibleFromChapter}
+          key={`chapter-${stickyNoteId}`}
+          onBlur={(e) => void handleChapterBlur(e.target.value)}
+        />
+      </div>
 
       <div style={fieldStyle}>
         <label style={labelStyle}>Content</label>

@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Book, Category, Character, Relationship, StickyNote, User } from '@/types';
+import { normalizeStickyNote } from '@/lib/stickyNotes';
 
 // Internal DB row: stores blobBuffer (ArrayBuffer) instead of Blob
 // so fake-indexeddb can serialize it in tests. The DAO converts at the boundary.
@@ -52,6 +53,19 @@ export class CalabashDB extends Dexie {
       portraits:     'id, bookId',
       annotations:   'id, bookId',
     });
+    this.version(5).stores({
+      users:         'id, updatedAt',
+      books:         'id, userId, updatedAt, categoryId',
+      categories:    'id, userId, order',
+      characters:    'id, bookId, chapterIntroduced',
+      relationships: 'id, bookId, sourceId, targetId, chapterRevealed',
+      portraits:     'id, bookId',
+      annotations:   'id, bookId, chapterIntroduced',
+    }).upgrade((tx) =>
+      tx.table('annotations').toCollection().modify((note: StickyNote) => {
+        Object.assign(note, normalizeStickyNote(note));
+      }),
+    );
   }
 }
 

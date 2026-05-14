@@ -31,6 +31,7 @@ import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/charact
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { computeForceLayout } from '@/lib/layout';
+import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -231,16 +232,18 @@ function CalabashCanvasInner({
   // Sticky note nodes
   const stickyNoteNodes: Node[] = useMemo(
     () =>
-      stickyNotes.map((s) => ({
-        id: s.id,
-        type: 'stickyNote',
-        position: s.position,
-        width: s.width,
-        height: s.height,
-        style: { width: s.width, height: s.height },
-        data: { note: s },
-      })),
-    [stickyNotes],
+      stickyNotes
+        .filter((s) => isStickyNoteVisibleAtChapter(s, currentChapter))
+        .map((s) => ({
+          id: s.id,
+          type: 'stickyNote',
+          position: s.position,
+          width: s.width,
+          height: s.height,
+          style: { width: s.width, height: s.height },
+          data: { note: s },
+        })),
+    [stickyNotes, currentChapter],
   );
 
   const allComputedNodes: Node[] = useMemo(

@@ -482,6 +482,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
       width: 300,
       height: 128,
       color: 'yellow',
+      chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
@@ -490,6 +491,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
       width: 300,
       height: 140,
       color: 'blue',
+      chapterIntroduced: 1,
     }),
     createAnnotation({
       bookId,
@@ -498,6 +500,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
       width: 300,
       height: 132,
       color: 'green',
+      chapterIntroduced: 1,
     }),
   ]);
 
@@ -854,6 +857,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     position: { x: -420, y: 210 },
     width: 260,
     height: 128,
+    chapterIntroduced: 1,
   });
 
   return bookId;

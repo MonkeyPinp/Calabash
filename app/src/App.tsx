@@ -505,6 +505,7 @@ export default function App() {
       bookId: activeBookId,
       content: '',
       position: { x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200 },
+      chapterIntroduced: currentChapter,
     });
     addStickyNote(note);
     pushUndo(

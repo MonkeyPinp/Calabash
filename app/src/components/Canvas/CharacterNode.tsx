@@ -199,32 +199,11 @@ function CharacterNodeImpl(props: NodeProps) {
             </>
           )}
 
-          {data.chapterIntroduced !== undefined && (
-            <div
-              title={`Introduced ch. ${data.chapterIntroduced}`}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                padding: '2px 6px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                color: 'var(--accent)',
-                background: 'color-mix(in srgb, var(--bg-panel) 82%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--accent) 50%, transparent)',
-                borderRadius: 2,
-                boxShadow: '0 1px 0 rgba(0,0,0,.08)',
-              }}
-            >
-              CH.{String(data.chapterIntroduced).padStart(2, '0')}
-            </div>
-          )}
         </div>
 
         <div
           style={{
+            position: 'relative',
             padding: '8px 10px 10px',
             background: 'var(--bg-panel)',
           }}
@@ -239,10 +218,33 @@ function CharacterNodeImpl(props: NodeProps) {
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              paddingRight: data.chapterIntroduced !== undefined ? 46 : 0,
             }}
           >
             {data.name}
           </div>
+          {data.chapterIntroduced !== undefined && (
+            <div
+              title={`Introduced ch. ${data.chapterIntroduced}`}
+              style={{
+                position: 'absolute',
+                right: 8,
+                bottom: 8,
+                padding: '2px 6px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: 0,
+                color: 'var(--accent)',
+                background: 'color-mix(in srgb, var(--bg-canvas) 82%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--accent) 50%, transparent)',
+                borderRadius: 2,
+                boxShadow: '0 1px 0 rgba(0,0,0,.08)',
+              }}
+            >
+              CH.{String(data.chapterIntroduced).padStart(2, '0')}
+            </div>
+          )}
           {data.profession && (
             <div
               style={{
@@ -254,6 +256,7 @@ function CharacterNodeImpl(props: NodeProps) {
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                paddingRight: data.chapterIntroduced !== undefined ? 46 : 0,
               }}
             >
               {data.profession}

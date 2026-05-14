@@ -194,6 +194,6 @@ describe('CharacterNode', () => {
     expect(root).toHaveAttribute('data-view-mode', 'portrait');
     expect(screen.getByText('Hajime Kindaichi')).toBeInTheDocument();
     expect(screen.getByText('[ portrait ]')).toBeInTheDocument();
-    expect(screen.getByText('CH.02')).toBeInTheDocument();
+    expect(screen.getByText('CH.02')).toHaveStyle({ right: '8px', bottom: '8px' });
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { Character, Relationship } from '@/types';
+import type { Character, Relationship, StickyNote } from '@/types';
 import CalabashCanvas from '@/components/Canvas/CalabashCanvas';
 
 // In jsdom React Flow's layout cycle doesn't complete, so edges are never drawn.
@@ -14,6 +14,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
   return {
     ...actual,
     Handle: () => null,
+    NodeResizer: () => null,
     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     ReactFlow: ({ nodes, edges, nodeTypes, edgeTypes, onNodeClick }: {
       nodes: NodeLike[];
@@ -69,6 +70,33 @@ const relationships: Relationship[] = [
   { id: 'r1', bookId: 'b', sourceId: 'a', targetId: 'b', type: 'suspicion', chapterRevealed: 1, certainty: 'suspected', createdAt: 0, updatedAt: 0 },
 ];
 
+const stickyNotes: StickyNote[] = [
+  {
+    id: 'note-1-4',
+    bookId: 'b',
+    content: '第1-4集：opening case notes',
+    position: { x: 0, y: 160 },
+    width: 220,
+    height: 120,
+    color: 'blue',
+    chapterIntroduced: 1,
+    createdAt: 0,
+    updatedAt: 0,
+  },
+  {
+    id: 'note-5-9',
+    bookId: 'b',
+    content: '第5-9集：later case notes',
+    position: { x: 260, y: 160 },
+    width: 220,
+    height: 120,
+    color: 'green',
+    chapterIntroduced: 5,
+    createdAt: 0,
+    updatedAt: 0,
+  },
+];
+
 describe('CalabashCanvas', () => {
   it('renders nodes for every character and the certainty badge for every edge', () => {
     render(
@@ -98,6 +126,37 @@ describe('CalabashCanvas', () => {
     );
     expect(screen.getByText('Poirot')).toBeInTheDocument();
     expect(screen.queryByText('FutureGuy')).not.toBeInTheDocument();
+  });
+
+  it('shows sticky notes only after their display chapter and renders their episode tag', () => {
+    const { rerender } = render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          stickyNotes={stickyNotes}
+          currentChapter={1}
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('第1-4集')).toBeInTheDocument();
+    expect(screen.queryByText('第5-9集')).not.toBeInTheDocument();
+
+    rerender(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          stickyNotes={stickyNotes}
+          currentChapter={5}
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('第5-9集')).toBeInTheDocument();
   });
 
   it('renders a compact keyboard shortcut legend above the minimap area', () => {

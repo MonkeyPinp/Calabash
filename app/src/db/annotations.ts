@@ -1,5 +1,6 @@
 import { db } from './schema';
 import type { StickyNote, StickyNoteColor } from '@/types';
+import { inferStickyNoteChapter, normalizeStickyNote, normalizeStickyNoteChapter } from '@/lib/stickyNotes';
 
 export interface CreateAnnotationInput {
   bookId: string;
@@ -8,6 +9,7 @@ export interface CreateAnnotationInput {
   width?: number;
   height?: number;
   color?: StickyNoteColor;
+  chapterIntroduced?: number;
 }
 
 export async function createAnnotation(input: CreateAnnotationInput): Promise<StickyNote> {
@@ -20,6 +22,10 @@ export async function createAnnotation(input: CreateAnnotationInput): Promise<St
     width: input.width ?? 200,
     height: input.height ?? 150,
     color: input.color ?? 'yellow',
+    chapterIntroduced: normalizeStickyNoteChapter(
+      input.chapterIntroduced,
+      inferStickyNoteChapter(input.content) ?? 1,
+    ),
     createdAt: now,
     updatedAt: now,
   };
@@ -28,7 +34,8 @@ export async function createAnnotation(input: CreateAnnotationInput): Promise<St
 }
 
 export async function listAnnotationsByBook(bookId: string): Promise<StickyNote[]> {
-  return db.annotations.where('bookId').equals(bookId).toArray();
+  const notes = await db.annotations.where('bookId').equals(bookId).toArray();
+  return notes.map(normalizeStickyNote);
 }
 
 export async function updateAnnotation(
@@ -37,7 +44,7 @@ export async function updateAnnotation(
 ): Promise<StickyNote> {
   const existing = await db.annotations.get(id);
   if (!existing) throw new Error(`Annotation ${id} not found`);
-  const next: StickyNote = { ...existing, ...patch, updatedAt: Date.now() };
+  const next: StickyNote = normalizeStickyNote({ ...existing, ...patch, updatedAt: Date.now() });
   await db.annotations.put(next);
   return next;
 }
@@ -47,5 +54,5 @@ export async function deleteAnnotation(id: string): Promise<void> {
 }
 
 export async function restoreAnnotation(note: StickyNote): Promise<void> {
-  await db.annotations.put(note);
+  await db.annotations.put(normalizeStickyNote(note));
 }

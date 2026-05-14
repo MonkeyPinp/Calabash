@@ -61,7 +61,7 @@ describe('importExport', () => {
       bookId: book.id, sourceId: c1.id, targetId: c2.id,
       type: 'professional', chapterRevealed: 1, certainty: 'confirmed',
     });
-    await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 } });
+    await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 }, chapterIntroduced: 7 });
 
     const exported = await exportBookAsJson(book.id);
     expect(exported.portraits).toHaveLength(1);
@@ -100,6 +100,7 @@ describe('importExport', () => {
     const reNotes = await listAnnotationsByBook(newBookId);
     expect(reNotes).toHaveLength(1);
     expect(reNotes[0].content).toBe('check alibi');
+    expect(reNotes[0].chapterIntroduced).toBe(7);
   });
 
   it('exports and imports the whole local library as collection JSON', async () => {
@@ -194,6 +195,8 @@ describe('importExport', () => {
     expect(await db.characters.count()).toBe(3);
     expect(await db.relationships.count()).toBe(2);
     expect(await db.annotations.count()).toBe(1);
+    const reNotes = await listAnnotationsByBook('book-beta-case');
+    expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
     expect(exported.calabashVersion).toBe('0.1.3');

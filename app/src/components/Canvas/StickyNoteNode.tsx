@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react';
 import type { StickyNote, StickyNoteColor } from '@/types';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
+import { getStickyNoteDisplayTag, normalizeStickyNoteChapter } from '@/lib/stickyNotes';
 
 export interface StickyNoteNodeData {
   note: StickyNote;
@@ -24,6 +25,8 @@ function StickyNoteNodeImpl(props: NodeProps) {
   const note = data.note;
   const sel = props.selected ?? false;
   const colors = COLOR_MAP[note.color];
+  const displayTag = getStickyNoteDisplayTag(note);
+  const visibleFromChapter = normalizeStickyNoteChapter(note.chapterIntroduced);
 
   const [content, setContent] = useState(note.content);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -186,6 +189,33 @@ function StickyNoteNodeImpl(props: NodeProps) {
           </div>
         )}
 
+        <div
+          title={`Visible from chapter ${visibleFromChapter}`}
+          style={{
+            position: 'absolute',
+            top: sel ? 34 : 7,
+            right: 8,
+            zIndex: 1,
+            maxWidth: 'calc(100% - 16px)',
+            padding: '2px 6px',
+            borderRadius: 2,
+            border: `1px solid ${colors.border}`,
+            background: 'rgba(255,255,255,0.42)',
+            color: colors.text,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: 0,
+            lineHeight: 1.25,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            pointerEvents: 'none',
+          }}
+        >
+          {displayTag}
+        </div>
+
         {/* Textarea */}
         <textarea
           value={content}
@@ -201,7 +231,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
             border: 'none',
             outline: 'none',
             resize: 'none',
-            padding: '8px 10px 10px',
+            padding: sel ? '8px 10px 10px' : '25px 10px 10px',
             fontFamily: 'var(--font-case-title)',
             fontSize: 13,
             lineHeight: 1.55,

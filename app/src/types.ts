@@ -97,6 +97,7 @@ export interface StickyNote {
   width: number;
   height: number;
   color: StickyNoteColor;
+  chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;
 }

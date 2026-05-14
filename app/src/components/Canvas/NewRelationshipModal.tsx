@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -101,8 +102,11 @@ export default function NewRelationshipModal({
     label: formatRelationshipType(type, t),
   }));
 
-  return (
+  const modal = (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('relationship.add')}
       style={{
         position: 'fixed',
         inset: 0,
@@ -122,10 +126,10 @@ export default function NewRelationshipModal({
           background: 'var(--bg-elevated)',
           border: '1px solid var(--ink-200)',
           borderRadius: 8,
-          maxWidth: 430,
+          maxWidth: 'min(430px, calc(100vw - 32px))',
           width: '100%',
           boxShadow: 'var(--shadow-modal)',
-          overflow: 'hidden',
+          overflow: 'visible',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -255,7 +259,7 @@ export default function NewRelationshipModal({
           </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
             <button
               type="button"
               onClick={onClose}
@@ -294,4 +298,6 @@ export default function NewRelationshipModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

@@ -30,7 +30,7 @@ const menuStyle: React.CSSProperties = {
   borderRadius: 5,
   background: 'var(--bg-elevated)',
   boxShadow: 'var(--shadow-pop)',
-  maxHeight: 190,
+  maxHeight: 'min(224px, calc(100vh - 80px))',
   overflowY: 'auto',
 };
 

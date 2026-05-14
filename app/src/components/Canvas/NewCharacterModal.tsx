@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -91,8 +92,11 @@ export default function NewCharacterModal({
     label: formatCharacterRole(role, t),
   }));
 
-  return (
+  const modal = (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('character.add')}
       style={{
         position: 'fixed', inset: 0,
         background: 'color-mix(in srgb, var(--ink-900) 34%, transparent)',
@@ -105,9 +109,9 @@ export default function NewCharacterModal({
       <div
         style={{
           background: 'var(--bg-elevated)', border: '1px solid var(--ink-200)',
-          borderRadius: 8, maxWidth: 460, width: '100%',
+          borderRadius: 8, maxWidth: 'min(460px, calc(100vw - 32px))', width: '100%',
           boxShadow: 'var(--shadow-modal)',
-          overflow: 'hidden',
+          overflow: 'visible',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -132,7 +136,7 @@ export default function NewCharacterModal({
 
           {/* Role + Profession side-by-side */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>{t('character.role')}</label>
               <Controller
                 name="role"
@@ -151,7 +155,7 @@ export default function NewCharacterModal({
                 )}
               />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>{t('character.occupation')}</label>
               <input
                 {...register('profession')}
@@ -172,7 +176,7 @@ export default function NewCharacterModal({
           </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
             <button type="button" onClick={onClose} style={{
               background: 'transparent', border: '1px solid var(--ink-200)',
               borderRadius: 4, padding: '8px 16px', cursor: 'pointer',
@@ -191,4 +195,6 @@ export default function NewCharacterModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

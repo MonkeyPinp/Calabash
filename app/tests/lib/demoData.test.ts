@@ -53,6 +53,58 @@ describe('Ackroyd demo data', () => {
     await expect(getPortrait(poirot!.portraitId!)).resolves.toMatchObject({ mimeType: 'image/svg+xml' });
   });
 
+  it('keeps Ackroyd narrative milestones chapter-accurate', async () => {
+    const bookId = await seedRogerAckroyd();
+    const book = await getBook(bookId);
+    const characters = await listCharactersByBook(bookId);
+    const relationships = await listRelationshipsByBook(bookId);
+    const ackroyd = characters.find((character) => character.name === 'Roger Ackroyd');
+    const sheppard = characters.find((character) => character.name === 'Dr. James Sheppard');
+    const ursula = characters.find((character) => character.name === 'the parlour maid');
+    const poirot = characters.find((character) => character.name === 'Hercule Poirot');
+    const ralph = characters.find((character) => character.name === 'Ralph Paton');
+    const flora = characters.find((character) => character.name === 'Flora Ackroyd');
+    const blunt = characters.find((character) => character.name === 'Major Hector Blunt');
+
+    expect(book?.highlightedChapters).toEqual([2, 5, 10, 21]);
+    expect(book?.spoilerChapters).toEqual([25, 27]);
+    expect(ackroyd?.role).toBe('other');
+    expect(ackroyd?.roleReveals).toEqual([{ role: 'victim', chapterRevealed: 5 }]);
+    expect(ackroyd?.notes).toContain('chapter 5');
+    expect(sheppard?.roleReveals).toEqual([{ role: 'murderer', chapterRevealed: 25 }]);
+    expect(ursula?.aliases).toEqual([
+      { name: 'the parlour maid', chapterRevealed: 2 },
+      { name: 'Ursula Bourne', chapterRevealed: 10 },
+      { name: 'Ursula Paton', chapterRevealed: 21 },
+    ]);
+    expect(relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceId: ralph?.id,
+        targetId: flora?.id,
+        chapterRevealed: 4,
+        label: 'engaged',
+      }),
+      expect.objectContaining({
+        sourceId: ralph?.id,
+        targetId: ursula?.id,
+        chapterRevealed: 21,
+        label: 'secretly married',
+      }),
+      expect.objectContaining({
+        sourceId: blunt?.id,
+        targetId: flora?.id,
+        chapterRevealed: 19,
+        label: 'loves',
+      }),
+      expect.objectContaining({
+        sourceId: poirot?.id,
+        targetId: sheppard?.id,
+        chapterRevealed: 25,
+        label: 'unmasks',
+      }),
+    ]));
+  });
+
   it('can create Ackroyd through the tutorial selector', async () => {
     const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'pt-BR', kind: 'ackroyd' });
     const book = await getBook(bookId);
@@ -63,11 +115,11 @@ describe('Ackroyd demo data', () => {
     expect(book?.title).toBe('The Murder of Roger Ackroyd');
     expect(book?.totalChapters).toBe(27);
     expect(book?.currentChapter).toBe(2);
-    expect(book?.highlightedChapters).toEqual([2, 10, 17]);
-    expect(book?.spoilerChapters).toEqual([27]);
+    expect(book?.highlightedChapters).toEqual([2, 5, 10, 21]);
+    expect(book?.spoilerChapters).toEqual([25, 27]);
     expect(notes).toHaveLength(3);
     expect(groups).toHaveLength(3);
-    expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2, 17]);
+    expect(groups.map((group) => group.chapterIntroduced).sort((a, b) => a - b)).toEqual([1, 2, 21]);
     expect(notes.map((note) => note.content).join(' ')).toContain('Exporte a biblioteca');
   });
 

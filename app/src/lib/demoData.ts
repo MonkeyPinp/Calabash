@@ -278,7 +278,7 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
 }> = {
   en: {
     start: 'Start here: this is your local tutorial copy. Move characters, edit labels, and delete anything; the public demo will stay unchanged for everyone else.',
-    chapters: 'Try the chapter slider: chapter 2 shows the Fernly Park circle. Chapters 10 and 17 are highlighted, and chapter 27 is protected by Spoiler Shield.',
+    chapters: 'Try the chapter slider: chapter 2 shows the Fernly Park circle, chapter 5 marks the murder, chapter 10 names the parlour maid, and chapter 21 reveals the hidden marriage. Chapter 25 onward is protected by Spoiler Shield.',
     edit: 'Try it: select Poirot, press E, then click another character to sketch a theory. Export Library when you want to keep your own backup.',
     detectiveGroup: 'Investigation view',
     householdGroup: 'Fernly Park circle',
@@ -286,7 +286,7 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
   },
   'zh-CN': {
     start: '从这里开始：这是你的本地教程副本。拖动人物、修改标签、删除内容，都只影响你自己的浏览器，公开 demo 不会被改动。',
-    chapters: '试试章节滑杆：第 2 章展示 Fernly Park 的主要人物圈；第 10、17 章被高亮，第 27 章由防剧透保护。',
+    chapters: '试试章节滑杆：第 2 章展示 Fernly Park 人物圈；第 5 章标记命案；第 10 章揭示女仆姓名；第 21 章揭示隐藏婚姻；第 25 章之后由防剧透保护。',
     edit: '动手试试：选中 Poirot，按 E，再点击另一个人物，画一条自己的推理线。想保存时导出书库。',
     detectiveGroup: '调查视角',
     householdGroup: 'Fernly Park 人物圈',
@@ -294,7 +294,7 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
   },
   es: {
     start: 'Empieza aquí: esta es tu copia local del tutorial. Mueve personajes, edita etiquetas y borra lo que quieras; la demo pública no cambia para nadie más.',
-    chapters: 'Prueba el control de capítulos: el capítulo 2 muestra el círculo de Fernly Park. Los capítulos 10 y 17 están destacados, y el 27 está protegido por el escudo anti-spoilers.',
+    chapters: 'Prueba el control de capítulos: el capítulo 2 muestra el círculo de Fernly Park, el 5 marca el asesinato, el 10 nombra a la doncella y el 21 revela el matrimonio oculto. A partir del capítulo 25, el escudo anti-spoilers protege la lectura.',
     edit: 'Pruébalo: selecciona a Poirot, pulsa E y haz clic en otro personaje para dibujar una teoría. Exporta la biblioteca cuando quieras guardar una copia.',
     detectiveGroup: 'Mirada investigadora',
     householdGroup: 'Círculo de Fernly Park',
@@ -302,7 +302,7 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
   },
   'pt-BR': {
     start: 'Comece aqui: esta é sua cópia local do tutorial. Mova personagens, edite rótulos e apague qualquer coisa; a demo pública continua igual para as outras pessoas.',
-    chapters: 'Teste o controle de capítulos: o capítulo 2 mostra o círculo de Fernly Park. Os capítulos 10 e 17 ficam destacados, e o 27 é protegido pelo escudo anti-spoiler.',
+    chapters: 'Teste o controle de capítulos: o capítulo 2 mostra o círculo de Fernly Park, o 5 marca o assassinato, o 10 nomeia a criada e o 21 revela o casamento oculto. Do capítulo 25 em diante, o escudo anti-spoiler protege a leitura.',
     edit: 'Experimente: selecione Poirot, pressione E e clique em outro personagem para desenhar uma teoria. Exporte a biblioteca quando quiser guardar seu backup.',
     detectiveGroup: 'Ponto de vista da investigação',
     householdGroup: 'Círculo de Fernly Park',
@@ -313,7 +313,7 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
 /**
  * Seeds the database with characters and relationships from
  * "The Murder of Roger Ackroyd" by Agatha Christie (1926).
- * This demo keeps the final culprit hidden until chapter 27. Spoiler Shield
+ * This demo keeps the final culprit hidden until chapter 25. Spoiler Shield
  * is enabled for the book, but the canvas is only covered once that chapter
  * exposes the `murderer` role.
  * Returns the new bookId.
@@ -327,8 +327,8 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     author: 'Agatha Christie',
     totalChapters: 27,
     spoilerShield: true,
-    spoilerChapters: [27],
-    highlightedChapters: [2, 10, 17],
+    spoilerChapters: [25, 27],
+    highlightedChapters: [2, 5, 10, 21],
     categoryId: category.id,
   });
   const bookId = book.id;
@@ -344,7 +344,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
 
   const sheppard = await createCharacter({
     bookId, name: 'Dr. James Sheppard', role: 'witness',
-    roleReveals: [{ role: 'murderer', chapterRevealed: 27 }],
+    roleReveals: [{ role: 'murderer', chapterRevealed: 25 }],
     profession: 'Village doctor', chapterIntroduced: 1,
     position: { x: -280, y: 80 },
     aliases: [{ name: 'Dr. James Sheppard', chapterRevealed: 1 }],
@@ -352,10 +352,11 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   });
 
   const ackroyd = await createCharacter({
-    bookId, name: 'Roger Ackroyd', role: 'victim',
-    profession: 'Wealthy manufacturer', chapterIntroduced: 1,
+    bookId, name: 'Roger Ackroyd', role: 'other',
+    roleReveals: [{ role: 'victim', chapterRevealed: 5 }],
+    profession: 'Wealthy businessman', chapterIntroduced: 1,
     position: { x: 280, y: 80 },
-    notes: 'Found murdered in his study at Fernly Park. Chapter 3.',
+    notes: 'Found murdered in his study at Fernly Park in chapter 5.',
   });
 
   const flora = await createCharacter({
@@ -399,8 +400,8 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
     position: { x: 60, y: 480 },
     aliases: [
       { name: 'the parlour maid', chapterRevealed: 2 },
-      { name: 'Ursula Bourne', chapterRevealed: 14 },
-      { name: 'Ursula Paton', chapterRevealed: 17 },
+      { name: 'Ursula Bourne', chapterRevealed: 10 },
+      { name: 'Ursula Paton', chapterRevealed: 21 },
     ],
     notes: 'Parlour maid with a secret. Her real identity is concealed until later chapters.',
   });
@@ -490,14 +491,14 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   // Ralph & Flora
   await createRelationship({
     bookId, sourceId: ralph.id, targetId: flora.id,
-    type: 'romantic', chapterRevealed: 2, certainty: 'confirmed',
+    type: 'romantic', chapterRevealed: 4, certainty: 'confirmed',
     label: 'engaged',
   });
 
-  // Ralph & Ursula (secret — revealed ch 17)
+  // Ralph & Ursula (secret — revealed ch 21)
   await createRelationship({
     bookId, sourceId: ralph.id, targetId: ursula.id,
-    type: 'romantic', chapterRevealed: 17, certainty: 'confirmed',
+    type: 'romantic', chapterRevealed: 21, certainty: 'confirmed',
     label: 'secretly married',
   });
 
@@ -511,15 +512,15 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
   // Blunt → Flora (unrequited)
   await createRelationship({
     bookId, sourceId: blunt.id, targetId: flora.id,
-    type: 'romantic', chapterRevealed: 10, certainty: 'suspected',
-    label: 'admires',
+    type: 'romantic', chapterRevealed: 19, certainty: 'confirmed',
+    label: 'loves',
   });
 
-  // Poirot suspicion of main suspect (deliberately vague — no spoilers)
+  // Poirot unmasks the main suspect at the protected reveal.
   await createRelationship({
     bookId, sourceId: poirot.id, targetId: sheppard.id,
-    type: 'suspicion', chapterRevealed: 20, certainty: 'suspected',
-    label: 'suspects',
+    type: 'suspicion', chapterRevealed: 25, certainty: 'confirmed',
+    label: 'unmasks',
   });
 
   const relationships = await listRelationshipsByBook(bookId);
@@ -563,7 +564,7 @@ export async function seedRogerAckroyd(userId?: string, language: ResolvedLangua
       characters: [ralph, ursula],
       positions,
       color: 'violet',
-      chapterIntroduced: 17,
+      chapterIntroduced: 21,
       padding: 95,
     }),
   ]);

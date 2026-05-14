@@ -10,6 +10,7 @@ export const RELATIONSHIP_TYPE_PRESETS = [
 ] as const;
 
 export type PresetRelationshipType = typeof RELATIONSHIP_TYPE_PRESETS[number];
+export type RelationshipDirectionChoice = 'forward' | 'reverse' | 'undirected';
 
 const RELATIONSHIP_TYPE_SET = new Set<string>(RELATIONSHIP_TYPE_PRESETS);
 
@@ -66,4 +67,22 @@ export function isDirected(type?: RelationshipType): boolean {
 
 export function isRelationshipDirected(relationship: Pick<Relationship, 'type' | 'directed'>): boolean {
   return relationship.directed ?? isDirected(relationship.type);
+}
+
+export function directedOverrideForChoice(
+  type: RelationshipType | undefined,
+  direction: RelationshipDirectionChoice,
+): boolean | undefined {
+  const directed = direction !== 'undirected';
+  return directed === isDirected(type) ? undefined : directed;
+}
+
+export function orientRelationshipEndpoints(
+  sourceId: string,
+  targetId: string,
+  direction: RelationshipDirectionChoice,
+): { sourceId: string; targetId: string } {
+  return direction === 'reverse'
+    ? { sourceId: targetId, targetId: sourceId }
+    : { sourceId, targetId };
 }

@@ -8,18 +8,22 @@ import { createRelationship, deleteRelationship, restoreRelationship } from '@/d
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import {
+  directedOverrideForChoice,
   formatRelationshipType,
   isDirected,
   normalizeRelationshipType,
+  orientRelationshipEndpoints,
+  type RelationshipDirectionChoice,
   RELATIONSHIP_TYPE_PRESETS,
 } from '@/lib/relationshipTypes';
 import PresetTextInput from '@/components/Form/PresetTextInput';
+import DirectionSegmentedControl from '@/components/Form/DirectionSegmentedControl';
 
 const CERTAINTY_LEVELS = ['confirmed', 'suspected', 'disproven'] as const;
 
 const schema = z.object({
   type: z.string().max(80).optional(),
-  directed: z.boolean(),
+  direction: z.enum(['forward', 'reverse', 'undirected']),
   label: z.string().optional(),
   chapterRevealed: z.number().min(1),
   certainty: z.enum(CERTAINTY_LEVELS),
@@ -48,13 +52,14 @@ export default function NewRelationshipModal({
   const addRelationship = useGraphStore((s) => s.addRelationship);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
   const pushUndo = useGraphStore((s) => s.pushUndo);
+  const characters = useGraphStore((s) => s.characters);
   const directionTouchedRef = useRef(false);
 
   const { control, register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       type: '',
-      directed: false,
+      direction: 'undirected',
       label: '',
       chapterRevealed: currentChapter,
       certainty: 'suspected',
@@ -70,20 +75,21 @@ export default function NewRelationshipModal({
   }, [onClose]);
 
   const watchedType = watch('type');
+  const watchedDirection = watch('direction');
   useEffect(() => {
     if (!directionTouchedRef.current) {
-      setValue('directed', isDirected(watchedType), { shouldDirty: false });
+      setValue('direction', isDirected(watchedType) ? 'forward' : 'undirected', { shouldDirty: false });
     }
   }, [watchedType, setValue]);
 
   async function onSubmit(values: FormValues) {
     const type = normalizeRelationshipType(values.type);
+    const endpoints = orientRelationshipEndpoints(sourceId, targetId, values.direction);
     const rel = await createRelationship({
       bookId,
-      sourceId,
-      targetId,
+      ...endpoints,
       type,
-      directed: values.directed === isDirected(type) ? undefined : values.directed,
+      directed: directedOverrideForChoice(type, values.direction),
       label: values.label || undefined,
       chapterRevealed: values.chapterRevealed,
       certainty: values.certainty,
@@ -101,6 +107,8 @@ export default function NewRelationshipModal({
     value: type,
     label: formatRelationshipType(type, t),
   }));
+  const sourceName = characters.find((c) => c.id === sourceId)?.name ?? sourceId;
+  const targetName = characters.find((c) => c.id === targetId)?.name ?? targetId;
 
   const modal = (
     <div
@@ -172,23 +180,18 @@ export default function NewRelationshipModal({
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 12,
-              color: 'var(--ink-700)',
-              cursor: 'pointer',
-              userSelect: 'none',
-            }}>
-              <input
-                type="checkbox"
-                {...register('directed', {
-                  onChange: () => { directionTouchedRef.current = true; },
-                })}
-              />
-              {t('relationship.directed')}
+            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
+              {t('relationship.direction')}
             </label>
+            <DirectionSegmentedControl
+              value={watchedDirection as RelationshipDirectionChoice}
+              sourceName={sourceName}
+              targetName={targetName}
+              onChange={(direction) => {
+                directionTouchedRef.current = true;
+                setValue('direction', direction, { shouldDirty: true });
+              }}
+            />
           </div>
 
           <div style={{ marginBottom: 12 }}>

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { isDirected, isRelationshipDirected, RELATIONSHIP_TYPE_META } from '@/lib/relationshipTypes';
+import {
+  directedOverrideForChoice,
+  isDirected,
+  isRelationshipDirected,
+  orientRelationshipEndpoints,
+  RELATIONSHIP_TYPE_META,
+} from '@/lib/relationshipTypes';
 
 describe('relationship type directionality', () => {
   it('treats family/professional/romantic/other as symmetric', () => {
@@ -25,5 +31,16 @@ describe('relationship type directionality', () => {
     expect(Object.keys(RELATIONSHIP_TYPE_META).sort()).toEqual(
       ['family', 'hostile', 'other', 'professional', 'romantic', 'suspicion'],
     );
+  });
+
+  it('maps three direction choices onto the existing relationship fields', () => {
+    expect(orientRelationshipEndpoints('a', 'b', 'forward')).toEqual({ sourceId: 'a', targetId: 'b' });
+    expect(orientRelationshipEndpoints('a', 'b', 'reverse')).toEqual({ sourceId: 'b', targetId: 'a' });
+    expect(orientRelationshipEndpoints('a', 'b', 'undirected')).toEqual({ sourceId: 'a', targetId: 'b' });
+
+    expect(directedOverrideForChoice('suspicion', 'forward')).toBeUndefined();
+    expect(directedOverrideForChoice('suspicion', 'undirected')).toBe(false);
+    expect(directedOverrideForChoice('family', 'forward')).toBe(true);
+    expect(directedOverrideForChoice('family', 'undirected')).toBeUndefined();
   });
 });

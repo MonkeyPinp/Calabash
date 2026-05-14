@@ -4,14 +4,17 @@ import { createRelationship, updateRelationship, deleteRelationship, restoreRela
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import {
+  directedOverrideForChoice,
   formatRelationshipType,
   getRelationshipTypeCssVar,
-  isDirected,
   isRelationshipDirected,
   normalizeRelationshipType,
+  orientRelationshipEndpoints,
+  type RelationshipDirectionChoice,
   RELATIONSHIP_TYPE_PRESETS,
 } from '@/lib/relationshipTypes';
 import PresetTextInput from '@/components/Form/PresetTextInput';
+import DirectionSegmentedControl from '@/components/Form/DirectionSegmentedControl';
 
 const CERTAINTY_LEVELS: CertaintyLevel[] = ['confirmed', 'suspected', 'disproven'];
 
@@ -59,6 +62,7 @@ export default function RelationshipInspector({
   const relationshipColor = getRelationshipTypeCssVar(rel.type);
   const relationshipTypeLabel = formatRelationshipType(rel.type, t);
   const headerArrow = relationshipDirected ? '→' : '—';
+  const directionChoice: RelationshipDirectionChoice = relationshipDirected ? 'forward' : 'undirected';
 
   async function persist(patch: Parameters<typeof updateRelationship>[1]) {
     const updated = await updateRelationship(relationshipId, patch);
@@ -103,7 +107,20 @@ export default function RelationshipInspector({
 
   function handleTypeCommit(value: string) {
     const nextType = normalizeRelationshipType(value);
-    if (nextType !== rel!.type) void persist({ type: nextType });
+    if (nextType !== rel!.type) {
+      void persist({
+        type: nextType,
+        directed: directedOverrideForChoice(nextType, directionChoice),
+      });
+    }
+  }
+
+  async function handleDirectionChange(direction: RelationshipDirectionChoice) {
+    const endpoints = orientRelationshipEndpoints(rel!.sourceId, rel!.targetId, direction);
+    await persist({
+      ...endpoints,
+      directed: directedOverrideForChoice(rel!.type, direction),
+    });
   }
 
   return (
@@ -217,26 +234,13 @@ export default function RelationshipInspector({
 
       {/* Direction */}
       <div style={fieldStyle}>
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          fontSize: 12,
-          color: 'var(--ink-700)',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}>
-          <input
-            type="checkbox"
-            defaultChecked={relationshipDirected}
-            key={`directed-${relationshipId}-${relationshipDirected}`}
-            onChange={(e) => {
-              const directed = e.target.checked;
-              void persist({ directed: directed === isDirected(rel.type) ? undefined : directed });
-            }}
-          />
-          {t('relationship.directed')}
-        </label>
+        <label style={labelStyle}>{t('relationship.direction')}</label>
+        <DirectionSegmentedControl
+          value={directionChoice}
+          sourceName={sourceName}
+          targetName={targetName}
+          onChange={(direction) => void handleDirectionChange(direction)}
+        />
       </div>
 
       {/* Certainty */}

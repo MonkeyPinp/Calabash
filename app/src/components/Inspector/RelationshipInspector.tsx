@@ -1,12 +1,18 @@
 import { Trash2, Copy } from 'lucide-react';
-import type { RelationshipType, CertaintyLevel } from '@/types';
+import type { CertaintyLevel } from '@/types';
 import { createRelationship, updateRelationship, deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
-import { isDirected } from '@/lib/relationshipTypes';
+import { useT } from '@/i18n';
+import {
+  formatRelationshipType,
+  getRelationshipTypeCssVar,
+  isDirected,
+  isRelationshipDirected,
+  normalizeRelationshipType,
+  RELATIONSHIP_TYPE_PRESETS,
+} from '@/lib/relationshipTypes';
+import PresetTextInput from '@/components/Form/PresetTextInput';
 
-const RELATIONSHIP_TYPES: RelationshipType[] = [
-  'family', 'professional', 'romantic', 'hostile', 'suspicion', 'other',
-];
 const CERTAINTY_LEVELS: CertaintyLevel[] = ['confirmed', 'suspected', 'disproven'];
 
 const labelStyle: React.CSSProperties = {
@@ -35,6 +41,7 @@ export default function RelationshipInspector({
   onDeleted,
   onDuplicated,
 }: RelationshipInspectorProps) {
+  const t = useT();
   const relationships = useGraphStore((s) => s.relationships);
   const characters   = useGraphStore((s) => s.characters);
   const updateRelationshipInStore = useGraphStore((s) => s.updateRelationshipInStore);
@@ -48,7 +55,10 @@ export default function RelationshipInspector({
   const sourceName = characters.find((c) => c.id === rel.sourceId)?.name ?? rel.sourceId;
   const targetName = characters.find((c) => c.id === rel.targetId)?.name ?? rel.targetId;
 
-  const headerArrow = isDirected(rel.type) ? '→' : '—';
+  const relationshipDirected = isRelationshipDirected(rel);
+  const relationshipColor = getRelationshipTypeCssVar(rel.type);
+  const relationshipTypeLabel = formatRelationshipType(rel.type, t);
+  const headerArrow = relationshipDirected ? '→' : '—';
 
   async function persist(patch: Parameters<typeof updateRelationship>[1]) {
     const updated = await updateRelationship(relationshipId, patch);
@@ -72,6 +82,7 @@ export default function RelationshipInspector({
       sourceId: rel.sourceId,
       targetId: rel.targetId,
       type: rel.type,
+      directed: rel.directed,
       certainty: rel.certainty,
       label: rel.label ? `${rel.label} (copy)` : undefined,
       chapterRevealed: rel.chapterRevealed,
@@ -83,6 +94,16 @@ export default function RelationshipInspector({
       async () => { await restoreRelationship(copy); addRelationship(copy); },
     );
     onDuplicated?.(copy.id);
+  }
+
+  const typeOptions = RELATIONSHIP_TYPE_PRESETS.map((type) => ({
+    value: type,
+    label: formatRelationshipType(type, t),
+  }));
+
+  function handleTypeCommit(value: string) {
+    const nextType = normalizeRelationshipType(value);
+    if (nextType !== rel!.type) void persist({ type: nextType });
   }
 
   return (
@@ -107,11 +128,11 @@ export default function RelationshipInspector({
               title={`${sourceName} ${headerArrow} ${targetName}`}
             >
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sourceName}</span>
-              <span style={{ color: `var(--rel-${rel.type})`, flexShrink: 0 }}>{headerArrow}</span>
+              <span style={{ color: relationshipColor, flexShrink: 0 }}>{headerArrow}</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{targetName}</span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
-              {[rel.label || rel.type, rel.certainty, `revealed ch. ${rel.chapterRevealed}`].join(' · ')}
+              {[rel.label || relationshipTypeLabel, rel.certainty, `revealed ch. ${rel.chapterRevealed}`].filter(Boolean).join(' · ')}
             </div>
           </div>
           <button
@@ -184,27 +205,38 @@ export default function RelationshipInspector({
       {/* Type */}
       <div style={fieldStyle}>
         <label style={labelStyle}>Type</label>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {RELATIONSHIP_TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => void persist({ type: t })}
-              style={{
-                padding: '4px 9px',
-                fontSize: 11,
-                background: 'var(--bg-canvas)',
-                border: `1px solid ${t === rel.type ? `var(--rel-${t})` : 'var(--ink-200)'}`,
-                color: t === rel.type ? `var(--rel-${t})` : 'var(--ink-600)',
-                fontWeight: t === rel.type ? 600 : 500,
-                borderRadius: 999,
-                cursor: 'pointer',
-              }}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
+        <PresetTextInput
+          style={inputStyle}
+          options={typeOptions}
+          defaultValue={rel.type ?? ''}
+          key={`type-${relationshipId}`}
+          placeholder="Optional"
+          onValueCommit={handleTypeCommit}
+        />
+      </div>
+
+      {/* Direction */}
+      <div style={fieldStyle}>
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 12,
+          color: 'var(--ink-700)',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}>
+          <input
+            type="checkbox"
+            defaultChecked={relationshipDirected}
+            key={`directed-${relationshipId}-${relationshipDirected}`}
+            onChange={(e) => {
+              const directed = e.target.checked;
+              void persist({ directed: directed === isDirected(rel.type) ? undefined : directed });
+            }}
+          />
+          {t('relationship.directed')}
+        </label>
       </div>
 
       {/* Certainty */}

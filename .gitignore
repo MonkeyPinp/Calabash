@@ -1,17 +1,24 @@
-# Claude Code internal
-.agents
-.claude
+# Agent / local workspace
+.agents/
+.claude/
+claude_design/
+AGENTS.md
 skills-lock.json
+PLAN.md
 
-# Node / Vite
+# Dependencies
 node_modules/
-dist/
-dist-ssr/
-*.local
 
 # Build / cache
+dist/
+dist-ssr/
 .vite/
 .turbo/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+src-tauri/target/
 
 # Logs
 npm-debug.log*
@@ -32,15 +39,14 @@ lerna-debug.log*
 .env
 .env.local
 .env.*.local
-
-# TypeScript build info
-*.tsbuildinfo
+*.local
 
 # OS
 Thumbs.db
 
-claude_design/
-AGENTS.md
-PLAN.md
-skills-lock.json
-
+# Local data / optional media
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+app/public/demo-portraits/

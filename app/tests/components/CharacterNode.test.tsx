@@ -73,4 +73,48 @@ describe('CharacterNode', () => {
     );
     expect(screen.getByText('Murderer')).toBeInTheDocument();
   });
+
+  it('renders custom roles as written with the neutral role color', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="c4"
+        type="character"
+        data={{ name: 'The Old Wizard', role: 'mentor' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(screen.getByText('mentor')).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="character-node"]')!.innerHTML).toMatch(/--node-other/);
+  });
+
+  it('wraps long names instead of truncating them', () => {
+    const name = 'The Extremely Long Double-Barrelled Duchess of the Northern Observatory';
+    renderInFlow(
+      <CharacterNode
+        id="c5"
+        type="character"
+        data={{ name, role: 'suspect', profession: 'Keeper of a very long institutional title' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(screen.getByText(name)).toHaveStyle({ whiteSpace: 'normal', overflowWrap: 'anywhere' });
+  });
 });

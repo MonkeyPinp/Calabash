@@ -5,7 +5,8 @@ describe('uiStore', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.setAttribute('data-theme', 'light');
-    useUiStore.setState({ theme: 'light', themePreference: 'light', language: 'system' });
+    document.documentElement.setAttribute('lang', 'en');
+    useUiStore.setState({ theme: 'light', themePreference: 'light', language: 'system', resolvedLanguage: 'en' });
   });
 
   it('default theme is light', () => {
@@ -32,6 +33,22 @@ describe('uiStore', () => {
   it('setLanguage persists the preferred language', () => {
     useUiStore.getState().setLanguage('zh-CN');
     expect(useUiStore.getState().language).toBe('zh-CN');
+    expect(useUiStore.getState().resolvedLanguage).toBe('zh-CN');
     expect(localStorage.getItem('calabash-language')).toBe('zh-CN');
+    expect(document.documentElement.getAttribute('lang')).toBe('zh-CN');
+  });
+
+  it('supports Spanish as an initial localized UI language', () => {
+    useUiStore.getState().setLanguage('es');
+    expect(useUiStore.getState().language).toBe('es');
+    expect(useUiStore.getState().resolvedLanguage).toBe('es');
+    expect(document.documentElement.getAttribute('lang')).toBe('es');
+  });
+
+  it('supports Brazilian Portuguese as an initial localized UI language', () => {
+    useUiStore.getState().setLanguage('pt-BR');
+    expect(useUiStore.getState().language).toBe('pt-BR');
+    expect(useUiStore.getState().resolvedLanguage).toBe('pt-BR');
+    expect(document.documentElement.getAttribute('lang')).toBe('pt-BR');
   });
 });

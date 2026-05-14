@@ -1,21 +1,8 @@
 export type CertaintyLevel = 'confirmed' | 'suspected' | 'disproven';
 
-export type CharacterRole =
-  | 'detective'
-  | 'suspect'
-  | 'victim'
-  | 'witness'
-  | 'bystander'
-  | 'murderer'
-  | 'other';
+export type CharacterRole = string;
 
-export type RelationshipType =
-  | 'family'
-  | 'professional'
-  | 'romantic'
-  | 'hostile'
-  | 'suspicion'
-  | 'other';
+export type RelationshipType = string;
 
 export interface Alias {
   name: string;
@@ -29,12 +16,15 @@ export interface RoleReveal {
 
 export interface Book {
   id: string;
+  userId?: string;
   categoryId?: string;
   title: string;
   author?: string;
   totalChapters: number;
   currentChapter: number;
   spoilerShield: boolean;
+  spoilerChapters: number[];
+  highlightedChapters: number[];
   createdAt: number;
   updatedAt: number;
 }
@@ -48,12 +38,21 @@ export interface Category {
   updatedAt: number;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  avatarId?: string;
+  avatarColor: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface Character {
   id: string;
   bookId: string;
   name: string;
   aliases: Alias[];
-  role: CharacterRole;
+  role?: CharacterRole;
   roleReveals?: RoleReveal[];
   profession?: string;
   socialPosition?: string;
@@ -70,7 +69,8 @@ export interface Relationship {
   bookId: string;
   sourceId: string;
   targetId: string;
-  type: RelationshipType;
+  type?: RelationshipType;
+  directed?: boolean;
   label?: string;
   notes?: string;
   chapterRevealed: number;

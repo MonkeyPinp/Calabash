@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2, Copy } from 'lucide-react';
-import type { Alias, CharacterRole } from '@/types';
+import type { Alias } from '@/types';
 import { updateCharacter, deleteCharacter, restoreCharacter, createCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { savePortrait, getPortrait } from '@/db/portraits';
 import { useGraphStore } from '@/stores/graphStore';
-
-const CHARACTER_ROLES: CharacterRole[] = [
-  'detective',
-  'suspect',
-  'victim',
-  'witness',
-  'bystander',
-  'murderer',
-  'other',
-];
+import { useT } from '@/i18n';
+import {
+  CHARACTER_ROLE_PRESETS,
+  formatCharacterRole,
+  getCharacterRoleCssVar,
+  normalizeCharacterRole,
+} from '@/lib/roles';
+import PresetTextInput from '@/components/Form/PresetTextInput';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -50,6 +48,7 @@ export interface CharacterInspectorProps {
 }
 
 export default function CharacterInspector({ characterId, bookId, onDeleted, onDuplicated }: CharacterInspectorProps) {
+  const t = useT();
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
   const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
@@ -160,8 +159,9 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
     if (val && val !== character!.name) void persist({ name: val });
   }
 
-  function handleRoleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    void persist({ role: e.target.value as CharacterRole });
+  function handleRoleCommit(value: string) {
+    const val = normalizeCharacterRole(value);
+    if (val !== character!.role) void persist({ role: val });
   }
 
   function handleChapterBlur(e: React.FocusEvent<HTMLInputElement>) {
@@ -228,6 +228,10 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  const roleOptions = CHARACTER_ROLE_PRESETS.map((role) => ({
+    value: role,
+    label: formatCharacterRole(role, t),
+  }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -267,7 +271,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
               fontFamily: 'var(--font-display)',
               fontSize: 19,
               fontWeight: 500,
-              color: `var(--role-${character.role})`,
+              color: getCharacterRoleCssVar(character.role),
               flexShrink: 0,
             }}
           >
@@ -356,18 +360,14 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
       {/* Role */}
       <div style={fieldStyle}>
         <label style={labelStyle}>Role</label>
-        <select
+        <PresetTextInput
           style={inputStyle}
-          defaultValue={character.role}
+          options={roleOptions}
+          defaultValue={character.role ?? ''}
           key={`role-${characterId}`}
-          onChange={handleRoleChange}
-        >
-          {CHARACTER_ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r.charAt(0).toUpperCase() + r.slice(1)}
-            </option>
-          ))}
-        </select>
+          placeholder="Optional"
+          onValueCommit={handleRoleCommit}
+        />
       </div>
 
       {/* Chapter Introduced */}

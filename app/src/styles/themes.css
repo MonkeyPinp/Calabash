@@ -8,6 +8,11 @@
   --transition-node: 0.15s ease;
 }
 
+:root[lang='zh-CN'] {
+  --font-display: "Noto Serif SC", "Songti SC", SimSun, "Newsreader", serif;
+  --font-case-title: "Special Elite", "Noto Serif SC", "Songti SC", SimSun, serif;
+}
+
 :root[data-theme='light'] {
   --bg-canvas: #e8dfc7;
   --bg-canvas-2: #d8ceb1;

@@ -25,45 +25,58 @@ import StickyNoteNode from './StickyNoteNode';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
-import { resolveCharacterRole } from '@/lib/roles';
-import { isDirected } from '@/lib/relationshipTypes';
+import { formatCharacterRole, getCharacterRoleVisualKey, resolveCharacterRole } from '@/lib/roles';
+import { getRelationshipTypeMarkerColor, isRelationshipDirected } from '@/lib/relationshipTypes';
 import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { computeForceLayout } from '@/lib/layout';
 import { useGraphStore } from '@/stores/graphStore';
-import type { RelationshipType } from '@/types';
+import { useT } from '@/i18n';
 
 const nodeTypes = { character: CharacterNode, stickyNote: StickyNoteNode };
 const edgeTypes = { relationship: RelationshipEdge };
 const EMPTY_STICKY_NOTES: StickyNote[] = [];
 
-const EDGE_COLOR: Record<RelationshipType, string> = {
-  family:       '#b06820',
-  professional: '#2c6080',
-  romantic:     '#a83870',
-  hostile:      '#b02020',
-  suspicion:    '#9a7010',
-  other:        '#707070',
-};
-
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
-const CHARACTER_NODE_MAX_WIDTH = 320;
-const CHARACTER_NODE_HEIGHT = 76;
+const CHARACTER_NODE_MAX_WIDTH = 440;
+const CHARACTER_NODE_MIN_HEIGHT = 76;
+const CHARACTER_NODE_TEXT_INSET = 78;
 
-function estimateCharacterNodeWidth(name: string, subtitle?: string) {
-  const longest = Math.max(name.length, subtitle?.length ?? 0);
-  return Math.min(CHARACTER_NODE_MAX_WIDTH, Math.max(DEFAULT_CHARACTER_NODE_WIDTH, 96 + longest * 6.4));
+function longestWordLength(text: string) {
+  return text.split(/\s+/).reduce((longest, word) => Math.max(longest, word.length), 0);
 }
 
-const SHORTCUTS = [
-  ['N', 'New'],
-  ['E', 'Edge'],
-  ['F', 'Fit'],
-  ['/', 'Search'],
-  ['Del', 'Delete'],
-  ['Ctrl Z', 'Undo'],
-] as const;
+function estimateWrappedLines(text: string | undefined, availableWidth: number, averageCharWidth: number) {
+  const cleaned = text?.trim();
+  if (!cleaned) return 0;
+  const byLength = Math.ceil((cleaned.length * averageCharWidth) / availableWidth);
+  const byWord = Math.ceil((longestWordLength(cleaned) * averageCharWidth) / availableWidth);
+  return Math.max(1, byLength, byWord);
+}
+
+function estimateCharacterNodeSize(name: string, roleLabel: string, subtitle?: string) {
+  const texts = [name, roleLabel, subtitle].filter(Boolean) as string[];
+  const longestWord = texts.reduce((longest, text) => Math.max(longest, longestWordLength(text)), 0);
+  const longestText = texts.reduce((longest, text) => Math.max(longest, text.length), 0);
+  const width = Math.min(
+    CHARACTER_NODE_MAX_WIDTH,
+    Math.max(
+      DEFAULT_CHARACTER_NODE_WIDTH,
+      96 + Math.min(longestText, 48) * 6.2,
+      96 + longestWord * 7.2,
+    ),
+  );
+  const textWidth = Math.max(120, width - CHARACTER_NODE_TEXT_INSET);
+  const metaText = [roleLabel, subtitle].filter(Boolean).join(' · ');
+  const nameLines = estimateWrappedLines(name, textWidth, 7.3);
+  const metaLines = estimateWrappedLines(metaText, textWidth, 5.8);
+  const height = Math.max(
+    CHARACTER_NODE_MIN_HEIGHT,
+    32 + nameLines * 17 + (metaLines > 0 ? 4 + metaLines * 14 : 0) + 18,
+  );
+  return { width, height };
+}
 
 const kbdStyle: React.CSSProperties = {
   minWidth: 20,
@@ -126,6 +139,7 @@ function CalabashCanvasInner({
   onFitViewReady,
   onLayoutReady,
 }: CalabashCanvasProps) {
+  const t = useT();
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [pendingConnection, setPendingConnection] = useState<{ sourceId: string; targetId: string } | null>(null);
   const [edgeStartId, setEdgeStartId] = useState<string | null>(null);
@@ -149,6 +163,17 @@ function CalabashCanvasInner({
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
+  const shortcuts = useMemo(
+    () => [
+      ['N', t('shortcut.newCharacter')],
+      ['E', t('shortcut.connectEdge')],
+      ['F', t('shortcut.fitToView')],
+      ['/', t('shortcut.search')],
+      ['Del', t('shortcut.deleteSelection')],
+      ['Ctrl Z', t('shortcut.undo')],
+    ] as const,
+    [t],
+  );
 
   useEffect(() => {
     onFitViewReady?.(fitView);
@@ -162,25 +187,28 @@ function CalabashCanvasInner({
         .filter((c) => c.chapterIntroduced <= currentChapter)
         .map((c) => {
           const name = resolveDisplayName(c.aliases, currentChapter);
-          const width = estimateCharacterNodeWidth(name, c.profession);
+          const role = resolveCharacterRole(c, currentChapter);
+          const roleLabel = formatCharacterRole(role, t);
+          const { width, height } = estimateCharacterNodeSize(name, roleLabel, c.profession);
           return {
             id: c.id,
             type: 'character',
             position: c.position,
             width,
-            height: CHARACTER_NODE_HEIGHT,
-            style: { width },
+            height,
+            style: { width, minHeight: height },
             data: {
               name,
               width,
-              role: resolveCharacterRole(c, currentChapter),
+              height,
+              role,
               profession: c.profession,
               portraitId: c.portraitId,
               chapterIntroduced: c.chapterIntroduced,
             },
           };
         }),
-    [characters, currentChapter],
+    [characters, currentChapter, t],
   );
 
   // Sticky note nodes
@@ -211,7 +239,7 @@ function CalabashCanvasInner({
       new Map(
         characterNodes.map((n) => [
           n.id,
-          { x: n.position.x + (n.width ?? DEFAULT_CHARACTER_NODE_WIDTH) / 2, y: n.position.y + (n.height ?? CHARACTER_NODE_HEIGHT) / 2 },
+          { x: n.position.x + (n.width ?? DEFAULT_CHARACTER_NODE_WIDTH) / 2, y: n.position.y + (n.height ?? CHARACTER_NODE_MIN_HEIGHT) / 2 },
         ]),
       ),
     [characterNodes],
@@ -253,10 +281,10 @@ function CalabashCanvasInner({
       const spread = 45;
       const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
-      const color = EDGE_COLOR[r.type];
+      const color = getRelationshipTypeMarkerColor(r.type);
       const filled = { type: MarkerType.ArrowClosed, color, width: 14, height: 14 };
 
-      const markerEnd = isDirected(r.type) ? filled : undefined;
+      const markerEnd = isRelationshipDirected(r) ? filled : undefined;
 
       const sc = nodeCenter.get(r.sourceId);
       const tc = nodeCenter.get(r.targetId);
@@ -288,7 +316,7 @@ function CalabashCanvasInner({
     const visibleIds = new Set(visible.map((c) => c.id));
     const visibleEdges = relationships
       .filter((r) => r.chapterRevealed <= currentChapter && visibleIds.has(r.sourceId) && visibleIds.has(r.targetId))
-      .map((r) => ({ source: r.sourceId, target: r.targetId, directed: isDirected(r.type) }));
+      .map((r) => ({ source: r.sourceId, target: r.targetId, directed: isRelationshipDirected(r) }));
 
     const positions = computeForceLayout(visible.map((c) => c.id), visibleEdges);
 
@@ -581,7 +609,7 @@ function CalabashCanvasInner({
               };
               return colorMap[note?.color ?? 'yellow'] ?? '#fde047';
             }
-            const role = (node.data as { role?: string }).role ?? 'other';
+            const role = getCharacterRoleVisualKey((node.data as { role?: string }).role);
             const map: Record<string, string> = {
               detective: '#2c5f7c', suspect: '#8b2e2e', victim: '#5c5c5c',
               witness: '#7c6f2c', bystander: '#9a9a95', murderer: '#111111', other: '#6b6b65',
@@ -599,6 +627,7 @@ function CalabashCanvasInner({
       <div
         aria-label="Keyboard shortcuts"
         data-testid="keyboard-shortcuts-legend"
+        className="shortcut-legend"
         style={{
           position: 'absolute',
           right: 14,
@@ -646,6 +675,7 @@ function CalabashCanvasInner({
           Shortcuts
         </div>
         <div
+          className="shortcut-panel"
           style={{
             width: 178,
             boxSizing: 'border-box',
@@ -654,6 +684,9 @@ function CalabashCanvasInner({
             border: '1px solid var(--ink-200)',
             background: 'var(--bg-panel)',
             boxShadow: 'var(--shadow-pop)',
+            opacity: 0,
+            transform: 'translateY(-4px)',
+            transition: 'opacity var(--transition-fast), transform var(--transition-fast)',
           }}
         >
           <div
@@ -666,7 +699,7 @@ function CalabashCanvasInner({
               color: 'var(--ink-600)',
             }}
           >
-            {SHORTCUTS.map(([key, label]) => (
+            {shortcuts.map(([key, label]) => (
               <div key={`${key}-${label}`} style={{ display: 'contents' }}>
                 <span style={kbdStyle}>{key}</span>
                 <span
@@ -678,7 +711,7 @@ function CalabashCanvasInner({
                     fontWeight: 500,
                   }}
                 >
-                  {label === 'New' ? 'New character' : label === 'Edge' ? 'Connect edge' : label === 'Delete' ? 'Delete selection' : label === 'Fit' ? 'Fit to view' : label}
+                  {label}
                 </span>
               </div>
             ))}
@@ -706,9 +739,20 @@ function CalabashCanvasInner({
             pointerEvents: 'none',
           }}
         >
-          Edge mode: click a target character
+          {t('shortcut.edgeModeHint')}
         </div>
       )}
+
+      <style>{`
+        .shortcut-legend {
+          pointer-events: auto !important;
+        }
+        .shortcut-legend:hover .shortcut-panel,
+        .shortcut-legend:focus-within .shortcut-panel {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+        }
+      `}</style>
 
       {pendingPosition !== null && bookId !== null && (
         <NewCharacterModal

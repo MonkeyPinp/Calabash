@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { listBooks } from '@/db/books';
+import { getBook, listBooks } from '@/db/books';
 import { listCharactersByBook } from '@/db/characters';
 import { listRelationshipsByBook } from '@/db/relationships';
 import { listAnnotationsByBook } from '@/db/annotations';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
+import { useUserStore } from '@/stores/userStore';
 
 export function useBookHydration(): { loading: boolean } {
   const [loading, setLoading] = useState(true);
@@ -13,20 +14,22 @@ export function useBookHydration(): { loading: boolean } {
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
   const setTotalChapters = useBookStore((s) => s.setTotalChapters);
   const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
+  const setSpoilerChapters = useBookStore((s) => s.setSpoilerChapters);
+  const setHighlightedChapters = useBookStore((s) => s.setHighlightedChapters);
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
+  const activeUserId = useUserStore((s) => s.activeUserId);
+  const usersHydrated = useUserStore((s) => s.hydrated);
+  const hydrateUsers = useUserStore((s) => s.hydrateUsers);
 
-  // On mount: load books and set the most recently updated as active
+  // On mount: ensure a local reader profile exists, then profile-scoped books load below.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const books = await listBooks();
-        if (!cancelled && books.length > 0) {
-          setActiveBook(books[0].id);
-        }
+        await hydrateUsers();
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -35,6 +38,34 @@ export function useBookHydration(): { loading: boolean } {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // When profile changes: open that reader's most recent book, or clear the board.
+  useEffect(() => {
+    if (!usersHydrated) return;
+    if (!activeUserId) {
+      setActiveBook(null);
+      setCharacters([]);
+      setRelationships([]);
+      setStickyNotes([]);
+      setSpoilerShield(false);
+      setSpoilerChapters([]);
+      setHighlightedChapters([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const books = await listBooks(activeUserId);
+        if (!cancelled) setActiveBook(books[0]?.id ?? null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersHydrated, activeUserId]);
+
   // When activeBookId changes: hydrate characters, relationships and currentChapter
   useEffect(() => {
     if (activeBookId === null) {
@@ -42,26 +73,29 @@ export function useBookHydration(): { loading: boolean } {
       setRelationships([]);
       setStickyNotes([]);
       setSpoilerShield(false);
+      setSpoilerChapters([]);
+      setHighlightedChapters([]);
       return;
     }
 
     let cancelled = false;
     (async () => {
-      const [characters, relationships, books, annotations] = await Promise.all([
+      const [characters, relationships, book, annotations] = await Promise.all([
         listCharactersByBook(activeBookId),
         listRelationshipsByBook(activeBookId),
-        listBooks(),
+        getBook(activeBookId),
         listAnnotationsByBook(activeBookId),
       ]);
       if (cancelled) return;
       setCharacters(characters);
       setRelationships(relationships);
       setStickyNotes(annotations);
-      const book = books.find((b) => b.id === activeBookId);
       if (book) {
         setCurrentChapter(book.currentChapter);
         setTotalChapters(book.totalChapters);
         setSpoilerShield(book.spoilerShield);
+        setSpoilerChapters(book.spoilerChapters);
+        setHighlightedChapters(book.highlightedChapters);
       }
     })();
 

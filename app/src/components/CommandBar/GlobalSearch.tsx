@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { useGraphStore } from '@/stores/graphStore';
 import { useBookStore } from '@/stores/bookStore';
+import { useT } from '@/i18n';
+import { formatRelationshipType } from '@/lib/relationshipTypes';
 
 interface GlobalSearchProps {
   onSelectCharacter: (id: string) => void;
@@ -10,6 +12,7 @@ interface GlobalSearchProps {
 }
 
 export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, onClose }: GlobalSearchProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const characters = useGraphStore((s) => s.characters);
@@ -87,7 +90,7 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search characters and relationships…"
+            placeholder={t('search.placeholder')}
             style={{
               flex: 1, border: 'none', outline: 'none', fontSize: 14,
               background: 'transparent', color: 'var(--ink-900)',
@@ -105,14 +108,14 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
             {!hasResults && (
               <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--ink-500)' }}>
-                No results for &ldquo;{query}&rdquo;
+                {t('search.noResults', { query })}
               </div>
             )}
 
             {matchedChars.length > 0 && (
               <>
                 <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.11em', color: 'var(--ink-500)', textTransform: 'uppercase' }}>
-                  Characters
+                  {t('search.characters')}
                 </div>
                 {matchedChars.map((c) => (
                   <button
@@ -128,7 +131,9 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
                   >
                     <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 500, color: 'var(--ink-900)' }}>{c.name}</span>
                     {c.profession && <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{c.profession}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>Ch.{c.chapterIntroduced}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>
+                      {t('search.chapterShort', { chapter: c.chapterIntroduced })}
+                    </span>
                   </button>
                 ))}
               </>
@@ -137,7 +142,7 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
             {matchedRels.length > 0 && (
               <>
                 <div style={{ padding: '6px 14px 2px', fontSize: 10, fontWeight: 700, letterSpacing: '0.11em', color: 'var(--ink-500)', textTransform: 'uppercase' }}>
-                  Relationships
+                  {t('search.relationships')}
                 </div>
                 {matchedRels.map((r) => (
                   <button
@@ -155,7 +160,9 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
                       {charMap.get(r.sourceId) ?? '?'} → {charMap.get(r.targetId) ?? '?'}
                     </span>
                     {r.label && <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{r.label}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>{r.type}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--ink-400)', flexShrink: 0 }}>
+                      {formatRelationshipType(r.type, t)}
+                    </span>
                   </button>
                 ))}
               </>
@@ -164,7 +171,7 @@ export default function GlobalSearch({ onSelectCharacter, onSelectRelationship, 
         )}
 
         <div style={{ padding: '8px 14px', fontSize: 11, color: 'var(--ink-500)', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)' }}>
-          ↩ select &nbsp;·&nbsp; Esc close
+          {t('search.footer')}
         </div>
       </div>
 

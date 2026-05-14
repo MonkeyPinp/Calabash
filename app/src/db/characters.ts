@@ -1,10 +1,11 @@
 import { db } from './schema';
 import type { Character, Alias, CharacterRole, RoleReveal } from '@/types';
+import { normalizeCharacterRole } from '@/lib/roles';
 
 export interface CreateCharacterInput {
   bookId: string;
   name: string;
-  role: CharacterRole;
+  role?: CharacterRole;
   roleReveals?: RoleReveal[];
   chapterIntroduced: number;
   aliases?: Alias[];
@@ -22,7 +23,7 @@ export async function createCharacter(input: CreateCharacterInput): Promise<Char
     bookId: input.bookId,
     name: input.name,
     aliases: input.aliases ?? [{ name: input.name, chapterRevealed: input.chapterIntroduced }],
-    role: input.role,
+    role: normalizeCharacterRole(input.role),
     roleReveals: input.roleReveals,
     profession: input.profession,
     socialPosition: input.socialPosition,
@@ -51,7 +52,10 @@ export async function updateCharacter(
 ): Promise<Character> {
   const existing = await db.characters.get(id);
   if (!existing) throw new Error(`Character ${id} not found`);
-  const next: Character = { ...existing, ...patch, updatedAt: Date.now() };
+  const normalizedPatch = 'role' in patch
+    ? { ...patch, role: normalizeCharacterRole(patch.role) }
+    : patch;
+  const next: Character = { ...existing, ...normalizedPatch, updatedAt: Date.now() };
   await db.characters.put(next);
   return next;
 }

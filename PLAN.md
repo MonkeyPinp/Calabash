@@ -50,15 +50,15 @@ A lightweight, local-first relationship graph editor designed specifically for r
 - Each book has its own independent graph
 
 **Character (node) management**
-- Add character with: name, aliases (each with the chapter it was revealed in), role/profession, family/social position, notes, optional portrait image, **chapter introduced**
+- Add character with: name, aliases (each with the chapter it was revealed in), optional free-text role/profession, family/social position, notes, optional portrait image, **chapter introduced**
 - Edit and delete characters
-- Role tag: Detective / Suspect / Victim / Witness / Bystander / Other (drives node border color)
+- Role tag: optional free text. Detective / Suspect / Victim / Witness / Bystander / Murderer / Other remain preset suggestions and drive role-specific colors; custom or blank roles use the neutral role color.
 - Display-name rule: the node label shows the earliest alias whose `chapterRevealed <= currentChapter` (the primary `name` is treated as the alias with the lowest `chapterRevealed`). This preserves spoiler safety when sharing or scrubbing.
 
 **Relationship (edge) management**
-- Add edge with: type (family / professional / romantic / hostile / suspicion / other), label text, notes, **chapter revealed**, **certainty** (confirmed / suspected / disproven)
+- Add edge with: optional free-text type, optional direction arrow, label text, notes, **chapter revealed**, **certainty** (confirmed / suspected / disproven)
 - Edit and delete edges
-- Directionality is **derived from `type`**, not stored as a separate field. Symmetric types (`family`, `professional`, `romantic`, `other`) render without arrows; asymmetric types (`hostile`, `suspicion`) render with an arrow from `sourceId` to `targetId`. The data model still uses `sourceId`/`targetId` because React Flow requires them, but for symmetric types the choice of which endpoint is source is semantically irrelevant.
+- Directionality defaults from known presets for backward compatibility: symmetric types (`family`, `professional`, `romantic`, `other`) render without arrows; asymmetric types (`hostile`, `suspicion`) render with an arrow from `sourceId` to `targetId`. A per-edge `directed` override exists so custom types like `mentor`, `betrays`, or `protects` are not constrained by detective-fiction presets.
 
 **Canvas interaction**
 - Drag nodes to position
@@ -96,8 +96,8 @@ A lightweight, local-first relationship graph editor designed specifically for r
 **Persistence**
 - All data in IndexedDB via Dexie.js
 - Auto-save commits on **logical boundaries** (drag end, input blur, discrete actions immediate) — see §3.6 for the full contract
-- Manual export: download book as JSON file (portraits inlined as data URLs)
-- Manual import: load book from JSON file
+- Manual export: download the whole local library as a Calabash JSON collection (library metadata, categories, books, graph data, notes, and portraits inlined as data URLs)
+- Manual import: load a Calabash JSON collection back into the local database; legacy single-book JSON imports remain accepted for old backups
 - "New book from JSON" path for future sharing
 
 **Theming**
@@ -158,27 +158,32 @@ We considered Cytoscape.js for raw performance. We chose React Flow because:
 
 type CertaintyLevel = 'confirmed' | 'suspected' | 'disproven';
 
-type CharacterRole =
-  | 'detective'
-  | 'suspect'
-  | 'victim'
-  | 'witness'
-  | 'bystander'
-  | 'murderer'   // the true culprit — spoiler-sensitive, protected by Spoiler Shield
-  | 'other';
+type CharacterRole = string;
+type RelationshipType = string;
 
-type RelationshipType =
-  | 'family'
-  | 'professional'
-  | 'romantic'
-  | 'hostile'
-  | 'suspicion'
-  | 'other';
+const CHARACTER_ROLE_PRESETS = [
+  'detective',
+  'suspect',
+  'victim',
+  'witness',
+  'bystander',
+  'murderer', // spoiler-sensitive, protected by Spoiler Shield
+  'other',
+] as const;
 
-// Directionality is a code constant, not a per-edge field.
-// Symmetric types render without arrows; asymmetric types render with an arrow source -> target.
+const RELATIONSHIP_TYPE_PRESETS = [
+  'family',
+  'professional',
+  'romantic',
+  'hostile',
+  'suspicion',
+  'other',
+] as const;
+
+// Default directionality for known presets only.
+// Custom relationship types default to symmetric unless the edge-level directed override is true.
 // Lives in `src/lib/relationshipTypes.ts`.
-const RELATIONSHIP_TYPE_META: Record<RelationshipType, { directed: boolean }> = {
+const RELATIONSHIP_TYPE_META: Record<typeof RELATIONSHIP_TYPE_PRESETS[number], { directed: boolean }> = {
   family:       { directed: false },
   professional: { directed: false },
   romantic:     { directed: false },
@@ -205,7 +210,9 @@ interface Book {
   author?: string;
   totalChapters: number;  // default 30
   currentChapter: number; // last slider position, for restore-on-open
-  spoilerShield: boolean; // Phase 1.5: when true, blur only chapters containing spoiler-sensitive resolved roles
+  spoilerShield: boolean; // Phase 1.5: when true, blur protected chapters
+  spoilerChapters: number[]; // reader-marked chapters to protect in addition to automatic sensitive role reveals
+  highlightedChapters: number[]; // reader-marked important chapters; visual only, no spoiler cover
   createdAt: number;      // epoch ms
   updatedAt: number;
 }
@@ -215,7 +222,7 @@ interface Character {
   bookId: string;
   name: string; // primary display name (= alias with the lowest chapterRevealed)
   aliases: Alias[]; // includes the primary name as the first entry; additional aliases each carry their own chapterRevealed
-  role: CharacterRole; // initial/resolved role before later chapter reveals
+  role?: CharacterRole; // optional initial/resolved role before later chapter reveals
   roleReveals?: RoleReveal[]; // latest role with chapterRevealed <= currentChapter wins
   profession?: string;
   socialPosition?: string; // family / social standing notes
@@ -232,7 +239,8 @@ interface Relationship {
   bookId: string;
   sourceId: string; // Character.id
   targetId: string;
-  type: RelationshipType; // directionality of the rendered arrow is derived from RELATIONSHIP_TYPE_META[type]
+  type?: RelationshipType; // optional free-text relationship category
+  directed?: boolean; // optional override; falls back to known preset defaults when omitted
   label?: string; // short edge text, e.g. "father of", "blackmails"
   notes?: string; // freeform markdown
   chapterRevealed: number; // 1-indexed
@@ -300,14 +308,14 @@ Calabash/                                       # repo root
     │   │   ├── characters.ts
     │   │   ├── relationships.ts
     │   │   ├── portraits.ts                   # binary blob storage + URL.createObjectURL helpers
-    │   │   └── importExport.ts                # JSON import/export (inlines portraits as data URLs)
+    │   │   └── importExport.ts                # library/book JSON import/export (inlines portraits as data URLs)
     │   ├── hooks/
     │   │   ├── useKeyboardShortcuts.ts
     │   │   ├── usePortraitUrl.ts              # Blob -> object URL with revoke on unmount
     │   │   └── useChapterFilter.ts            # the core filter logic
     │   ├── lib/
     │   │   ├── certainty.ts                   # cycle, visual mapping
-    │   │   ├── relationshipTypes.ts           # RELATIONSHIP_TYPE_META: directionality table
+    │   │   ├── relationshipTypes.ts           # relationship presets, colors, and direction defaults
     │   │   ├── aliases.ts                     # resolve display name for a given chapter
     │   │   ├── layout.ts                      # force-directed layout trigger
     │   │   └── theme.ts                       # CSS variable definitions
@@ -356,22 +364,28 @@ Persistence commits on **logical boundaries**, not on a time-based debounce. The
   4. For **continuous operations**, writes only on the boundary:
      - Node position: written on React Flow's `onNodeDragStop` (one write per drag, not 60/sec during the drag)
      - Inspector text fields (name, notes, etc.): written on blur, or on explicit Save click
+- Chapter names are deliberately out of scope. The slider uses numeric chapters plus optional reader highlights, reveal markers, and protected markers so long chapter titles do not become another management surface.
 - **View state is excluded from the undo stack and the data tables**: chapter slider position, theme, panel collapsed/expanded, current selection, current zoom. The chapter slider position is persisted to `Book.currentChapter` as write-through (so the next session opens at the same chapter) but is not undoable — `Ctrl+Z` does not move the slider backwards.
 - On app launch: hydrate Zustand from Dexie. Object URLs for portraits are created lazily as characters mount and revoked on unmount.
 - Undo stack: capped at 100 entries, in-memory only (not persisted across sessions in MVP).
-- Export JSON shape:
+- Library export JSON shape:
   ```json
   {
     "calabashVersion": "0.1.0",
-    "book": { /* Book */ },
+    "exportType": "library",
+    "exportedAt": 1730000000000,
+    "users": [ /* User[] */ ],
+    "categories": [ /* Category[] */ ],
+    "books": [ /* Book[] */ ],
     "characters": [ /* Character[] */ ],
     "relationships": [ /* Relationship[] */ ],
+    "annotations": [ /* StickyNote[] */ ],
     "portraits": [
       { "id": "...", "bookId": "...", "mimeType": "image/jpeg", "dataUrl": "data:image/jpeg;base64,..." }
     ]
   }
   ```
-  On export, `portraits[].dataUrl` is generated by reading each `Portrait.blob` and base64-encoding it; on import, the reverse — the data URL is decoded back into a Blob and stored in the `portraits` table.
+  On export, `portraits[].dataUrl` is generated by reading each `Portrait.blob` and base64-encoding it; on import, the reverse — the data URL is decoded back into a Blob and stored in the `portraits` table. Full-library import is a merge/upsert restore. Old single-book JSON exports are still importable and are attached to the current local library.
 
 ### 3.7 Theming and UI language
 
@@ -405,13 +419,15 @@ Last synced after the Claude Design UI pass.
 - Character nodes use role ribbon/avatar, bottom-right introduced chapter, and dynamic width based on display name/profession length
 - Edge mode shortcut exits after one completed relationship
 - Sticky notes, StickyNote inspector, book categories, Settings panel, Spoiler Shield, and Ackroyd-only demo cleanup are present in the codebase
+- Phase 1.5 local reader metadata is wired through Dexie, book/category filtering, demo creation, and import/export, but the UI presents this as one local library rather than an account/profile system
+- UI language preferences support English, Simplified Chinese, Spanish, and Brazilian Portuguese, with CJK title typography using a serif dossier-style stack
+- First-launch onboarding can create either an Ackroyd tutorial case or the Hida Trick House tutorial case from the guide or Settings
+- The Calabash pipe mark is now present as an app SVG logo and favicon
+- Export/Import are whole-library JSON utilities, available above the sidebar footer and mirrored in Settings data management; the footer stays focused on Settings, theme, and GitHub
 
 **Needs follow-up**
-- Full i18n pass: UI strings are still mostly English
-- Onboarding/tutorial book flow has not been built
-- Category UX is still minimal: create/assign/delete exist, but expand/collapse and manual ordering are not polished
-- Export/Import placement is usable but should be revisited once Settings gets a data-management section
-- Inspector visual parity with the latest Claude mock should be checked field by field
+- Inspector field-by-field localization and visual parity should still be checked after a full reading dogfood pass
+- Category UX supports create/assign/rename/delete and collapse/expand; manual ordering remains deferred
 - Final accessibility pass: focus order, labels, keyboard-only flows, contrast in both themes
 - Real reading-session dogfood: read one full detective novel and record friction before adding new features
 
@@ -426,20 +442,20 @@ Everything in §2.1. Deployed as a static site (Vercel, Netlify, or GitHub Pages
 
 Before packaging as a desktop app, add these features to complete the reading experience:
 
-Current status after the Claude Design UI pass: Book Categories, Spoiler Shield, Settings Panel, Sticky Note Inspector, and Demo Cleanup are implemented in the web app. Multi-user support, i18n, and onboarding remain deferred. Several implemented items still need UX polish and dogfood validation before they should be considered "done-done."
+Current status after the Phase 1.5 pass: Book Categories, Spoiler Shield, Settings Panel, Sticky Note Inspector, Demo Cleanup, simplified local library metadata, English/Simplified Chinese/Spanish/Brazilian Portuguese language preferences, onboarding, Ackroyd and Hida tutorial creation, and whole-library JSON import/export are implemented in the web app. Remaining work is mostly validation polish: inspector localization sweep, accessibility review, manual category ordering, and real reading-session dogfood.
 
-#### 1.5.1 Multi-user Support (Local)
-- Default user created on first launch (no password required)
-- Users can create additional profiles, switch between them
-- Editable username and avatar
-- Existing data migrates to the default user on upgrade
-- **Data model**: new `users` table; `books` gains `userId` field
+#### 1.5.1 Local Library Metadata
+- Default local library created on first launch (no password, login, or sync)
+- Settings exposes a simple library name, not an account/profile system
+- Existing pre-library data migrates to the default local library on upgrade
+- **Data model**: local `users` table is retained as an internal owner table; `books` keeps `userId` for migration/import compatibility
 
 ```typescript
 interface User {
   id: string;
-  name: string;
+  name: string;           // shown as local library name
   avatarId?: string;      // FK -> portraits table (reuse with type distinction)
+  avatarColor: string;    // retained for imported older profile data
   createdAt: number;
   updatedAt: number;
 }
@@ -466,7 +482,9 @@ interface Category {
 
 #### 1.5.3 Spoiler Shield
 - Book-level toggle (`spoilerShield: boolean` on `Book`)
-- When enabled, the entire canvas is blurred with a CSS filter only when the current chapter contains spoiler-sensitive resolved roles
+- When enabled, the entire canvas is blurred with a CSS filter when the current chapter is reader-marked in `spoilerChapters` or contains spoiler-sensitive resolved roles
+- The toolbar Shield action can mark the current chapter as protected, reveal it temporarily, cover it again, or remove reader-added protection
+- Readers can separately highlight chapters on the chapter slider; highlighted chapters are visual bookmarks only and do not trigger Spoiler Shield
 - Clicking the canvas shows a confirmation dialog: "Are you sure you want to reveal? This may contain spoilers."
 - Protects `murderer` role nodes and sensitive relationships from accidental exposure
 - Core to the product's "spoiler-safe by construction" promise
@@ -483,27 +501,18 @@ interface Category {
 - Prepares the app for Tauri packaging
 
 #### 1.5.5 Internationalization (i18n)
-- Framework: `react-i18next`
-- Initial languages: English (default), Simplified Chinese (zh-CN)
+- Lightweight local dictionary in `src/i18n.ts`
+- Initial languages: English (default), Simplified Chinese (zh-CN), Spanish (es), Brazilian Portuguese (pt-BR)
 - Default language detection: `navigator.language`
-- Translation scope: all UI text, error messages, tutorial content
-- Demo data (Ackroyd) available in both languages
-- File structure:
-  ```
-  src/locales/
-    en/
-      common.json
-      tutorial.json
-    zh-CN/
-      common.json
-      tutorial.json
-  ```
+- Translation scope: primary shell, sidebar, settings, onboarding, search, keyboard hints, and create-character/create-relationship modals
+- Tutorial data localizes to the selected language
 
-#### 1.5.6 Onboarding Tutorial
+#### 1.5.6 Onboarding Tutorials
 - Popup-based interactive guide on first launch
-- Gamified task: create a simple graph with Alice (murderer), Bob (suspect), Carol (witness), Dave (bystander)
-- Teaches: adding characters, creating relationships, using the chapter slider, toggling certainty
-- Tutorial data saved in a "Tutorial" book (user can delete)
+- Tutorial chooser includes *The Murder of Roger Ackroyd* for Western detective-fiction familiarity and *Hida Trick House Murder Case* for a compact three-episode chapter-slider exercise
+- Gamified task: explore the three-episode "Hida Trick House Murder Case" tutorial from *The Kindaichi Case Files* TV episodes 18-20
+- Teaches: adding characters, creating relationships, using the chapter slider as episode progress, toggling certainty, and letting Spoiler Shield protect the final reveal
+- Tutorial data saved in a "Tutorial" category book (user can delete)
 - Can be re-triggered from Settings
 
 #### 1.5.7 Sticky Note Inspector
@@ -513,9 +522,23 @@ interface Category {
 
 #### 1.5.8 Demo Cleanup
 - Remove "One Hundred Years of Solitude" demo
-- Keep only "The Murder of Roger Ackroyd" as the single demo
-- Demo button in sidebar creates a pre-populated book with characters and relationships
-- Ackroyd demo keeps the final culprit hidden as a non-spoiler role until the reveal chapter, then resolves them to `murderer`; Spoiler Shield is enabled for the book but only covers the canvas once the current chapter reaches that sensitive reveal
+- Keep *The Murder of Roger Ackroyd* as the primary Western starter case, with generated original portrait avatars
+- Sidebar button creates a pre-populated Ackroyd book with characters and relationships
+- Ackroyd keeps the final culprit hidden as a non-spoiler role until the reveal chapter, then resolves them to `murderer`; Spoiler Shield is enabled for the book but only covers the canvas once the current chapter reaches that sensitive reveal
+
+---
+
+### Phase 1.6 — Private beta distribution
+
+Before starting the desktop shell, validate the product with the existing web app as a static, client-only beta.
+
+- Ship one app, two eventual distributions: web first, desktop later. Do not fork separate web and desktop products.
+- No accounts, login, sync service, backend API, hosted database, or server-side reader data.
+- Keep reader library data in IndexedDB through Dexie. Use `localStorage` only for preferences and active session pointers such as theme, language, onboarding, and active local library.
+- Add a clear beta storage note before external testing: data stays in this browser, clearing site data deletes the library, and Export Library is the backup path.
+- Treat whole-library JSON import/export as the beta safety rail. Keep compatibility tests and at least one fixture-style real export for regression checks.
+- Run one full reading dogfood pass plus 3-5 web beta testers before Tauri work begins.
+- Only move to Tauri once the core workflow and data-safety story feel boringly reliable.
 
 ---
 

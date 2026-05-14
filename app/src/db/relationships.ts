@@ -1,11 +1,13 @@
 import { db } from './schema';
 import type { Relationship, RelationshipType, CertaintyLevel } from '@/types';
+import { normalizeRelationshipType } from '@/lib/relationshipTypes';
 
 export interface CreateRelationshipInput {
   bookId: string;
   sourceId: string;
   targetId: string;
-  type: RelationshipType;
+  type?: RelationshipType;
+  directed?: boolean;
   chapterRevealed: number;
   label?: string;
   notes?: string;
@@ -19,7 +21,8 @@ export async function createRelationship(input: CreateRelationshipInput): Promis
     bookId: input.bookId,
     sourceId: input.sourceId,
     targetId: input.targetId,
-    type: input.type,
+    type: normalizeRelationshipType(input.type),
+    directed: input.directed,
     label: input.label,
     notes: input.notes,
     chapterRevealed: input.chapterRevealed,
@@ -45,7 +48,10 @@ export async function updateRelationship(
 ): Promise<Relationship> {
   const existing = await db.relationships.get(id);
   if (!existing) throw new Error(`Relationship ${id} not found`);
-  const next: Relationship = { ...existing, ...patch, updatedAt: Date.now() };
+  const normalizedPatch = 'type' in patch
+    ? { ...patch, type: normalizeRelationshipType(patch.type) }
+    : patch;
+  const next: Relationship = { ...existing, ...normalizedPatch, updatedAt: Date.now() };
   await db.relationships.put(next);
   return next;
 }

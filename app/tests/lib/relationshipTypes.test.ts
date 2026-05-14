@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isDirected, RELATIONSHIP_TYPE_META } from '@/lib/relationshipTypes';
+import { isDirected, isRelationshipDirected, RELATIONSHIP_TYPE_META } from '@/lib/relationshipTypes';
 
 describe('relationship type directionality', () => {
   it('treats family/professional/romantic/other as symmetric', () => {
@@ -12,6 +12,13 @@ describe('relationship type directionality', () => {
   it('treats hostile/suspicion as directed', () => {
     expect(isDirected('hostile')).toBe(true);
     expect(isDirected('suspicion')).toBe(true);
+  });
+
+  it('treats custom or blank relationship types as symmetric unless overridden', () => {
+    expect(isDirected('mentor')).toBe(false);
+    expect(isDirected(undefined)).toBe(false);
+    expect(isRelationshipDirected({ type: 'mentor', directed: true })).toBe(true);
+    expect(isRelationshipDirected({ type: 'suspicion', directed: false })).toBe(false);
   });
 
   it('exposes the full table', () => {

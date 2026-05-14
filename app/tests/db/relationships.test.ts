@@ -30,6 +30,21 @@ describe('relationships DAO', () => {
     expect(r.certainty).toBe('confirmed');
   });
 
+  it('accepts custom and blank optional relationship types', async () => {
+    const custom = await createRelationship({
+      bookId: 'b', sourceId: 's', targetId: 't',
+      type: 'mentor', chapterRevealed: 1, directed: true,
+    });
+    const untyped = await createRelationship({
+      bookId: 'b', sourceId: 's', targetId: 'u',
+      type: '   ', chapterRevealed: 1,
+    });
+
+    expect(custom.type).toBe('mentor');
+    expect(custom.directed).toBe(true);
+    expect(untyped.type).toBeUndefined();
+  });
+
   it('listRelationshipsByBook scopes to one book', async () => {
     await createRelationship({ bookId: 'A', sourceId: 's', targetId: 't', type: 'family', chapterRevealed: 1 });
     await createRelationship({ bookId: 'B', sourceId: 's', targetId: 't', type: 'family', chapterRevealed: 1 });

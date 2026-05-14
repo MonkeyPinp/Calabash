@@ -15,6 +15,7 @@ describe('books DAO', () => {
       db.relationships.clear(),
       db.portraits.clear(),
       db.annotations.clear(),
+      db.users.clear(),
     ]);
   });
 
@@ -25,6 +26,8 @@ describe('books DAO', () => {
     expect(book.totalChapters).toBe(30);
     expect(book.currentChapter).toBe(1);
     expect(book.spoilerShield).toBe(false);
+    expect(book.spoilerChapters).toEqual([]);
+    expect(book.highlightedChapters).toEqual([]);
     expect(book.createdAt).toBeGreaterThan(0);
     expect(book.updatedAt).toBe(book.createdAt);
   });
@@ -53,13 +56,29 @@ describe('books DAO', () => {
     expect(books.map((x) => x.id)).toEqual([b.id, a.id]);
   });
 
+  it('listBooks can filter by local reader profile', async () => {
+    const a = await createBook({ title: 'A', userId: 'reader-a' });
+    const b = await createBook({ title: 'B', userId: 'reader-b' });
+
+    expect((await listBooks('reader-a')).map((book) => book.id)).toEqual([a.id]);
+    expect((await listBooks('reader-b')).map((book) => book.id)).toEqual([b.id]);
+  });
+
   it('updateBook merges fields and bumps updatedAt', async () => {
     const book = await createBook({ title: 'X' });
     await new Promise((r) => setTimeout(r, 2));
-    const updated = await updateBook(book.id, { title: 'Y', currentChapter: 5, spoilerShield: true });
+    const updated = await updateBook(book.id, {
+      title: 'Y',
+      currentChapter: 5,
+      spoilerShield: true,
+      spoilerChapters: [5, 2, 5],
+      highlightedChapters: [8, 3, 3],
+    });
     expect(updated.title).toBe('Y');
     expect(updated.currentChapter).toBe(5);
     expect(updated.spoilerShield).toBe(true);
+    expect(updated.spoilerChapters).toEqual([2, 5]);
+    expect(updated.highlightedChapters).toEqual([3, 8]);
     expect(updated.updatedAt).toBeGreaterThan(book.updatedAt);
   });
 

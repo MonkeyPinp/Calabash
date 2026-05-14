@@ -11,7 +11,9 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
   if (!name) throw new Error('Category name is required');
 
   const now = Date.now();
-  const existing = await db.categories.toArray();
+  const existing = await db.categories
+    .filter((category) => category.userId === input.userId)
+    .toArray();
   const maxOrder = existing.reduce((max, category) => Math.max(max, category.order), -1);
   const category: Category = {
     id: crypto.randomUUID(),
@@ -38,8 +40,10 @@ export async function findOrCreateCategory(input: CreateCategoryInput): Promise<
   return existing ?? createCategory({ name, userId: input.userId });
 }
 
-export async function listCategories(): Promise<Category[]> {
-  const categories = await db.categories.toArray();
+export async function listCategories(userId?: string): Promise<Category[]> {
+  const categories = userId
+    ? await db.categories.where('userId').equals(userId).toArray()
+    : await db.categories.toArray();
   return categories.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 }
 

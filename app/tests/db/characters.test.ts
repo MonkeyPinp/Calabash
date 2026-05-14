@@ -44,6 +44,24 @@ describe('characters DAO', () => {
     expect(c.position).toEqual({ x: 100, y: 50 });
   });
 
+  it('accepts custom and blank optional roles', async () => {
+    const mentor = await createCharacter({
+      bookId: BOOK_ID,
+      name: 'Lady Vimes',
+      role: 'mentor',
+      chapterIntroduced: 1,
+    });
+    const untyped = await createCharacter({
+      bookId: BOOK_ID,
+      name: 'A stranger',
+      role: '   ',
+      chapterIntroduced: 1,
+    });
+
+    expect(mentor.role).toBe('mentor');
+    expect(untyped.role).toBeUndefined();
+  });
+
   it('listCharactersByBook returns only characters for that book', async () => {
     await createCharacter({ bookId: 'book-A', name: 'A', role: 'detective', chapterIntroduced: 1 });
     await createCharacter({ bookId: 'book-B', name: 'B', role: 'suspect',   chapterIntroduced: 1 });

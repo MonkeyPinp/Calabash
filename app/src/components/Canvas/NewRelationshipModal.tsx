@@ -1,16 +1,24 @@
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Relationship } from '@/types';
 import { createRelationship, deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
+import { useT } from '@/i18n';
+import {
+  formatRelationshipType,
+  isDirected,
+  normalizeRelationshipType,
+  RELATIONSHIP_TYPE_PRESETS,
+} from '@/lib/relationshipTypes';
+import PresetTextInput from '@/components/Form/PresetTextInput';
 
-const RELATIONSHIP_TYPES = ['family', 'professional', 'romantic', 'hostile', 'suspicion', 'other'] as const;
 const CERTAINTY_LEVELS = ['confirmed', 'suspected', 'disproven'] as const;
 
 const schema = z.object({
-  type: z.enum(RELATIONSHIP_TYPES),
+  type: z.string().max(80).optional(),
+  directed: z.boolean(),
   label: z.string().optional(),
   chapterRevealed: z.number().min(1),
   certainty: z.enum(CERTAINTY_LEVELS),
@@ -35,14 +43,17 @@ export default function NewRelationshipModal({
   onClose,
   onCreated,
 }: NewRelationshipModalProps) {
+  const t = useT();
   const addRelationship = useGraphStore((s) => s.addRelationship);
   const removeRelationship = useGraphStore((s) => s.removeRelationship);
   const pushUndo = useGraphStore((s) => s.pushUndo);
+  const directionTouchedRef = useRef(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { control, register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: 'other',
+      type: '',
+      directed: false,
       label: '',
       chapterRevealed: currentChapter,
       certainty: 'suspected',
@@ -57,12 +68,21 @@ export default function NewRelationshipModal({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
+  const watchedType = watch('type');
+  useEffect(() => {
+    if (!directionTouchedRef.current) {
+      setValue('directed', isDirected(watchedType), { shouldDirty: false });
+    }
+  }, [watchedType, setValue]);
+
   async function onSubmit(values: FormValues) {
+    const type = normalizeRelationshipType(values.type);
     const rel = await createRelationship({
       bookId,
       sourceId,
       targetId,
-      type: values.type,
+      type,
+      directed: values.directed === isDirected(type) ? undefined : values.directed,
       label: values.label || undefined,
       chapterRevealed: values.chapterRevealed,
       certainty: values.certainty,
@@ -75,6 +95,11 @@ export default function NewRelationshipModal({
     onCreated(rel);
     onClose();
   }
+
+  const typeOptions = RELATIONSHIP_TYPE_PRESETS.map((type) => ({
+    value: type,
+    label: formatRelationshipType(type, t),
+  }));
 
   return (
     <div
@@ -106,44 +131,69 @@ export default function NewRelationshipModal({
       >
         <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--ink-150)' }}>
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink-900)' }}>
-            Add relationship
+            {t('relationship.add')}
           </h2>
         </div>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div style={{ padding: '16px 18px 4px' }}>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
-              Type
+              {t('relationship.type')}
             </label>
-            <select
-              {...register('type')}
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                border: '1px solid var(--ink-200)',
-                borderRadius: 4,
-                background: 'var(--bg-canvas)',
-                color: 'var(--ink-900)',
-                fontSize: 13,
-                boxSizing: 'border-box',
-              }}
-            >
-              <option value="family">Family</option>
-              <option value="professional">Professional</option>
-              <option value="romantic">Romantic</option>
-              <option value="hostile">Hostile</option>
-              <option value="suspicion">Suspicion</option>
-              <option value="other">Other</option>
-            </select>
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <PresetTextInput
+                  ref={field.ref}
+                  name={field.name}
+                  value={field.value ?? ''}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  options={typeOptions}
+                  placeholder={t('common.optional')}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    border: '1px solid var(--ink-200)',
+                    borderRadius: 4,
+                    background: 'var(--bg-canvas)',
+                    color: 'var(--ink-900)',
+                    fontSize: 13,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              )}
+            />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 12,
+              color: 'var(--ink-700)',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}>
+              <input
+                type="checkbox"
+                {...register('directed', {
+                  onChange: () => { directionTouchedRef.current = true; },
+                })}
+              />
+              {t('relationship.directed')}
+            </label>
           </div>
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
-              Label (optional)
+              {t('relationship.labelOptional')}
             </label>
             <input
               {...register('label')}
-              placeholder="e.g. Alibi, Employer…"
+              placeholder={t('relationship.labelPlaceholder')}
               style={{
                 width: '100%',
                 padding: '6px 10px',
@@ -159,7 +209,7 @@ export default function NewRelationshipModal({
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
-              Chapter Revealed
+              {t('relationship.chapterRevealed')}
             </label>
             <input
               {...register('chapterRevealed', { valueAsNumber: true })}
@@ -183,7 +233,7 @@ export default function NewRelationshipModal({
 
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>
-              Certainty
+              {t('relationship.certainty')}
             </label>
             <select
               {...register('certainty')}
@@ -198,9 +248,9 @@ export default function NewRelationshipModal({
                 boxSizing: 'border-box',
               }}
             >
-              <option value="suspected">Suspected</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="disproven">Disproven</option>
+              {CERTAINTY_LEVELS.map((certainty) => (
+                <option key={certainty} value={certainty}>{t(`certainty.${certainty}`)}</option>
+              ))}
             </select>
           </div>
           </div>
@@ -220,7 +270,7 @@ export default function NewRelationshipModal({
                 fontWeight: 500,
               }}
             >
-              Cancel
+              {t('sidebar.cancel')}
             </button>
             <button
               type="submit"
@@ -237,7 +287,7 @@ export default function NewRelationshipModal({
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              {isSubmitting ? 'Adding…' : 'Create relationship'}
+              {isSubmitting ? t('relationship.adding') : t('relationship.create')}
             </button>
           </div>
         </form>

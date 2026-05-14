@@ -1,26 +1,32 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Github, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, Download, FilePlus2, Github, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
-import ChapterSlider from './components/Canvas/ChapterSlider';
+import ChapterSlider, { type ChapterSliderMark } from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
 import CharacterInspector from './components/Inspector/CharacterInspector';
 import RelationshipInspector from './components/Inspector/RelationshipInspector';
 import StickyNoteInspector from './components/Inspector/StickyNoteInspector';
 import SettingsPanel from './components/Settings/SettingsPanel';
+import OnboardingPanel from './components/Onboarding/OnboardingPanel';
+import CalabashLogo from './components/Brand/CalabashLogo';
 import { useBookHydration } from './hooks/useBookHydration';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
 import { useUiStore } from './stores/uiStore';
-import { exportBookAsJson, importBookFromJson } from './db/importExport';
+import { useUserStore } from './stores/userStore';
+import { exportLibraryAsJson, importBookFromJson, importLibraryFromJson, isLibraryExport } from './db/importExport';
 import GlobalSearch from './components/CommandBar/GlobalSearch';
-import { listBooks, updateBook } from './db/books';
+import { createBook, getBook, updateBook } from './db/books';
 import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
-import { getSpoilerShieldToolbarAction } from './lib/spoilerShield';
+import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
+import { seedTutorialBook, type TutorialKind } from './lib/demoData';
+import { useT } from './i18n';
 import type { Book } from './types';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
+const ONBOARDING_SEEN_KEY = 'calabash-onboarding-seen';
 
 const toolbarBtnStyle: React.CSSProperties = {
   background: 'transparent',
@@ -48,6 +54,26 @@ const dividerStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
+const toolbarClusterStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: 3,
+  background: 'var(--bg-canvas)',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 7,
+  flexShrink: 0,
+};
+
+const historyClusterStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 5,
+  overflow: 'hidden',
+  flexShrink: 0,
+};
+
 const primaryToolbarBtnStyle: React.CSSProperties = {
   ...toolbarBtnStyle,
   background: 'var(--ink-900)',
@@ -56,32 +82,212 @@ const primaryToolbarBtnStyle: React.CSSProperties = {
   padding: '0 11px 0 9px',
 };
 
+const sidebarUtilityButtonStyle: React.CSSProperties = {
+  flex: 1,
+  height: 30,
+  minWidth: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  background: 'transparent',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 5,
+  color: 'var(--ink-700)',
+  cursor: 'pointer',
+  fontSize: 12,
+  fontWeight: 500,
+  padding: '0 8px',
+};
+
+function EmptyInspectorGuide({ t }: { t: ReturnType<typeof useT> }) {
+  const rows = [
+    {
+      icon: <UserPlus size={13} />,
+      title: t('app.inspectCharacter'),
+      body: t('app.inspectCharacterBody'),
+    },
+    {
+      icon: <ArrowRight size={13} />,
+      title: t('app.inspectRelationship'),
+      body: t('app.inspectRelationshipBody'),
+    },
+    {
+      icon: <StickyNote size={13} />,
+      title: t('app.inspectNote'),
+      body: t('app.inspectNoteBody'),
+    },
+  ];
+
+  return (
+    <div style={{ padding: 18, color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.55 }}>
+      <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>
+        {t('app.inspector')}
+      </div>
+      <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 18, color: 'var(--ink-900)', marginTop: 4, marginBottom: 14 }}>
+        {t('app.nothingSelected')}
+      </div>
+      {rows.map((row) => (
+        <div
+          key={row.title}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '28px 1fr',
+            gap: 12,
+            padding: '12px 0',
+            borderTop: '1px solid var(--ink-150)',
+          }}
+        >
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              display: 'grid',
+              placeItems: 'center',
+              background: 'var(--bg-canvas)',
+              border: '1px solid var(--ink-200)',
+              borderRadius: 4,
+              color: 'var(--ink-600)',
+            }}
+          >
+            {row.icon}
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 13.5, color: 'var(--ink-900)', lineHeight: 1.2 }}>
+              {row.title}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, lineHeight: 1.5 }}>
+              {row.body}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StarterActionCard({
+  icon,
+  title,
+  body,
+  action,
+  primary = false,
+  disabled = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  action: string;
+  primary?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        minHeight: 156,
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        background: primary ? 'var(--ink-900)' : 'var(--bg-panel)',
+        border: primary
+          ? '1px solid var(--ink-900)'
+          : '1px solid var(--ink-200)',
+        borderRadius: 7,
+        boxShadow: primary ? '0 14px 34px rgba(32, 24, 14, 0.14)' : '0 1px 2px rgba(32, 24, 14, 0.04)',
+        color: primary ? 'var(--bg-panel)' : 'var(--ink-900)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+        textAlign: 'left',
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 30,
+          height: 30,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 5,
+          background: primary ? 'rgba(255,255,255,0.13)' : 'var(--bg-canvas)',
+          border: primary ? '1px solid rgba(255,255,255,0.18)' : '1px solid var(--ink-200)',
+          color: primary ? 'var(--bg-panel)' : 'var(--accent)',
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ fontFamily: 'var(--font-case-title)', fontSize: 18, lineHeight: 1.15 }}>
+        {title}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          color: primary ? 'color-mix(in srgb, var(--bg-panel) 78%, transparent)' : 'var(--ink-500)',
+          fontSize: 12,
+          lineHeight: 1.55,
+        }}
+      >
+        {body}
+      </span>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          color: primary ? 'var(--bg-panel)' : 'var(--accent)',
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        {action}
+        <ArrowRight size={13} />
+      </span>
+    </button>
+  );
+}
+
 export default function App() {
+  const t = useT();
   const { loading } = useBookHydration();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [newCharacterRequestId, setNewCharacterRequestId] = useState(0);
   const [startEdgeRequestId, setStartEdgeRequestId] = useState(0);
   const [startEdgeSourceId, setStartEdgeSourceId] = useState<string | null>(null);
   const [revealedSpoilerKey, setRevealedSpoilerKey] = useState<string | null>(null);
   const [spoilerConfirmOpen, setSpoilerConfirmOpen] = useState(false);
   const [activeBookSummary, setActiveBookSummary] = useState<Book | null>(null);
+  const libraryImportInputRef = useRef<HTMLInputElement>(null);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setActiveBook = useBookStore((s) => s.setActiveBook);
   const currentChapter = useBookStore((s) => s.currentChapter);
   const totalChapters = useBookStore((s) => s.totalChapters);
   const spoilerShield = useBookStore((s) => s.spoilerShield);
+  const spoilerChapters = useBookStore((s) => s.spoilerChapters);
+  const highlightedChapters = useBookStore((s) => s.highlightedChapters);
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
   const setCurrentChapterAndPersist = useBookStore((s) => s.setCurrentChapterAndPersist);
   const setTotalChapters = useBookStore((s) => s.setTotalChapters);
   const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
+  const setSpoilerChapters = useBookStore((s) => s.setSpoilerChapters);
+  const setHighlightedChapters = useBookStore((s) => s.setHighlightedChapters);
 
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
   const stickyNotes = useGraphStore((s) => s.stickyNotes);
+  const setCharacters = useGraphStore((s) => s.setCharacters);
+  const setRelationships = useGraphStore((s) => s.setRelationships);
+  const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
   const pushUndo = useGraphStore((s) => s.pushUndo);
@@ -92,6 +298,10 @@ export default function App() {
 
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
+  const resolvedLanguage = useUiStore((s) => s.resolvedLanguage);
+  const activeUserId = useUserStore((s) => s.activeUserId);
+  const setActiveUser = useUserStore((s) => s.setActiveUser);
+  const refreshUsers = useUserStore((s) => s.refreshUsers);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,11 +309,17 @@ export default function App() {
       setActiveBookSummary(null);
       return;
     }
-    void listBooks().then((books) => {
-      if (!cancelled) setActiveBookSummary(books.find((book) => book.id === activeBookId) ?? null);
+    void getBook(activeBookId).then((book) => {
+      if (!cancelled) setActiveBookSummary(book ?? null);
     });
     return () => { cancelled = true; };
   }, [activeBookId]);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(ONBOARDING_SEEN_KEY)) setOnboardingOpen(true);
+    } catch { /* test env */ }
+  }, []);
 
   // Inspector selection state
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
@@ -141,32 +357,72 @@ export default function App() {
     layoutRef.current = fn;
   }, []);
 
-  // Export handler
   async function handleExport() {
-    if (!activeBookId) return;
-    const data = await exportBookAsJson(activeBookId);
+    const data = await exportLibraryAsJson();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${data.book.title.replace(/[^a-z0-9]/gi, '_')}.calabash.json`;
+    a.download = `calabash-library-${new Date().toISOString().slice(0, 10)}.calabash.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // Import handler
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleImportFile(file: File) {
     const text = await file.text();
     try {
       const payload = JSON.parse(text);
-      const newBookId = await importBookFromJson(payload);
+      if (isLibraryExport(payload)) {
+        const result = await importLibraryFromJson(payload);
+        await refreshUsers();
+        if (result.activeUserId) setActiveUser(result.activeUserId);
+        if (result.activeBookId) setActiveBook(result.activeBookId);
+        return;
+      }
+      const newBookId = await importBookFromJson(payload, activeUserId ?? undefined);
       setActiveBook(newBookId);
     } catch {
-      alert('Invalid Calabash JSON file.');
+      alert(t('app.invalidImport'));
     }
-    e.target.value = '';
+  }
+
+  function applyBookShell(book: Book) {
+    setCurrentChapter(book.currentChapter);
+    setTotalChapters(book.totalChapters);
+    setSpoilerShield(book.spoilerShield);
+    setSpoilerChapters(book.spoilerChapters);
+    setHighlightedChapters(book.highlightedChapters);
+  }
+
+  async function handleCreateStarterBook() {
+    if (!activeUserId) return;
+    const book = await createBook({
+      userId: activeUserId,
+      title: t('app.starterBlankBookTitle'),
+      totalChapters: 30,
+      spoilerShield: false,
+    });
+    setActiveBook(book.id);
+    applyBookShell(book);
+    setCharacters([]);
+    setRelationships([]);
+    setStickyNotes([]);
+  }
+
+  async function handleCreateTutorialBook(kind: TutorialKind = 'ackroyd') {
+    if (!activeUserId) return;
+    const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind });
+    const book = await getBook(newBookId);
+    setActiveBook(newBookId);
+    if (book) applyBookShell(book);
+    setCharacters([]);
+    setRelationships([]);
+    setStickyNotes([]);
+  }
+
+  function closeOnboarding() {
+    try { localStorage.setItem(ONBOARDING_SEEN_KEY, 'true'); } catch { /* test env */ }
+    setOnboardingOpen(false);
   }
 
   // Add sticky note at canvas centre, with undo support
@@ -184,18 +440,56 @@ export default function App() {
     );
   }
 
-  const chapterHasSpoilers = useMemo(
+  const chapterHasAutomaticSpoilers = useMemo(
     () => hasSpoilerSensitiveRoleAtChapter(characters, currentChapter),
     [characters, currentChapter],
   );
-  const currentSpoilerKey = activeBookId && chapterHasSpoilers
+  const chapterManuallyProtected = spoilerChapters.includes(currentChapter);
+  const currentChapterHighlighted = highlightedChapters.includes(currentChapter);
+  const chapterProtected = chapterHasAutomaticSpoilers || chapterManuallyProtected;
+  const currentSpoilerKey = activeBookId && chapterProtected
     ? `${activeBookId}:${currentChapter}`
     : null;
   const spoilerShieldCoverActive =
     spoilerShield &&
     currentSpoilerKey !== null &&
     revealedSpoilerKey !== currentSpoilerKey;
+  const shieldButtonActive = spoilerShield && currentSpoilerKey !== null;
   const shieldButtonGuarding = spoilerShieldCoverActive;
+  const chapterMarks = useMemo<ChapterSliderMark[]>(() => {
+    const next = new Map<number, ChapterSliderMark>();
+    const addReveal = (chapter: number) => {
+      if (chapter < 1 || chapter > totalChapters || next.has(chapter)) return;
+      next.set(chapter, {
+        chapter,
+        kind: 'reveal',
+        label: t('app.sliderRevealMark', { chapter }),
+      });
+    };
+
+    relationships.forEach((relationship) => addReveal(relationship.chapterRevealed));
+    characters.forEach((character) => {
+      character.roleReveals?.forEach((reveal) => addReveal(reveal.chapterRevealed));
+    });
+    spoilerChapters.forEach((chapter) => {
+      if (chapter < 1 || chapter > totalChapters) return;
+      next.set(chapter, {
+        chapter,
+        kind: 'protected',
+        label: t('app.sliderProtectedMark', { chapter }),
+      });
+    });
+    highlightedChapters.forEach((chapter) => {
+      if (chapter < 1 || chapter > totalChapters || next.get(chapter)?.kind === 'protected') return;
+      next.set(chapter, {
+        chapter,
+        kind: 'highlight',
+        label: t('app.sliderHighlightMark', { chapter }),
+      });
+    });
+
+    return [...next.values()].sort((a, b) => a.chapter - b.chapter);
+  }, [characters, relationships, spoilerChapters, highlightedChapters, totalChapters, t]);
 
   async function handleToggleSpoilerShield() {
     if (!activeBookId) return;
@@ -206,6 +500,7 @@ export default function App() {
       spoilerShieldCoverActive,
       currentSpoilerKey,
       revealedSpoilerKey,
+      chapterProtected,
     });
 
     if (action === 'prompt-reveal') {
@@ -219,11 +514,39 @@ export default function App() {
     }
     if (action === 'none') return;
 
-    const next = action === 'enable-shield';
-    setSpoilerShield(next);
+    if (action === 'protect-current-chapter') {
+      const nextChapters = addSpoilerChapter(spoilerChapters, currentChapter);
+      setSpoilerChapters(nextChapters);
+      setSpoilerShield(true);
+      setRevealedSpoilerKey(null);
+      setSpoilerConfirmOpen(false);
+      await updateBook(activeBookId, { spoilerShield: true, spoilerChapters: nextChapters });
+      return;
+    }
+
+    setSpoilerShield(true);
     setRevealedSpoilerKey(null);
     setSpoilerConfirmOpen(false);
-    await updateBook(activeBookId, { spoilerShield: next });
+    await updateBook(activeBookId, { spoilerShield: true });
+  }
+
+  async function handleRemoveCurrentChapterProtection() {
+    if (!activeBookId) return;
+    const nextChapters = removeSpoilerChapter(spoilerChapters, currentChapter);
+    setSpoilerChapters(nextChapters);
+    setRevealedSpoilerKey(null);
+    setSpoilerConfirmOpen(false);
+    await updateBook(activeBookId, { spoilerChapters: nextChapters });
+  }
+
+  async function handleToggleCurrentChapterHighlight() {
+    if (!activeBookId) return;
+    const nextChapters = currentChapterHighlighted
+      ? highlightedChapters.filter((chapter) => chapter !== currentChapter)
+      : [...highlightedChapters, currentChapter];
+    const normalized = [...new Set(nextChapters)].sort((a, b) => a - b);
+    setHighlightedChapters(normalized);
+    await updateBook(activeBookId, { highlightedChapters: normalized });
   }
 
   useEffect(() => {
@@ -269,31 +592,39 @@ export default function App() {
           <div
             style={{
               padding: '18px 18px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            <div
-              style={{
-                fontFamily: 'var(--font-case-title)',
-                fontSize: 22,
-                fontWeight: 400,
-                color: 'var(--ink-900)',
-                letterSpacing: '-0.005em',
-                lineHeight: 1.1,
-              }}
-            >
-              Calabash
+            <div style={{ color: 'var(--accent)', flexShrink: 0 }}>
+              <CalabashLogo size={30} />
             </div>
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-500)',
-              }}
-            >
-              Reader&apos;s case file
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: 'var(--font-case-title)',
+                  fontSize: 22,
+                  fontWeight: 400,
+                  color: 'var(--ink-900)',
+                  letterSpacing: '0',
+                  lineHeight: 1.1,
+                }}
+              >
+                Calabash
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-500)',
+                }}
+              >
+                {t('app.subtitle')}
+              </div>
             </div>
           </div>
 
@@ -318,7 +649,7 @@ export default function App() {
             >
               <Search size={13} />
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                Search books · characters
+                {t('app.search')}
               </span>
               <span
                 style={{
@@ -337,57 +668,48 @@ export default function App() {
           {/* Book list */}
           <BookList />
 
-          <div style={{ borderTop: '1px solid var(--ink-200)' }}>
-            <div
-              style={{
-                padding: '7px 10px 6px',
-                borderBottom: '1px solid var(--ink-150)',
-                display: 'flex',
-                gap: 6,
-              }}
+          <div
+            style={{
+              borderTop: '1px solid var(--ink-150)',
+              padding: '8px 10px',
+              display: 'flex',
+              gap: 6,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => void handleExport()}
+              style={sidebarUtilityButtonStyle}
+              title={t('app.exportLibrary')}
+              aria-label={t('app.exportLibrary')}
             >
-              <button
-                onClick={() => void handleExport()}
-                disabled={!activeBookId}
-                style={{
-                  flex: 1,
-                  height: 26,
-                  fontSize: 11,
-                  background: 'transparent',
-                  border: '1px solid var(--ink-200)',
-                  borderRadius: 4,
-                  color: activeBookId ? 'var(--ink-600)' : 'var(--ink-300)',
-                  cursor: activeBookId ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Export
-              </button>
-              <label
-                style={{
-                  flex: 1,
-                  height: 26,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  background: 'transparent',
-                  border: '1px solid var(--ink-200)',
-                  borderRadius: 4,
-                  color: 'var(--ink-600)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                Import
-                <input
-                  type="file"
-                  accept="application/json,.json"
-                  style={{ display: 'none' }}
-                  onChange={(e) => void handleImport(e)}
-                />
-              </label>
-            </div>
+              <Download size={13} />
+              <span>{t('app.export')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => libraryImportInputRef.current?.click()}
+              style={sidebarUtilityButtonStyle}
+              title={t('app.importLibrary')}
+              aria-label={t('app.importLibrary')}
+            >
+              <Upload size={13} />
+              <span>{t('app.import')}</span>
+            </button>
+            <input
+              ref={libraryImportInputRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleImportFile(file);
+                e.target.value = '';
+              }}
+            />
+          </div>
 
+          <div style={{ borderTop: '1px solid var(--ink-200)' }}>
             <div
               style={{
                 height: 52,
@@ -416,11 +738,11 @@ export default function App() {
                   fontSize: 13,
                   fontWeight: 400,
                 }}
-                title="Settings"
-                aria-label="Settings"
+                title={t('app.settings')}
+                aria-label={t('app.settings')}
               >
                 <SettingsIcon size={13} />
-                Settings
+                {t('app.settings')}
               </button>
               <button
                 onClick={toggleTheme}
@@ -437,8 +759,8 @@ export default function App() {
                   justifyContent: 'center',
                   padding: 0,
                 }}
-                title="Switch theme"
-                aria-label="Switch theme"
+                title={t('app.switchTheme')}
+                aria-label={t('app.switchTheme')}
               >
                 {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
               </button>
@@ -509,68 +831,68 @@ export default function App() {
             <PanelLeft size={15} />
           </button>
 
-          <div style={dividerStyle} />
-
-          <button
-            className="toolbar-btn"
-            onClick={() => setNewCharacterRequestId((id) => id + 1)}
-            disabled={!activeBookId}
-            title="Add character (N)"
-            style={primaryToolbarBtnStyle}
-          >
-            <UserPlus size={13} />
-            Add character
-            <span
-              style={{
-                marginLeft: 2,
-                padding: '1px 5px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9.5,
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                color: 'rgba(255,255,255,0.78)',
-                borderRadius: 3,
-              }}
+          <div style={toolbarClusterStyle}>
+            <button
+              className="toolbar-btn"
+              onClick={() => setNewCharacterRequestId((id) => id + 1)}
+              disabled={!activeBookId}
+              title={`${t('app.addCharacter')} (N)`}
+              style={primaryToolbarBtnStyle}
             >
-              N
-            </span>
-          </button>
+              <UserPlus size={13} />
+              {t('app.addCharacter')}
+              <span
+                style={{
+                  marginLeft: 2,
+                  padding: '1px 5px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9.5,
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.78)',
+                  borderRadius: 3,
+                }}
+              >
+                N
+              </span>
+            </button>
 
-          {/* Sticky note */}
-          <button
-            className="toolbar-btn"
-            onClick={() => void handleAddStickyNote()}
-            disabled={!activeBookId}
-            title="Add sticky note"
-            style={toolbarBtnStyle}
-          >
-            <StickyNote size={13} />
-            Note
-          </button>
+            {/* Sticky note */}
+            <button
+              className="toolbar-btn"
+              onClick={() => void handleAddStickyNote()}
+              disabled={!activeBookId}
+              title={t('app.note')}
+              style={{ ...toolbarBtnStyle, border: 'none' }}
+            >
+              <StickyNote size={13} />
+              {t('app.note')}
+            </button>
+          </div>
 
-          <div style={dividerStyle} />
-
-          {/* Undo */}
-          <button
-            className="toolbar-btn"
-            onClick={() => void undo()}
-            disabled={undoStack.length === 0}
-            title="Undo (Ctrl+Z)"
-            style={{ ...toolbarBtnStyle, padding: 0 }}
-          >
-            <Undo2 size={15} />
-          </button>
-
-          {/* Redo */}
-          <button
-            className="toolbar-btn"
-            onClick={() => void redo()}
-            disabled={redoStack.length === 0}
-            title="Redo (Ctrl+Shift+Z)"
-            style={{ ...toolbarBtnStyle, padding: 0 }}
-          >
-            <Redo2 size={15} />
-          </button>
+          <div style={historyClusterStyle}>
+            {/* Undo */}
+            <button
+              className="toolbar-btn"
+              onClick={() => void undo()}
+              disabled={undoStack.length === 0}
+              title="Undo (Ctrl+Z)"
+              style={{ ...toolbarBtnStyle, padding: 0, minWidth: 28, height: 26, border: 'none', borderRadius: 0 }}
+            >
+              <Undo2 size={14} />
+            </button>
+            <div style={{ width: 1, height: 16, background: 'var(--ink-200)' }} />
+            {/* Redo */}
+            <button
+              className="toolbar-btn"
+              onClick={() => void redo()}
+              disabled={redoStack.length === 0}
+              title="Redo (Ctrl+Shift+Z)"
+              style={{ ...toolbarBtnStyle, padding: 0, minWidth: 28, height: 26, border: 'none', borderRadius: 0 }}
+            >
+              <Redo2 size={14} />
+            </button>
+          </div>
 
           <div
             style={{
@@ -596,7 +918,7 @@ export default function App() {
                 maxWidth: 280,
               }}
             >
-              {activeBookSummary?.title ?? 'No active book'}
+              {activeBookSummary?.title ?? t('app.noActiveBook')}
             </span>
             {activeBookSummary?.author && (
               <>
@@ -626,7 +948,7 @@ export default function App() {
             style={toolbarBtnStyle}
           >
             <LayoutGrid size={13} />
-            Layout
+            {t('app.layout')}
           </button>
 
           {/* Spoiler Shield */}
@@ -636,22 +958,22 @@ export default function App() {
             disabled={!activeBookId}
             title={
               shieldButtonGuarding
-                ? 'Reveal covered spoilers'
+                ? t('app.revealProtectedChapter')
                 : spoilerShield && currentSpoilerKey !== null && revealedSpoilerKey === currentSpoilerKey
-                  ? 'Cover spoilers again'
-                : spoilerShield
-                  ? 'Spoiler Shield enabled for spoiler chapters'
-                  : 'Enable Spoiler Shield'
+                  ? t('app.coverChapterAgain')
+                : chapterProtected
+                  ? t('app.enableShield')
+                  : t('app.protectCurrentChapter', { chapter: currentChapter })
             }
             style={{
               ...toolbarBtnStyle,
-              color: shieldButtonGuarding ? 'var(--accent)' : 'var(--ink-600)',
-              borderColor: shieldButtonGuarding ? 'color-mix(in srgb, var(--accent) 36%, transparent)' : 'transparent',
-              background: shieldButtonGuarding ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              color: shieldButtonActive ? 'var(--accent)' : 'var(--ink-600)',
+              borderColor: shieldButtonActive ? 'color-mix(in srgb, var(--accent) 36%, transparent)' : 'transparent',
+              background: shieldButtonActive ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
             }}
           >
             {shieldButtonGuarding ? <ShieldOff size={13} /> : <Shield size={13} />}
-            Shield
+            {t('app.shield')}
           </button>
 
           <div style={dividerStyle} />
@@ -693,7 +1015,7 @@ export default function App() {
                   <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
                 </path>
               </svg>
-              Loading…
+              {t('app.loading')}
             </div>
           ) : activeBookId === null ? (
             <div style={{
@@ -703,22 +1025,90 @@ export default function App() {
               color: 'var(--ink-600)',
               fontSize: 13,
               textAlign: 'center',
-              padding: 30,
+              padding: 32,
+              overflowY: 'auto',
             }}>
-              <div>
+              <div style={{ width: 'min(820px, 100%)' }}>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 60,
+                    height: 60,
+                    margin: '0 auto 14px',
+                    borderRadius: 999,
+                    background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                    border: '1.5px dashed color-mix(in srgb, var(--accent) 50%, transparent)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: 'var(--accent)',
+                    fontFamily: 'var(--font-case-title)',
+                    fontSize: 11,
+                    letterSpacing: '0.14em',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {t('app.emptyStamp')}
+                </div>
                 <div
                   style={{
                     fontFamily: 'var(--font-case-title)',
-                    fontSize: 26,
+                    fontSize: 30,
                     color: 'var(--ink-800)',
-                    letterSpacing: '-0.01em',
+                    letterSpacing: 0,
+                    lineHeight: 1.1,
                   }}
                 >
-                  A board for your next case file.
+                  {t('app.emptyTitle')}
                 </div>
-                <div style={{ maxWidth: 380, margin: '8px auto 0', lineHeight: 1.6 }}>
-                  Create a book in the sidebar, then add characters as you meet them.
-                  The chapter slider keeps the board spoiler-safe as you read.
+                <div style={{ maxWidth: 560, margin: '10px auto 0', lineHeight: 1.6 }}>
+                  {t('app.emptyBody')}
+                </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: 12,
+                    marginTop: 24,
+                    alignItems: 'stretch',
+                  }}
+                >
+                  <StarterActionCard
+                    primary
+                    icon={<BookOpen size={16} />}
+                    title={t('app.starterAckroydTitle')}
+                    body={t('app.starterAckroydBody')}
+                    action={t('onboarding.createAckroydTutorial')}
+                    onClick={() => void handleCreateTutorialBook('ackroyd')}
+                    disabled={!activeUserId}
+                  />
+                  <StarterActionCard
+                    icon={<FilePlus2 size={16} />}
+                    title={t('app.starterBlankTitle')}
+                    body={t('app.starterBlankBody')}
+                    action={t('app.starterBlankAction')}
+                    onClick={() => void handleCreateStarterBook()}
+                    disabled={!activeUserId}
+                  />
+                  <StarterActionCard
+                    icon={<Upload size={16} />}
+                    title={t('app.starterImportTitle')}
+                    body={t('app.starterImportBody')}
+                    action={t('app.importLibrary')}
+                    onClick={() => libraryImportInputRef.current?.click()}
+                  />
+                  <StarterActionCard
+                    icon={<UserPlus size={16} />}
+                    title={t('app.starterHidaTitle')}
+                    body={t('app.starterHidaBody')}
+                    action={t('onboarding.createHidaTutorial')}
+                    onClick={() => void handleCreateTutorialBook('hida')}
+                    disabled={!activeUserId}
+                  />
+                </div>
+                <div style={{ maxWidth: 640, margin: '18px auto 0', color: 'var(--ink-500)', fontSize: 12, lineHeight: 1.55 }}>
+                  {t('app.starterLocalHint')}
                 </div>
               </div>
             </div>
@@ -788,9 +1178,9 @@ export default function App() {
                   }}
                 >
                   <Shield size={28} color="var(--accent)" />
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500 }}>Spoiler Shield</span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 500 }}>{t('app.spoilerShield')}</span>
                   <span style={{ fontSize: 12, color: 'var(--ink-500)' }}>
-                    Chapter {currentChapter} contains spoiler-sensitive reveals
+                    {t('app.spoilerCoverBody', { chapter: currentChapter })}
                   </span>
                 </button>
               )}
@@ -804,8 +1194,11 @@ export default function App() {
             bookId={activeBookId}
             totalChapters={totalChapters}
             currentChapter={currentChapter}
+            currentChapterHighlighted={currentChapterHighlighted}
+            marks={chapterMarks}
             onChange={setCurrentChapter}
             onCommit={(n) => void setCurrentChapterAndPersist(activeBookId, n)}
+            onToggleCurrentChapterHighlight={() => void handleToggleCurrentChapterHighlight()}
             onTotalChaptersChange={async (n) => {
               setTotalChapters(n);
               await updateBook(activeBookId, { totalChapters: n });
@@ -847,12 +1240,7 @@ export default function App() {
                 onDeleted={() => setSelectedStickyNoteId(null)}
               />
             ) : (
-              <div style={{ padding: 18, color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.55 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink-900)', marginBottom: 6 }}>
-                  Nothing selected
-                </div>
-                Select a character, relationship, or sticky note to edit its case-file details.
-              </div>
+              <EmptyInspectorGuide t={t} />
             )}
           </div>
         </div>
@@ -875,13 +1263,31 @@ export default function App() {
         />
       )}
 
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsPanel
+          onClose={() => setSettingsOpen(false)}
+          onExportLibrary={() => void handleExport()}
+          onImportLibrary={(file) => void handleImportFile(file)}
+          onOpenOnboarding={() => setOnboardingOpen(true)}
+          onCreateTutorial={(kind) => void handleCreateTutorialBook(kind)}
+        />
+      )}
+
+      {onboardingOpen && (
+        <OnboardingPanel
+          onClose={closeOnboarding}
+          onCreateTutorial={(kind) => {
+            void handleCreateTutorialBook(kind);
+            closeOnboarding();
+          }}
+        />
+      )}
 
       {spoilerConfirmOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Reveal spoilers"
+          aria-label={t('app.revealSpoilers')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -908,10 +1314,10 @@ export default function App() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '18px 22px 6px' }}>
               <Shield size={16} color="var(--accent)" />
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500 }}>Reveal spoilers?</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500 }}>{t('app.revealSpoilers')}</div>
             </div>
             <p style={{ margin: '4px 22px 16px', fontSize: 13, lineHeight: 1.6, color: 'var(--ink-600)' }}>
-              Chapter {currentChapter} contains spoiler-sensitive reveals you recorded. Revealing will uncover them until the next chapter change.
+              {t('app.revealSpoilersBody', { chapter: currentChapter })}
             </p>
             <div
               style={{
@@ -923,6 +1329,24 @@ export default function App() {
                 gap: 8,
               }}
             >
+              {chapterManuallyProtected && !chapterHasAutomaticSpoilers && (
+                <button
+                  onClick={() => void handleRemoveCurrentChapterProtection()}
+                  style={{
+                    marginRight: 'auto',
+                    padding: '6px 12px',
+                    borderRadius: 5,
+                    border: '1px solid var(--ink-200)',
+                    background: 'transparent',
+                    color: 'var(--ink-600)',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  {t('app.removeChapterProtection')}
+                </button>
+              )}
               <button
                 onClick={() => setSpoilerConfirmOpen(false)}
                 style={{
@@ -936,7 +1360,7 @@ export default function App() {
                   fontWeight: 500,
                 }}
               >
-                Keep covered
+                {t('app.keepCovered')}
               </button>
               <button
                 onClick={() => {
@@ -954,7 +1378,7 @@ export default function App() {
                   fontWeight: 500,
                 }}
               >
-                Reveal
+                {t('app.reveal')}
               </button>
             </div>
           </div>

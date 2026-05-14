@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Book, Category, Character, Relationship, StickyNote } from '@/types';
+import type { Book, Category, Character, Relationship, StickyNote, User } from '@/types';
 
 // Internal DB row: stores blobBuffer (ArrayBuffer) instead of Blob
 // so fake-indexeddb can serialize it in tests. The DAO converts at the boundary.
@@ -12,6 +12,7 @@ export interface PortraitRow {
 }
 
 export class CalabashDB extends Dexie {
+  users!:         Table<User, string>;
   books!:         Table<Book, string>;
   categories!:    Table<Category, string>;
   characters!:    Table<Character, string>;
@@ -36,6 +37,15 @@ export class CalabashDB extends Dexie {
     });
     this.version(3).stores({
       books:         'id, updatedAt, categoryId',
+      categories:    'id, userId, order',
+      characters:    'id, bookId, chapterIntroduced',
+      relationships: 'id, bookId, sourceId, targetId, chapterRevealed',
+      portraits:     'id, bookId',
+      annotations:   'id, bookId',
+    });
+    this.version(4).stores({
+      users:         'id, updatedAt',
+      books:         'id, userId, updatedAt, categoryId',
       categories:    'id, userId, order',
       characters:    'id, bookId, chapterIntroduced',
       relationships: 'id, bookId, sourceId, targetId, chapterRevealed',

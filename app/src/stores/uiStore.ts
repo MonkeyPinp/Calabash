@@ -2,14 +2,15 @@ import { create } from 'zustand';
 
 type Theme = 'light' | 'dark';
 export type ThemePreference = Theme | 'system';
-export type LanguagePreference = 'system' | 'en' | 'zh-CN';
+export type ResolvedLanguage = 'en' | 'zh-CN' | 'es' | 'pt-BR';
+export type LanguagePreference = ResolvedLanguage | 'system';
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system';
 }
 
 function isLanguagePreference(value: string | null): value is LanguagePreference {
-  return value === 'system' || value === 'en' || value === 'zh-CN';
+  return value === 'system' || value === 'en' || value === 'zh-CN' || value === 'es' || value === 'pt-BR';
 }
 
 function systemTheme(): Theme {
@@ -23,8 +24,26 @@ function resolveTheme(preference: ThemePreference): Theme {
   return preference === 'system' ? systemTheme() : preference;
 }
 
+function systemLanguage(): ResolvedLanguage {
+  try {
+    const locale = navigator.language.toLowerCase();
+    if (locale.startsWith('zh')) return 'zh-CN';
+    if (locale.startsWith('es')) return 'es';
+    if (locale.startsWith('pt')) return 'pt-BR';
+  } catch { /* test env */ }
+  return 'en';
+}
+
+export function resolveLanguagePreference(preference: LanguagePreference): ResolvedLanguage {
+  return preference === 'system' ? systemLanguage() : preference;
+}
+
 function applyTheme(theme: Theme) {
   try { document.documentElement.setAttribute('data-theme', theme); } catch { /* test env */ }
+}
+
+function applyLanguage(language: ResolvedLanguage) {
+  try { document.documentElement.setAttribute('lang', language); } catch { /* test env */ }
 }
 
 function readThemePreference(): ThemePreference {
@@ -61,6 +80,7 @@ interface UiStoreState {
   theme: Theme;
   themePreference: ThemePreference;
   language: LanguagePreference;
+  resolvedLanguage: ResolvedLanguage;
   toggleTheme: () => void;
   setThemePreference: (preference: ThemePreference) => void;
   setLanguage: (language: LanguagePreference) => void;
@@ -69,11 +89,17 @@ interface UiStoreState {
 
 const initialThemePreference = readThemePreference();
 const initialTheme = resolveTheme(initialThemePreference);
+const initialLanguage = readLanguage();
+const initialResolvedLanguage = resolveLanguagePreference(initialLanguage);
+
+applyTheme(initialTheme);
+applyLanguage(initialResolvedLanguage);
 
 export const useUiStore = create<UiStoreState>((set) => ({
   theme: initialTheme,
   themePreference: initialThemePreference,
-  language: readLanguage(),
+  language: initialLanguage,
+  resolvedLanguage: initialResolvedLanguage,
   toggleTheme: () =>
     set((s) => {
       const next = s.theme === 'light' ? 'dark' : 'light';
@@ -88,8 +114,10 @@ export const useUiStore = create<UiStoreState>((set) => ({
     set({ themePreference, theme });
   },
   setLanguage: (language) => {
+    const resolvedLanguage = resolveLanguagePreference(language);
     persistLanguage(language);
-    set({ language });
+    applyLanguage(resolvedLanguage);
+    set({ language, resolvedLanguage });
   },
   setTheme: (theme) => {
     persistThemePreference(theme, theme);

@@ -8,6 +8,7 @@ describe('categories DAO', () => {
     await Promise.all([
       db.books.clear(),
       db.categories.clear(),
+      db.users.clear(),
     ]);
   });
 
@@ -36,6 +37,16 @@ describe('categories DAO', () => {
 
     expect(second.id).toBe(first.id);
     expect(await listCategories()).toHaveLength(1);
+  });
+
+  it('scopes category ordering and listing by reader profile', async () => {
+    const first = await createCategory({ name: 'Mystery', userId: 'reader-a' });
+    const second = await createCategory({ name: 'Mystery', userId: 'reader-b' });
+
+    expect(first.order).toBe(0);
+    expect(second.order).toBe(0);
+    expect((await listCategories('reader-a')).map((category) => category.id)).toEqual([first.id]);
+    expect((await listCategories('reader-b')).map((category) => category.id)).toEqual([second.id]);
   });
 
   it('deleting a category moves its books to Uncategorized', async () => {

@@ -14,7 +14,23 @@ vi.mock('@xyflow/react', async (importOriginal) => {
   };
 });
 
-function renderEdge(data: { certainty: 'confirmed' | 'suspected' | 'disproven'; type: 'family' | 'suspicion' }) {
+function renderEdge(data: { certainty: 'confirmed' | 'suspected' | 'disproven'; type?: string; label?: string }) {
+  const edgeData = {
+    ...data,
+    relationship: {
+      id: 'e1',
+      bookId: 'b1',
+      sourceId: 'a',
+      targetId: 'b',
+      type: data.type,
+      label: data.label,
+      chapterRevealed: 1,
+      certainty: data.certainty,
+      createdAt: 0,
+      updatedAt: 0,
+    },
+  };
+
   return render(
     <ReactFlowProvider>
       <svg>
@@ -28,7 +44,7 @@ function renderEdge(data: { certainty: 'confirmed' | 'suspected' | 'disproven'; 
           targetY={0}
           sourcePosition={Position.Bottom}
           targetPosition={Position.Top}
-          data={data}
+          data={edgeData}
           selected={false}
           animated={false}
           interactionWidth={20}
@@ -55,5 +71,16 @@ describe('RelationshipEdge', () => {
   it('renders a ✗ badge for disproven', () => {
     renderEdge({ certainty: 'disproven', type: 'family' });
     expect(screen.getByText('✗')).toBeInTheDocument();
+  });
+
+  it('renders custom relationship types as written', () => {
+    renderEdge({ certainty: 'confirmed', type: 'mentor' });
+    expect(screen.getByText('mentor')).toBeInTheDocument();
+  });
+
+  it('wraps long labels instead of truncating them', () => {
+    const label = 'guardian of the inheritance and secret keeper of the impossible alibi';
+    renderEdge({ certainty: 'confirmed', type: 'mentor', label });
+    expect(screen.getByText(label)).toHaveStyle({ overflowWrap: 'anywhere' });
   });
 });

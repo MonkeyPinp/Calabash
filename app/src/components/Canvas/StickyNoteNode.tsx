@@ -110,14 +110,30 @@ function StickyNoteNodeImpl(props: NodeProps) {
           border: `1.5px solid ${sel ? colors.border : 'transparent'}`,
           borderRadius: 2,
           boxShadow: sel
-            ? `0 0 0 2px var(--ink-900), 0 6px 16px rgba(0,0,0,0.18)`
-            : '0 1px 1px rgba(0,0,0,0.07), 0 8px 14px -6px rgba(0,0,0,0.15)',
+            ? `0 0 0 2px var(--ink-900), 0 4px 12px rgba(0,0,0,0.14)`
+            : '0 1px 1px rgba(0,0,0,0.06), 0 5px 10px -4px rgba(0,0,0,0.12)',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden',
+          overflow: 'visible',
           transition: 'box-shadow 0.15s, border-color 0.15s',
+          position: 'relative',
         }}
       >
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: -5,
+            left: '50%',
+            transform: 'translateX(-50%) rotate(-1deg)',
+            width: 58,
+            height: 11,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.34) 100%)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+            borderRadius: 1,
+            pointerEvents: 'none',
+          }}
+        />
         {/* Colour picker + delete — only visible when selected */}
         {sel && (
           <div style={{
@@ -186,7 +202,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
             outline: 'none',
             resize: 'none',
             padding: '8px 10px 10px',
-            fontFamily: 'var(--font-display)',
+            fontFamily: 'var(--font-case-title)',
             fontSize: 13,
             lineHeight: 1.55,
             color: colors.text,

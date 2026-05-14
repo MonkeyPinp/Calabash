@@ -38,7 +38,7 @@
 
   --role-detective: #2c4d70;
   --role-suspect: #8a3320;
-  --role-victim: #3a342a;
+  --role-victim: #5c5c5c;
   --role-witness: #8a6a24;
   --role-bystander: #7d7560;
   --role-murderer: #1a1610;
@@ -89,7 +89,7 @@
 
   --role-detective: #6ea7c8;
   --role-suspect: #cf7466;
-  --role-victim: #a09a8e;
+  --role-victim: #9a9a9a;
   --role-witness: #d8b758;
   --role-bystander: #6a6e78;
   --role-murderer: #eceef3;

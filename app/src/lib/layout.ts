@@ -25,6 +25,15 @@ export interface LayoutPoint {
   y: number;
 }
 
+export interface LayoutNodeSize {
+  width: number;
+  height: number;
+}
+
+export interface LayoutOptions {
+  nodeSizes?: Map<string, LayoutNodeSize>;
+}
+
 // Approximate rendered node size
 const NODE_W = 180;
 const NODE_H = 80;
@@ -34,6 +43,28 @@ const RENDERED_NODE_DIAGONAL = Math.sqrt(NODE_W * NODE_W + NODE_H * NODE_H);
 export const MIN_LAYOUT_NODE_DISTANCE = Math.ceil(RENDERED_NODE_DIAGONAL * 1.22);
 const CROSSING_WEIGHT = 1_000_000;
 const EPSILON = 0.0001;
+
+function nodeDiagonal(id: string, nodeSizes?: Map<string, LayoutNodeSize>): number {
+  const size = nodeSizes?.get(id);
+  if (!size) return RENDERED_NODE_DIAGONAL;
+  return Math.sqrt(size.width * size.width + size.height * size.height);
+}
+
+function pairMinDistance(a: string, b: string, nodeSizes?: Map<string, LayoutNodeSize>): number {
+  if (!nodeSizes) return MIN_LAYOUT_NODE_DISTANCE;
+  return Math.ceil(((nodeDiagonal(a, nodeSizes) + nodeDiagonal(b, nodeSizes)) / 2) * 1.22);
+}
+
+function maxPairMinDistance(ids: string[], nodeSizes?: Map<string, LayoutNodeSize>): number {
+  if (!nodeSizes || ids.length < 2) return MIN_LAYOUT_NODE_DISTANCE;
+  let max = MIN_LAYOUT_NODE_DISTANCE;
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      max = Math.max(max, pairMinDistance(ids[i], ids[j], nodeSizes));
+    }
+  }
+  return max;
+}
 
 function orientation(a: LayoutPoint, b: LayoutPoint, c: LayoutPoint): number {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -111,7 +142,7 @@ export function getMinimumLayoutNodeDistance(positions: Map<string, LayoutPoint>
 
 export function separateLayoutNodes(
   positions: Map<string, LayoutPoint>,
-  minDistance = MIN_LAYOUT_NODE_DISTANCE,
+  minDistance: number | ((a: string, b: string) => number) = MIN_LAYOUT_NODE_DISTANCE,
   maxPasses = 80,
 ): Map<string, LayoutPoint> {
   if (positions.size < 2) return positions;
@@ -136,9 +167,13 @@ export function separateLayoutNodes(
           dist = 1;
         }
 
-        if (dist >= minDistance) continue;
+        const requiredDistance = typeof minDistance === 'function'
+          ? minDistance(entries[i][0], entries[j][0])
+          : minDistance;
 
-        const push = (minDistance - dist) / 2;
+        if (dist >= requiredDistance) continue;
+
+        const push = (requiredDistance - dist) / 2;
         const nx = dx / dist;
         const ny = dy / dist;
         a.x -= nx * push;
@@ -200,6 +235,7 @@ export function computeForceLayout(
   edges: LayoutEdge[],
   canvasWidth = 1400,
   canvasHeight = 1000,
+  options: LayoutOptions = {},
 ): Map<string, LayoutPoint> {
   const N = nodeIds.length;
   if (N === 0) return new Map();
@@ -208,9 +244,10 @@ export function computeForceLayout(
   // Ideal spring length — bounded so small graphs stay compact.
   // sqrt(area/N) is the classical FR value; we use a tighter multiplier for density.
   const area = canvasWidth * canvasHeight;
+  const baselineDistance = maxPairMinDistance(nodeIds, options.nodeSizes);
   const k = Math.min(
-    MIN_LAYOUT_NODE_DISTANCE * 1.15,
-    Math.max(MIN_LAYOUT_NODE_DISTANCE * 0.95, Math.sqrt(area / N) * 0.55),
+    baselineDistance * 1.15,
+    Math.max(baselineDistance * 0.95, Math.sqrt(area / N) * 0.55),
   );
 
   // Initialise on a circle (deterministic)
@@ -248,8 +285,9 @@ export function computeForceLayout(
         // Standard Coulomb repulsion
         let rep = (k * k) / safeDist;
         // Extra hard-shell repulsion inside the minimum distance to prevent crowding
-        if (dist < MIN_LAYOUT_NODE_DISTANCE) {
-          rep += ((MIN_LAYOUT_NODE_DISTANCE - dist) / MIN_LAYOUT_NODE_DISTANCE) * k * 4;
+        const requiredDistance = pairMinDistance(v.id, u.id, options.nodeSizes);
+        if (dist < requiredDistance) {
+          rep += ((requiredDistance - dist) / requiredDistance) * k * 4;
         }
 
         v.dx += nx * rep;
@@ -294,5 +332,8 @@ export function computeForceLayout(
   }
 
   const positions = new Map(nodes.map((n) => [n.id, { x: Math.round(n.x), y: Math.round(n.y) }]));
-  return improveLayoutEdgeCrossings(separateLayoutNodes(positions), edges);
+  return improveLayoutEdgeCrossings(
+    separateLayoutNodes(positions, (a, b) => pairMinDistance(a, b, options.nodeSizes)),
+    edges,
+  );
 }

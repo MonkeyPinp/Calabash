@@ -1,7 +1,8 @@
 import { db, type PortraitRow } from './schema';
 import type { Book, Category, Character, Relationship, StickyNote, User } from '@/types';
+import { APP_VERSION } from '@/version';
 
-const CALABASH_VERSION = '0.1.2';
+const CALABASH_VERSION = APP_VERSION;
 
 export interface PortraitExport {
   id: string;

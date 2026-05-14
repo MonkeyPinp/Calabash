@@ -59,7 +59,7 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
               {t('onboarding.body')}
             </p>
           </div>
-          <button type="button" onClick={onClose} title={t('onboarding.skip')} style={iconButtonStyle}>
+          <button type="button" onClick={onClose} title={t('onboarding.skip')} aria-label={t('onboarding.skip')} style={iconButtonStyle}>
             <X size={15} />
           </button>
         </div>

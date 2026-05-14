@@ -3,7 +3,8 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CharacterRole } from '@/types';
 import { usePortraitUrl } from '@/hooks/usePortraitUrl';
 import { useT } from '@/i18n';
-import { formatCharacterRole, getCharacterRoleCssVar } from '@/lib/roles';
+import { formatCharacterRole, getCharacterRoleCssVar, getCharacterRoleVisualKey } from '@/lib/roles';
+import type { CharacterNodeViewMode } from '@/stores/uiStore';
 
 export interface CharacterNodeData {
   name: string;
@@ -13,26 +14,262 @@ export interface CharacterNodeData {
   profession?: string;
   portraitId?: string;
   chapterIntroduced?: number;
+  viewMode?: CharacterNodeViewMode;
 }
 
 function CharacterNodeImpl(props: NodeProps) {
   const t       = useT();
   const data    = props.data as unknown as CharacterNodeData;
   const sel     = props.selected ?? false;
+  const roleKey = getCharacterRoleVisualKey(data.role);
+  const isVictim = roleKey === 'victim';
   const roleVar = getCharacterRoleCssVar(data.role);
   const portraitUrl = usePortraitUrl(data.portraitId);
   const [portraitFailed, setPortraitFailed] = useState(false);
 
-  const initial = data.name.trim().charAt(0).toUpperCase();
+  const initial = data.name.trim().charAt(0).toUpperCase() || '?';
   const roleLabel = formatCharacterRole(data.role, t);
 
   useEffect(() => {
     setPortraitFailed(false);
   }, [portraitUrl]);
 
+  const handles = (
+    [
+      { type: 'source' as const, pos: Position.Top,    id: 'source-top'    },
+      { type: 'target' as const, pos: Position.Top,    id: 'target-top'    },
+      { type: 'source' as const, pos: Position.Bottom, id: 'source-bottom' },
+      { type: 'target' as const, pos: Position.Bottom, id: 'target-bottom' },
+      { type: 'source' as const, pos: Position.Left,   id: 'source-left'   },
+      { type: 'target' as const, pos: Position.Left,   id: 'target-left'   },
+      { type: 'source' as const, pos: Position.Right,  id: 'source-right'  },
+      { type: 'target' as const, pos: Position.Right,  id: 'target-right'  },
+    ] as const
+  ).map(({ type, pos, id }) => (
+    <Handle
+      key={id}
+      id={id}
+      type={type}
+      position={pos}
+      className={`${sel ? '' : 'opacity-0'} group-hover:opacity-100 transition-opacity`}
+      style={{
+        width: data.viewMode === 'portrait' ? 10 : 9,
+        height: data.viewMode === 'portrait' ? 10 : 9,
+        background: 'var(--bg-panel)',
+        border: `1.5px solid ${roleVar}`,
+      }}
+    />
+  ));
+
+  if (data.viewMode === 'portrait') {
+    const width = data.width ?? 176;
+    const photoHeight = Math.max(148, Math.round(width * 0.9));
+    return (
+      <div
+        data-testid="character-node"
+        data-view-mode="portrait"
+        className="group"
+        style={{
+          position: 'relative',
+          width,
+          minHeight: data.height ?? 252,
+          background: 'var(--bg-panel)',
+          border: `${sel ? 2 : 1}px solid ${sel ? roleVar : 'var(--ink-200)'}`,
+          borderRadius: 4,
+          overflow: 'hidden',
+          boxShadow: sel
+            ? `0 0 0 3px color-mix(in srgb, ${roleVar} 22%, transparent), var(--shadow-node)`
+            : 'var(--shadow-node)',
+          transition: 'box-shadow var(--transition-node), border-color var(--transition-node)',
+          cursor: 'default',
+          filter: isVictim ? 'grayscale(1) saturate(0.12) contrast(0.96)' : undefined,
+        } as React.CSSProperties}
+      >
+        <div style={{ height: 5, background: roleVar, position: 'relative' }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: 8,
+              right: 8,
+              top: 2,
+              height: 1,
+              background: 'color-mix(in srgb, var(--bg-panel) 70%, transparent)',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 6,
+            padding: '4px 8px 3px',
+            background: 'color-mix(in srgb, var(--ink-200) 30%, var(--bg-panel))',
+            borderBottom: '1px solid var(--ink-200)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 8.5,
+            letterSpacing: '0.08em',
+            color: 'var(--ink-500)',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            FILE {initial}-{String(data.chapterIntroduced ?? 0).padStart(2, '0')}
+          </span>
+          {roleLabel && (
+            <span style={{ color: roleVar, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {roleLabel}
+            </span>
+          )}
+        </div>
+
+        <div
+          style={{
+            position: 'relative',
+            height: photoHeight,
+            background: `repeating-linear-gradient(
+              135deg,
+              color-mix(in srgb, ${roleVar} 6%, var(--bg-canvas)) 0px,
+              color-mix(in srgb, ${roleVar} 6%, var(--bg-canvas)) 8px,
+              color-mix(in srgb, ${roleVar} 14%, var(--bg-canvas)) 8px,
+              color-mix(in srgb, ${roleVar} 14%, var(--bg-canvas)) 16px
+            )`,
+            overflow: 'hidden',
+            borderBottom: '1px solid var(--ink-150)',
+          }}
+        >
+          {portraitUrl && !portraitFailed ? (
+            <img
+              src={portraitUrl}
+              alt=""
+              onError={() => setPortraitFailed(true)}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                objectFit: 'cover',
+                filter: isVictim ? 'grayscale(1) saturate(0) contrast(0.95)' : 'saturate(0.9) contrast(1.03)',
+              }}
+            />
+          ) : (
+            <>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(180deg, rgba(255,245,220,.22) 0%, rgba(60,40,20,.10) 100%)',
+                  mixBlendMode: 'multiply',
+                }}
+              />
+              <CornerBracket corner="tl" />
+              <CornerBracket corner="tr" />
+              <CornerBracket corner="bl" />
+              <CornerBracket corner="br" />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 70,
+                  fontWeight: 600,
+                  color: `color-mix(in srgb, ${roleVar} 78%, var(--ink-900))`,
+                  lineHeight: 1,
+                  textShadow: '0 1px 0 color-mix(in srgb, var(--bg-panel) 55%, transparent)',
+                  userSelect: 'none',
+                }}
+              >
+                {initial}
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 7,
+                  bottom: 5,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 8.5,
+                  letterSpacing: '0.08em',
+                  color: 'color-mix(in srgb, var(--ink-900) 38%, transparent)',
+                }}
+              >
+                [ portrait ]
+              </div>
+            </>
+          )}
+
+          {data.chapterIntroduced !== undefined && (
+            <div
+              title={`Introduced ch. ${data.chapterIntroduced}`}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                padding: '2px 6px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                color: 'var(--accent)',
+                background: 'color-mix(in srgb, var(--bg-panel) 82%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--accent) 50%, transparent)',
+                borderRadius: 2,
+                boxShadow: '0 1px 0 rgba(0,0,0,.08)',
+              }}
+            >
+              CH.{String(data.chapterIntroduced).padStart(2, '0')}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            padding: '8px 10px 10px',
+            background: 'var(--bg-panel)',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: 'var(--font-case-title)',
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'var(--ink-900)',
+              lineHeight: 1.15,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {data.name}
+          </div>
+          {data.profession && (
+            <div
+              style={{
+                marginTop: 2,
+                fontSize: 10.5,
+                color: 'var(--ink-500)',
+                lineHeight: 1.2,
+                fontStyle: 'italic',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {data.profession}
+            </div>
+          )}
+        </div>
+
+        {handles}
+      </div>
+    );
+  }
+
   return (
     <div
       data-testid="character-node"
+      data-view-mode="text"
       className="group"
       style={{
         position: 'relative',
@@ -47,6 +284,7 @@ function CharacterNodeImpl(props: NodeProps) {
         boxShadow: sel ? `0 0 0 3px color-mix(in srgb, ${roleVar} 18%, transparent), var(--shadow-node)` : 'var(--shadow-node)',
         transition: 'box-shadow var(--transition-node), border-color var(--transition-node)',
         cursor: 'default',
+        filter: isVictim ? 'grayscale(1) saturate(0.12) contrast(0.96)' : undefined,
       } as React.CSSProperties}
     >
       {/* Role-colour left ribbon */}
@@ -65,6 +303,7 @@ function CharacterNodeImpl(props: NodeProps) {
               width: 34, height: 34, borderRadius: '50%',
               objectFit: 'cover', flexShrink: 0,
               border: `1px solid color-mix(in srgb, ${roleVar} 38%, transparent)`,
+              filter: isVictim ? 'grayscale(1) saturate(0) contrast(0.95)' : undefined,
             }}
           />
         ) : (
@@ -155,31 +394,30 @@ function CharacterNodeImpl(props: NodeProps) {
       )}
 
       {/* Handles — source + target on all four sides for smart routing */}
-      {(
-        [
-          { type: 'source' as const, pos: Position.Top,    id: 'source-top'    },
-          { type: 'target' as const, pos: Position.Top,    id: 'target-top'    },
-          { type: 'source' as const, pos: Position.Bottom, id: 'source-bottom' },
-          { type: 'target' as const, pos: Position.Bottom, id: 'target-bottom' },
-          { type: 'source' as const, pos: Position.Left,   id: 'source-left'   },
-          { type: 'target' as const, pos: Position.Left,   id: 'target-left'   },
-          { type: 'source' as const, pos: Position.Right,  id: 'source-right'  },
-          { type: 'target' as const, pos: Position.Right,  id: 'target-right'  },
-        ] as const
-      ).map(({ type, pos, id }) => (
-        <Handle
-          key={id}
-          id={id}
-          type={type}
-          position={pos}
-          className={`${sel ? '' : 'opacity-0'} group-hover:opacity-100 transition-opacity`}
-          style={{
-            width: 9, height: 9,
-            background: 'var(--bg-panel)',
-            border: `1.5px solid ${roleVar}`,
-          }}
-        />
-      ))}
+      {handles}
+    </div>
+  );
+}
+
+function CornerBracket({ corner }: { corner: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const styleByCorner: Record<typeof corner, React.CSSProperties> = {
+    tl: { top: 6, left: 6, transform: 'rotate(0deg)' },
+    tr: { top: 6, right: 6, transform: 'rotate(90deg)' },
+    bl: { bottom: 6, left: 6, transform: 'rotate(-90deg)' },
+    br: { bottom: 6, right: 6, transform: 'rotate(180deg)' },
+  };
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        width: 12,
+        height: 12,
+        ...styleByCorner[corner],
+      }}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 12, height: 1.5, background: 'color-mix(in srgb, var(--ink-900) 55%, transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 1.5, height: 12, background: 'color-mix(in srgb, var(--ink-900) 55%, transparent)' }} />
     </div>
   );
 }

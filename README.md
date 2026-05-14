@@ -6,7 +6,7 @@
 
 > A spoiler-safe relationship board for detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.1.2`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.1.3`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -43,7 +43,7 @@ Calabash is local-first:
 - Your books are stored in your browser with IndexedDB.
 - Theme, language, and onboarding preferences use localStorage.
 - Other demo visitors cannot change your board, and you cannot change theirs.
-- Clearing browser site data can delete your local library.
+- Clearing browser site data can delete your local library during beta.
 - Use **Export Library** as your backup path and **Import Library** to move data to another browser.
 
 ## Quick Start
@@ -118,6 +118,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.1.0`: first public web demo.
 - `0.1.1`: public-facing repository cleanup, multilingual README split, issue templates, and beta docs polish.
 - `0.1.2`: inspector localization polish and simplified character details panel.
+- `0.1.3`: beta-readiness storage warnings, import/export fixture regression coverage, and release validation.
 
 ## License
 

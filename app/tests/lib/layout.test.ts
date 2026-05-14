@@ -66,4 +66,22 @@ describe('layout', () => {
     expect(countLayoutEdgeCrossings(positions, edges)).toBe(0);
     expect(getMinimumLayoutNodeDistance(positions)).toBeGreaterThanOrEqual(MIN_LAYOUT_NODE_DISTANCE - 1);
   });
+
+  it('spaces large portrait nodes farther apart when node sizes are provided', () => {
+    const positions = computeForceLayout(
+      ['a', 'b', 'c'],
+      [{ source: 'a', target: 'b' }],
+      900,
+      700,
+      {
+        nodeSizes: new Map([
+          ['a', { width: 176, height: 252 }],
+          ['b', { width: 176, height: 252 }],
+          ['c', { width: 176, height: 252 }],
+        ]),
+      },
+    );
+
+    expect(getMinimumLayoutNodeDistance(positions)).toBeGreaterThan(MIN_LAYOUT_NODE_DISTANCE);
+  });
 });

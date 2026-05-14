@@ -15,8 +15,8 @@ import { useUserStore } from '@/stores/userStore';
 import { useT } from '@/i18n';
 import CalabashLogo from '@/components/Brand/CalabashLogo';
 import type { TutorialKind } from '@/lib/demoData';
+import { APP_VERSION } from '@/version';
 
-const APP_VERSION = '0.1.2';
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const STUDIO_URL = 'https://guesswhat.studio';
 
@@ -106,7 +106,7 @@ export default function SettingsPanel({
             <CalabashLogo size={24} />
           </div>
           <div style={{ flex: 1, fontFamily: 'var(--font-case-title)', fontSize: 20, fontWeight: 500 }}>{t('settings.title')}</div>
-          <button type="button" onClick={onClose} title={t('settings.close')} style={iconButtonStyle}>
+          <button type="button" onClick={onClose} title={t('settings.close')} aria-label={t('settings.close')} style={iconButtonStyle}>
             <X size={15} />
           </button>
         </div>
@@ -138,6 +138,9 @@ export default function SettingsPanel({
 
           <section style={sectionStyle}>
             <label style={labelStyle}>{t('settings.data')}</label>
+            <p style={betaNoteStyle}>
+              {t('settings.betaStorageNote')}
+            </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" onClick={onExportLibrary} style={actionButtonStyle(false)}>
                 <Download size={13} />
@@ -252,6 +255,17 @@ const sectionStyle: React.CSSProperties = {
   padding: '0 0 16px',
   marginBottom: 16,
   borderBottom: '1px solid var(--ink-150)',
+};
+
+const betaNoteStyle: React.CSSProperties = {
+  margin: '0 0 10px',
+  padding: '8px 9px',
+  border: '1px solid color-mix(in srgb, var(--accent) 28%, var(--ink-200))',
+  borderRadius: 5,
+  background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-canvas))',
+  color: 'var(--ink-700)',
+  fontSize: 12,
+  lineHeight: 1.45,
 };
 
 const iconButtonStyle: React.CSSProperties = {

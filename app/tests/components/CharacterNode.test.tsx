@@ -74,6 +74,52 @@ describe('CharacterNode', () => {
     expect(screen.getByText('Murderer')).toBeInTheDocument();
   });
 
+  it('renders victim nodes in grayscale', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="victim"
+        type="character"
+        data={{ name: 'Roger Ackroyd', role: 'victim' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="character-node"]')).toHaveStyle({
+      filter: 'grayscale(1) saturate(0.12) contrast(0.96)',
+    });
+  });
+
+  it('renders portrait victim nodes in grayscale', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="portrait-victim"
+        type="character"
+        data={{ name: 'Roger Ackroyd', role: 'victim', viewMode: 'portrait', width: 176, height: 252 }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="character-node"]')).toHaveStyle({
+      filter: 'grayscale(1) saturate(0.12) contrast(0.96)',
+    });
+  });
+
   it('renders custom roles as written with the neutral role color', () => {
     const { container } = renderInFlow(
       <CharacterNode
@@ -116,5 +162,38 @@ describe('CharacterNode', () => {
     );
 
     expect(screen.getByText(name)).toHaveStyle({ whiteSpace: 'normal', overflowWrap: 'anywhere' });
+  });
+
+  it('renders the large portrait display mode', () => {
+    const { container } = renderInFlow(
+      <CharacterNode
+        id="c6"
+        type="character"
+        data={{
+          name: 'Hajime Kindaichi',
+          role: 'detective',
+          profession: 'High school detective',
+          chapterIntroduced: 2,
+          viewMode: 'portrait',
+          width: 176,
+          height: 252,
+        }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    const root = container.querySelector('[data-testid="character-node"]');
+    expect(root).toHaveAttribute('data-view-mode', 'portrait');
+    expect(screen.getByText('Hajime Kindaichi')).toBeInTheDocument();
+    expect(screen.getByText('[ portrait ]')).toBeInTheDocument();
+    expect(screen.getByText('CH.02')).toBeInTheDocument();
   });
 });

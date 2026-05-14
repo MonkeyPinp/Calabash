@@ -6,7 +6,13 @@ describe('uiStore', () => {
     localStorage.clear();
     document.documentElement.setAttribute('data-theme', 'light');
     document.documentElement.setAttribute('lang', 'en');
-    useUiStore.setState({ theme: 'light', themePreference: 'light', language: 'system', resolvedLanguage: 'en' });
+    useUiStore.setState({
+      theme: 'light',
+      themePreference: 'light',
+      language: 'system',
+      resolvedLanguage: 'en',
+      characterNodeViewMode: 'text',
+    });
   });
 
   it('default theme is light', () => {
@@ -50,5 +56,11 @@ describe('uiStore', () => {
     expect(useUiStore.getState().language).toBe('pt-BR');
     expect(useUiStore.getState().resolvedLanguage).toBe('pt-BR');
     expect(document.documentElement.getAttribute('lang')).toBe('pt-BR');
+  });
+
+  it('persists the character node display mode', () => {
+    useUiStore.getState().setCharacterNodeViewMode('portrait');
+    expect(useUiStore.getState().characterNodeViewMode).toBe('portrait');
+    expect(localStorage.getItem('calabash-character-node-view-mode')).toBe('portrait');
   });
 });

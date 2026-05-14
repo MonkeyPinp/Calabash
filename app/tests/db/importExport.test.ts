@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { db } from '@/db/schema';
 import { createBook } from '@/db/books';
 import { createCategory } from '@/db/categories';
@@ -13,6 +15,7 @@ import {
   importBookFromJson,
   importLibraryFromJson,
   isLibraryExport,
+  type CalabashLibraryExport,
 } from '@/db/importExport';
 
 describe('importExport', () => {
@@ -31,7 +34,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.1.2');
+    expect(json.calabashVersion).toBe('0.1.3');
     expect(json.book.title).toBe('Empty');
     expect(json.characters).toEqual([]);
     expect(json.relationships).toEqual([]);
@@ -178,6 +181,32 @@ describe('importExport', () => {
     const rePortrait = await getPortrait(portrait.id);
     expect(rePortrait).toBeDefined();
     expect(Array.from(new Uint8Array(await rePortrait!.blob.arrayBuffer()))).toEqual([20, 21, 22]);
+  });
+
+  it('imports the beta library fixture and re-exports it with the current version', async () => {
+    const fixture = JSON.parse(
+      readFileSync(path.join(process.cwd(), 'tests', 'fixtures', 'beta-library-export-0.1.3.json'), 'utf8'),
+    ) as CalabashLibraryExport;
+
+    const result = await importLibraryFromJson(fixture);
+    expect(result).toEqual({ activeUserId: 'reader-beta-1', activeBookId: 'book-beta-case' });
+    expect(await db.books.count()).toBe(1);
+    expect(await db.characters.count()).toBe(3);
+    expect(await db.relationships.count()).toBe(2);
+    expect(await db.annotations.count()).toBe(1);
+
+    const exported = await exportLibraryAsJson();
+    expect(exported.calabashVersion).toBe('0.1.3');
+    expect(exported.books[0]).toMatchObject({
+      id: 'book-beta-case',
+      spoilerShield: true,
+      spoilerChapters: [12],
+      highlightedChapters: [3, 9],
+    });
+    expect(exported.characters.find((character) => character.id === 'char-beta-sheppard')?.roleReveals).toEqual([
+      { role: 'murderer', chapterRevealed: 12 },
+    ]);
+    expect(exported.portraits[0].dataUrl).toBe('data:image/png;base64,AAECAwQ=');
   });
 
   it('throws when exporting an unknown book id', async () => {

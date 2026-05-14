@@ -33,6 +33,7 @@ import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/anno
 import { computeForceLayout } from '@/lib/layout';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
+import type { CharacterNodeViewMode } from '@/stores/uiStore';
 
 const nodeTypes = { character: CharacterNode, stickyNote: StickyNoteNode };
 const edgeTypes = { relationship: RelationshipEdge };
@@ -42,6 +43,8 @@ const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
 const CHARACTER_NODE_MIN_HEIGHT = 76;
 const CHARACTER_NODE_TEXT_INSET = 78;
+const PORTRAIT_CHARACTER_NODE_WIDTH = 176;
+const PORTRAIT_CHARACTER_NODE_HEIGHT = 252;
 
 function longestWordLength(text: string) {
   return text.split(/\s+/).reduce((longest, word) => Math.max(longest, word.length), 0);
@@ -78,6 +81,17 @@ function estimateCharacterNodeSize(name: string, roleLabel: string, subtitle?: s
   return { width, height };
 }
 
+function getCharacterNodeSize(
+  viewMode: CharacterNodeViewMode,
+  name: string,
+  roleLabel: string,
+  subtitle?: string,
+) {
+  return viewMode === 'portrait'
+    ? { width: PORTRAIT_CHARACTER_NODE_WIDTH, height: PORTRAIT_CHARACTER_NODE_HEIGHT }
+    : estimateCharacterNodeSize(name, roleLabel, subtitle);
+}
+
 const kbdStyle: React.CSSProperties = {
   minWidth: 20,
   height: 18,
@@ -112,6 +126,7 @@ export interface CalabashCanvasProps {
   characters: Character[];
   relationships: Relationship[];
   stickyNotes?: StickyNote[];
+  characterNodeViewMode?: CharacterNodeViewMode;
   currentChapter: number;
   bookId: string | null;
   newCharacterRequestId?: number;
@@ -128,6 +143,7 @@ function CalabashCanvasInner({
   characters,
   relationships,
   stickyNotes = EMPTY_STICKY_NOTES,
+  characterNodeViewMode = 'text',
   currentChapter,
   bookId,
   newCharacterRequestId = 0,
@@ -189,7 +205,7 @@ function CalabashCanvasInner({
           const name = resolveDisplayName(c.aliases, currentChapter);
           const role = resolveCharacterRole(c, currentChapter);
           const roleLabel = formatCharacterRole(role, t);
-          const { width, height } = estimateCharacterNodeSize(name, roleLabel, c.profession);
+          const { width, height } = getCharacterNodeSize(characterNodeViewMode, name, roleLabel, c.profession);
           return {
             id: c.id,
             type: 'character',
@@ -201,6 +217,7 @@ function CalabashCanvasInner({
               name,
               width,
               height,
+              viewMode: characterNodeViewMode,
               role,
               profession: c.profession,
               portraitId: c.portraitId,
@@ -208,7 +225,7 @@ function CalabashCanvasInner({
             },
           };
         }),
-    [characters, currentChapter, t],
+    [characters, currentChapter, characterNodeViewMode, t],
   );
 
   // Sticky note nodes
@@ -314,11 +331,25 @@ function CalabashCanvasInner({
     if (!bookId) return;
     const visible = characters.filter((c) => c.chapterIntroduced <= currentChapter);
     const visibleIds = new Set(visible.map((c) => c.id));
+    const nodeSizes = new Map(
+      visible.map((c) => {
+        const name = resolveDisplayName(c.aliases, currentChapter);
+        const role = resolveCharacterRole(c, currentChapter);
+        const roleLabel = formatCharacterRole(role, t);
+        return [c.id, getCharacterNodeSize(characterNodeViewMode, name, roleLabel, c.profession)] as const;
+      }),
+    );
     const visibleEdges = relationships
       .filter((r) => r.chapterRevealed <= currentChapter && visibleIds.has(r.sourceId) && visibleIds.has(r.targetId))
       .map((r) => ({ source: r.sourceId, target: r.targetId, directed: isRelationshipDirected(r) }));
 
-    const positions = computeForceLayout(visible.map((c) => c.id), visibleEdges);
+    const positions = computeForceLayout(
+      visible.map((c) => c.id),
+      visibleEdges,
+      characterNodeViewMode === 'portrait' ? 1800 : 1400,
+      characterNodeViewMode === 'portrait' ? 1300 : 1000,
+      { nodeSizes },
+    );
 
     // Write to DB + Zustand
     await Promise.all(
@@ -340,8 +371,8 @@ function CalabashCanvasInner({
     );
 
     // fitView after React Flow renders the new rfNodes (double rAF ensures post-paint)
-    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15 })));
-  }, [bookId, characters, relationships, currentChapter, updateCharacterInStore, fitView]);
+    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15, maxZoom: 1.1 })));
+  }, [bookId, characters, relationships, currentChapter, characterNodeViewMode, t, updateCharacterInStore, fitView]);
 
   useEffect(() => {
     onLayoutReady?.(runLayout);
@@ -578,7 +609,7 @@ function CalabashCanvasInner({
         selectionKeyCode="Shift"
         nodeDragThreshold={1}
         fitView
-        fitViewOptions={{ padding: 0.15 }}
+        fitViewOptions={{ padding: 0.15, maxZoom: 1.1 }}
         onNodesChange={handleNodesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}

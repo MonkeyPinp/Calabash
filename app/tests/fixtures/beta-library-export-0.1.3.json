@@ -1,0 +1,138 @@
+{
+  "calabashVersion": "0.1.3",
+  "exportType": "library",
+  "exportedAt": 1778716800000,
+  "users": [
+    {
+      "id": "reader-beta-1",
+      "name": "Beta Reader",
+      "avatarColor": "#8a3320",
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-beta-classic",
+      "userId": "reader-beta-1",
+      "name": "Classic Mystery",
+      "order": 0,
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "books": [
+    {
+      "id": "book-beta-case",
+      "userId": "reader-beta-1",
+      "categoryId": "cat-beta-classic",
+      "title": "Beta Fixture Case",
+      "author": "Agatha Christie",
+      "totalChapters": 12,
+      "currentChapter": 9,
+      "spoilerShield": true,
+      "spoilerChapters": [12],
+      "highlightedChapters": [3, 9],
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "characters": [
+    {
+      "id": "char-beta-poirot",
+      "bookId": "book-beta-case",
+      "name": "Hercule Poirot",
+      "aliases": [{ "name": "Hercule Poirot", "chapterRevealed": 1 }],
+      "role": "detective",
+      "profession": "Private detective",
+      "socialPosition": "Retired Belgian investigator",
+      "notes": "Keeps everyone honest.",
+      "portraitId": "portrait-beta-poirot",
+      "chapterIntroduced": 1,
+      "position": { "x": 40, "y": 80 },
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    },
+    {
+      "id": "char-beta-sheppard",
+      "bookId": "book-beta-case",
+      "name": "Dr. Sheppard",
+      "aliases": [
+        { "name": "Dr. Sheppard", "chapterRevealed": 1 },
+        { "name": "James Sheppard", "chapterRevealed": 4 }
+      ],
+      "role": "witness",
+      "roleReveals": [{ "role": "murderer", "chapterRevealed": 12 }],
+      "profession": "Doctor",
+      "socialPosition": "Village doctor",
+      "notes": "Narrator notes stay spoiler-protected until the final chapter.",
+      "chapterIntroduced": 1,
+      "position": { "x": 310, "y": 90 },
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    },
+    {
+      "id": "char-beta-caroline",
+      "bookId": "book-beta-case",
+      "name": "Caroline Sheppard",
+      "aliases": [{ "name": "Caroline Sheppard", "chapterRevealed": 1 }],
+      "role": "witness",
+      "profession": "Observer",
+      "chapterIntroduced": 1,
+      "position": { "x": 185, "y": 235 },
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel-beta-poirot-sheppard",
+      "bookId": "book-beta-case",
+      "sourceId": "char-beta-poirot",
+      "targetId": "char-beta-sheppard",
+      "type": "suspicion",
+      "directed": true,
+      "label": "questions account",
+      "notes": "Suspicion should survive import/export.",
+      "chapterRevealed": 9,
+      "certainty": "suspected",
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    },
+    {
+      "id": "rel-beta-siblings",
+      "bookId": "book-beta-case",
+      "sourceId": "char-beta-sheppard",
+      "targetId": "char-beta-caroline",
+      "type": "family",
+      "directed": false,
+      "label": "siblings",
+      "chapterRevealed": 1,
+      "certainty": "confirmed",
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-beta-storage",
+      "bookId": "book-beta-case",
+      "content": "Export before clearing site data.",
+      "position": { "x": 520, "y": 160 },
+      "width": 220,
+      "height": 140,
+      "color": "yellow",
+      "createdAt": 1778716800000,
+      "updatedAt": 1778716800000
+    }
+  ],
+  "portraits": [
+    {
+      "id": "portrait-beta-poirot",
+      "bookId": "book-beta-case",
+      "mimeType": "image/png",
+      "dataUrl": "data:image/png;base64,AAECAwQ=",
+      "createdAt": 1778716800000
+    }
+  ]
+}

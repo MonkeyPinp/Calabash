@@ -6,7 +6,7 @@
 
 > Un tablero de relaciones sin spoilers para lectores de misterio.
 
-[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.1.2`
+[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.1.3`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · **Español** · [Português (Brasil)](README.pt-BR.md)
 
@@ -43,7 +43,7 @@ Calabash es local-first:
 - Tus libros se guardan en tu navegador con IndexedDB.
 - Tema, idioma y guía inicial usan localStorage.
 - Otros visitantes de la demo no pueden cambiar tu tablero, y tú no puedes cambiar el suyo.
-- Borrar los datos del sitio en el navegador puede eliminar tu biblioteca local.
+- Durante la beta, borrar los datos del sitio en el navegador puede eliminar tu biblioteca local.
 - Usa **Export Library** como copia de seguridad e **Import Library** para mover tus datos.
 
 ## Inicio Rápido
@@ -85,7 +85,7 @@ El roadmap del producto no se mantiene dentro del repositorio público. La plani
 
 ## Versión
 
-Calabash usa versionado beta `0.x`. `0.1.2` pule la localización del inspector y simplifica el panel de detalles de personajes.
+Calabash usa versionado beta `0.x`. `0.1.3` refuerza los avisos de almacenamiento beta, la cobertura con fixture de importación/exportación y la validación de release.
 
 ## License
 

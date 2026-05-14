@@ -6,7 +6,7 @@
 
 > 给侦探小说读者使用的防剧透人物关系板。
 
-[在线 Demo](https://guesswhat-studio.github.io/Calabash/) · [反馈问题](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · 版本 `0.1.2`
+[在线 Demo](https://guesswhat-studio.github.io/Calabash/) · [反馈问题](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · 版本 `0.1.3`
 
 语言：[English](README.md) · **简体中文** · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -43,7 +43,7 @@ Calabash 是本地优先工具：
 - 你的书本保存在当前浏览器的 IndexedDB 中。
 - 主题、语言、新手引导等偏好保存在 localStorage 中。
 - 其他 Demo 访问者不会修改你的内容，你也不会修改他们的内容。
-- 清除浏览器站点数据可能会删除本地书库。
+- beta 期间，清除浏览器站点数据可能会删除本地书库。
 - 请用 **Export Library** 备份，用 **Import Library** 迁移到其他浏览器。
 
 ## 快速开始
@@ -85,7 +85,7 @@ npm run build
 
 ## 版本
 
-当前使用 `0.x` beta 版本号。`0.1.2` 修复了检查器本地化，并简化了人物详情面板。
+当前使用 `0.x` beta 版本号。`0.1.3` 补强了 beta 存储提示、导入/导出夹具回归测试和发布验证。
 
 ## License
 

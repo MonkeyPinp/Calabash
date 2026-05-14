@@ -4,6 +4,7 @@ type Theme = 'light' | 'dark';
 export type ThemePreference = Theme | 'system';
 export type ResolvedLanguage = 'en' | 'zh-CN' | 'es' | 'pt-BR';
 export type LanguagePreference = ResolvedLanguage | 'system';
+export type CharacterNodeViewMode = 'text' | 'portrait';
 
 function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system';
@@ -11,6 +12,10 @@ function isThemePreference(value: string | null): value is ThemePreference {
 
 function isLanguagePreference(value: string | null): value is LanguagePreference {
   return value === 'system' || value === 'en' || value === 'zh-CN' || value === 'es' || value === 'pt-BR';
+}
+
+function isCharacterNodeViewMode(value: string | null): value is CharacterNodeViewMode {
+  return value === 'text' || value === 'portrait';
 }
 
 function systemTheme(): Theme {
@@ -65,6 +70,14 @@ function readLanguage(): LanguagePreference {
   return 'system';
 }
 
+function readCharacterNodeViewMode(): CharacterNodeViewMode {
+  try {
+    const saved = localStorage.getItem('calabash-character-node-view-mode');
+    if (isCharacterNodeViewMode(saved)) return saved;
+  } catch { /* test env */ }
+  return 'text';
+}
+
 function persistThemePreference(preference: ThemePreference, resolved: Theme) {
   try {
     localStorage.setItem('calabash-theme-preference', preference);
@@ -76,14 +89,20 @@ function persistLanguage(language: LanguagePreference) {
   try { localStorage.setItem('calabash-language', language); } catch { /* test env */ }
 }
 
+function persistCharacterNodeViewMode(mode: CharacterNodeViewMode) {
+  try { localStorage.setItem('calabash-character-node-view-mode', mode); } catch { /* test env */ }
+}
+
 interface UiStoreState {
   theme: Theme;
   themePreference: ThemePreference;
   language: LanguagePreference;
   resolvedLanguage: ResolvedLanguage;
+  characterNodeViewMode: CharacterNodeViewMode;
   toggleTheme: () => void;
   setThemePreference: (preference: ThemePreference) => void;
   setLanguage: (language: LanguagePreference) => void;
+  setCharacterNodeViewMode: (mode: CharacterNodeViewMode) => void;
   setTheme: (t: Theme) => void;
 }
 
@@ -91,6 +110,7 @@ const initialThemePreference = readThemePreference();
 const initialTheme = resolveTheme(initialThemePreference);
 const initialLanguage = readLanguage();
 const initialResolvedLanguage = resolveLanguagePreference(initialLanguage);
+const initialCharacterNodeViewMode = readCharacterNodeViewMode();
 
 applyTheme(initialTheme);
 applyLanguage(initialResolvedLanguage);
@@ -100,6 +120,7 @@ export const useUiStore = create<UiStoreState>((set) => ({
   themePreference: initialThemePreference,
   language: initialLanguage,
   resolvedLanguage: initialResolvedLanguage,
+  characterNodeViewMode: initialCharacterNodeViewMode,
   toggleTheme: () =>
     set((s) => {
       const next = s.theme === 'light' ? 'dark' : 'light';
@@ -118,6 +139,10 @@ export const useUiStore = create<UiStoreState>((set) => ({
     persistLanguage(language);
     applyLanguage(resolvedLanguage);
     set({ language, resolvedLanguage });
+  },
+  setCharacterNodeViewMode: (characterNodeViewMode) => {
+    persistCharacterNodeViewMode(characterNodeViewMode);
+    set({ characterNodeViewMode });
   },
   setTheme: (theme) => {
     persistThemePreference(theme, theme);

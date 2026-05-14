@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowRight, BookOpen, Download, FilePlus2, Github, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider, { type ChapterSliderMark } from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
@@ -24,6 +24,7 @@ import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter 
 import { seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { useT } from './i18n';
 import type { Book } from './types';
+import type { CharacterNodeViewMode } from './stores/uiStore';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const ONBOARDING_SEEN_KEY = 'calabash-onboarding-seen';
@@ -99,6 +100,76 @@ const sidebarUtilityButtonStyle: React.CSSProperties = {
   fontWeight: 500,
   padding: '0 8px',
 };
+
+function BoardStyleSwitcher({
+  value,
+  onChange,
+  t,
+}: {
+  value: CharacterNodeViewMode;
+  onChange: (mode: CharacterNodeViewMode) => void;
+  t: ReturnType<typeof useT>;
+}) {
+  const options: Array<{ value: CharacterNodeViewMode; label: string; icon: React.ReactNode }> = [
+    { value: 'text', label: t('app.textMode'), icon: <FileText size={13} /> },
+    { value: 'portrait', label: t('app.portraitMode'), icon: <ImageIcon size={13} /> },
+  ];
+
+  return (
+    <div role="group" aria-label={t('app.viewMode')} style={viewModeClusterStyle}>
+      {options.map((option) => {
+        const active = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={active}
+            title={option.label}
+            onClick={() => onChange(option.value)}
+            style={viewModeButtonStyle(active)}
+          >
+            {option.icon}
+            <span>{option.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const viewModeClusterStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 2,
+  padding: 3,
+  background: 'var(--bg-canvas)',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 6,
+  flexShrink: 0,
+  position: 'relative',
+  zIndex: 2,
+};
+
+function viewModeButtonStyle(active: boolean): React.CSSProperties {
+  return {
+    height: 26,
+    minWidth: 0,
+    padding: '0 9px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    border: 'none',
+    borderRadius: 4,
+    background: active ? 'var(--bg-panel)' : 'transparent',
+    color: active ? 'var(--ink-900)' : 'var(--ink-500)',
+    boxShadow: active ? '0 1px 2px rgba(40,28,12,.10), inset 0 0 0 1px var(--ink-200)' : 'none',
+    cursor: 'pointer',
+    fontSize: 11.5,
+    fontWeight: active ? 600 : 500,
+    whiteSpace: 'nowrap',
+  };
+}
 
 function EmptyInspectorGuide({ t }: { t: ReturnType<typeof useT> }) {
   const rows = [
@@ -299,6 +370,8 @@ export default function App() {
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
   const resolvedLanguage = useUiStore((s) => s.resolvedLanguage);
+  const characterNodeViewMode = useUiStore((s) => s.characterNodeViewMode);
+  const setCharacterNodeViewMode = useUiStore((s) => s.setCharacterNodeViewMode);
   const activeUserId = useUserStore((s) => s.activeUserId);
   const setActiveUser = useUserStore((s) => s.setActiveUser);
   const refreshUsers = useUserStore((s) => s.refreshUsers);
@@ -809,7 +882,7 @@ export default function App() {
             background: 'var(--bg-panel)',
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 8,
             padding: '0 12px',
             zIndex: 1,
           }}
@@ -894,7 +967,14 @@ export default function App() {
             </button>
           </div>
 
+          <BoardStyleSwitcher
+            value={characterNodeViewMode}
+            onChange={setCharacterNodeViewMode}
+            t={t}
+          />
+
           <div
+            className="toolbar-book-title"
             style={{
               flex: 1,
               display: 'flex',
@@ -902,7 +982,9 @@ export default function App() {
               alignItems: 'baseline',
               gap: 8,
               minWidth: 0,
-              padding: '0 16px',
+              marginLeft: 8,
+              padding: '0 20px',
+              pointerEvents: 'none',
             }}
           >
             <span
@@ -924,6 +1006,7 @@ export default function App() {
               <>
                 <span style={{ color: 'var(--ink-400)' }}>·</span>
                 <span
+                  className="toolbar-book-author"
                   style={{
                     fontSize: 11,
                     color: 'var(--ink-500)',
@@ -1128,6 +1211,7 @@ export default function App() {
                   characters={characters}
                   relationships={relationships}
                   stickyNotes={stickyNotes}
+                  characterNodeViewMode={characterNodeViewMode}
                   currentChapter={currentChapter}
                   bookId={activeBookId}
                   newCharacterRequestId={newCharacterRequestId}

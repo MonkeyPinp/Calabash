@@ -57,6 +57,26 @@ button.toolbar-btn:disabled {
   cursor: not-allowed !important;
 }
 
+@media (max-width: 1080px) {
+  .toolbar-book-title {
+    flex: 0 1 190px !important;
+    justify-content: flex-start !important;
+    margin-left: 14px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .toolbar-book-author {
+    display: none !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .toolbar-book-title {
+    display: none !important;
+  }
+}
+
 /* ── React Flow: base canvas ─────────────────────────────────────────────── */
 .react-flow__background {
   background: var(--bg-canvas);

@@ -12,19 +12,19 @@ For every public version:
 
 The `0.1.x` line is a browser beta, so each release includes a static web bundle.
 
-Starting with `0.2`, the desktop shell lives in `src-tauri/`. The same release workflow also uploads plain desktop binaries for:
+Starting with `0.2`, the desktop shell lives in `src-tauri/`. The same release workflow uploads desktop assets for:
 
-- Windows x64
-- Linux x64
-- macOS Apple silicon
-- macOS Intel
+- Windows x64 plain binary
+- Linux x64 plain binary
+- macOS Apple silicon DMG
+- macOS Intel DMG
 
-A desktop release is not complete unless all configured platform binaries are present on the GitHub Release.
+A desktop release is not complete unless all configured platform assets are present on the GitHub Release.
 
 ## Signing Follow-up
 
 The current desktop binaries are unsigned, so browsers and operating systems can warn that the files are uncommon or from an unknown publisher. A future desktop hardening pass should add:
 
 - Windows Authenticode signing for the portable `.exe`, using Azure Trusted Signing or a CA-issued code signing certificate, plus `signtool verify` in CI.
-- macOS Developer ID signing and notarization, preferably publishing a signed and notarized `.app.zip` instead of a raw Mach-O binary.
+- macOS Developer ID signing and notarization for the published `.dmg` images.
 - Linux checksums, and optionally detached signatures, for the published Linux binary or AppImage.

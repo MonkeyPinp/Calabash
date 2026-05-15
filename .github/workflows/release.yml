@@ -95,7 +95,7 @@ jobs:
             echo
             echo "Assets:"
             echo "- Web bundle: static browser build for self-hosting or archive validation."
-            echo "- Desktop binaries: Windows, Linux, and macOS builds are attached by the Tauri release job."
+            echo "- Desktop builds: Windows and Linux plain binaries, plus macOS DMG images for Apple Silicon and Intel Macs."
           } > release-notes.md
 
       - name: Create or update GitHub Release
@@ -161,19 +161,23 @@ jobs:
           - platform: macos-15
             label: macos-arm64
             asset_suffix: darwin_aarch64
-            args: --no-bundle
+            args: --bundles dmg
+            upload_plain_binary: false
           - platform: macos-15-intel
             label: macos-x64
             asset_suffix: darwin_x64
-            args: --no-bundle
+            args: --bundles dmg
+            upload_plain_binary: false
           - platform: ubuntu-22.04
             label: linux-x64
             asset_suffix: linux_x64
             args: --no-bundle
+            upload_plain_binary: true
           - platform: windows-latest
             label: windows-x64
             asset_suffix: windows_x64
             args: --no-bundle
+            upload_plain_binary: true
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -223,7 +227,7 @@ jobs:
         with:
           projectPath: .
           args: ${{ matrix.args }}
-          uploadPlainBinary: true
+          uploadPlainBinary: ${{ matrix.upload_plain_binary }}
           includeUpdaterJson: false
 
       - name: Collect desktop workflow artifact

@@ -39,7 +39,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
-- **Desktop beta**: `v0.2.2` ships unsigned plain binaries for Windows, macOS, and Linux, with an in-app release checker.
+- **Desktop beta**: `v0.2.2` ships unsigned Windows/Linux binaries and macOS DMG images, with an in-app release checker.
 
 ## Data And Privacy
 

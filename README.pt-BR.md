@@ -39,7 +39,7 @@ Calabash é deliberadamente manual. Ele não extrai personagens automaticamente,
 - **Biblioteca local**: salve livros no IndexedDB e faça backup com Exportar/Importar.
 - **Tutoriais incluídos**: teste *The Murder of Roger Ackroyd* ou *Hida Trick House Murder Case*.
 - **Interface multilíngue**: inglês, chinês simplificado, japonês, espanhol e português do Brasil.
-- **Beta desktop**: `v0.2.2` publica binários simples sem assinatura para Windows, macOS e Linux, com verificação de versões no app.
+- **Beta desktop**: `v0.2.2` publica binários sem assinatura para Windows/Linux e imagens DMG para macOS, com verificação de versões no app.
 
 ## Dados E Privacidade
 

@@ -4,17 +4,19 @@
   <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
 </p>
 
-> Um quadro de relações sem spoilers para leitores de mistério.
+> Um quadro de casos, grafo de relações e rastreador de pistas sem spoilers para leitores de mistério.
 
 [Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.2.1`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [Español](README.es.md) · **Português (Brasil)**
 
-![Calabash demo screenshot](docs/assets/calabash-demo.png)
+![Captura do Calabash como quadro de casos, notas de mistério e grafo de relações sem spoilers](docs/assets/calabash-demo.png)
 
 ## O Que É
 
 Calabash é um quadro local-first para acompanhar personagens, aliases, pistas, relações e teorias enquanto você lê. O nome vem do cachimbo calabash associado a Sherlock Holmes: a ferramenta não resolve o caso por você, mas fica ao seu lado enquanto você pensa.
+
+Você pode usá-lo como app de notas para mistério, grafo de relações de personagens, rastreador de pistas ou quadro privado para romances longos, casos de mangá, mistérios fair-play e competições de puzzles.
 
 A demo pública atual roda inteiramente no navegador. Não há conta, banco de dados hospedado para leitores nem salvamento no servidor.
 
@@ -64,6 +66,7 @@ Calabash é para leitores que gostam de fazer o trabalho investigativo:
 
 - Leitores de mistério clássico: Agatha Christie, Ellery Queen, John Dickson Carr, S. S. Van Dine.
 - Fãs de mangá e séries de mistério com aliases, identidades ocultas e revelações tardias.
+- Pessoas resolvendo puzzles e concursos de mistério que precisam de um quadro temporário para personagens, pistas, lugares e hipóteses.
 - Leitores de ficção com muitos personagens: fantasia, romance histórico, sagas familiares, thrillers políticos.
 - Qualquer pessoa que queira uma ferramenta privada, tranquila e sem conta para pensar com uma história.
 

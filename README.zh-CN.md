@@ -4,17 +4,19 @@
   <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
 </p>
 
-> 给侦探小说读者使用的防剧透人物关系板。
+> 给推理小说读者使用的防剧透案件板、人物关系图和线索整理工具。
 
 [在线 Demo](https://guesswhat-studio.github.io/Calabash/) · [反馈问题](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · 版本 `0.2.1`
 
 语言：[English](README.md) · **简体中文** · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
-![Calabash demo screenshot](docs/assets/calabash-demo.png)
+![Calabash 推理小说笔记、人物关系图和防剧透案件板截图](docs/assets/calabash-demo.png)
 
 ## 它是什么
 
 Calabash 是一个本地优先的案件资料板。你可以一边读书，一边记录人物、别名、线索、关系和自己的推理。它的名字来自 Sherlock Holmes 的葫芦形烟斗：工具不会替你破案，但会陪你一起思考。
+
+你可以把它当作推理小说笔记、人物关系图、线索整理板，或每周谜题、推理比赛时临时使用的私人案件板。
 
 目前公开 Demo 完全在浏览器中运行。没有账号系统，没有云端读者数据库，也没有服务器保存用户内容。
 
@@ -64,6 +66,7 @@ Calabash 适合喜欢自己做推理功课的读者：
 
 - Agatha Christie、Ellery Queen、John Dickson Carr 等经典推理读者。
 - 喜欢记录别名、伪装身份、后期揭示的漫画和剧集观众。
+- 做每周谜题、推理比赛或长篇谜题时，需要整理人物、地点、线索和假设的解谜者。
 - 阅读人物众多小说的人：奇幻、历史、家族传奇、政治惊悚等。
 - 想要一个安静、私密、无需账号的阅读思考工具的人。
 

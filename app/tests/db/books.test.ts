@@ -1,6 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '@/db/schema';
-import { createBook, getBook, listBooks, updateBook, deleteBook } from '@/db/books';
+import {
+  createBook,
+  createOpenClue,
+  deleteBook,
+  deleteOpenClue,
+  getBook,
+  listBooks,
+  listOpenClues,
+  updateBook,
+  updateOpenClue,
+} from '@/db/books';
 import { createCharacter, listCharactersByBook } from '@/db/characters';
 import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
 import { savePortrait } from '@/db/portraits';
@@ -30,6 +40,7 @@ describe('books DAO', () => {
     expect(book.spoilerShield).toBe(false);
     expect(book.spoilerChapters).toEqual([]);
     expect(book.highlightedChapters).toEqual([]);
+    expect(book.openClues).toEqual([]);
     expect(book.createdAt).toBeGreaterThan(0);
     expect(book.updatedAt).toBe(book.createdAt);
   });
@@ -82,6 +93,32 @@ describe('books DAO', () => {
     expect(updated.spoilerChapters).toEqual([2, 5]);
     expect(updated.highlightedChapters).toEqual([3, 8]);
     expect(updated.updatedAt).toBeGreaterThan(book.updatedAt);
+  });
+
+  it('stores open clues on the book row as a pure list', async () => {
+    const book = await createBook({ title: 'X' });
+    const clue = await createOpenClue({
+      bookId: book.id,
+      text: 'Why was the study locked?',
+      chapterIntroduced: 2,
+    });
+
+    expect(await listOpenClues(book.id)).toMatchObject([
+      { id: clue.id, text: 'Why was the study locked?', status: 'open', chapterIntroduced: 2 },
+    ]);
+
+    const explained = await updateOpenClue(book.id, clue.id, { status: 'explained' });
+    expect(explained.status).toBe('explained');
+
+    await deleteOpenClue(book.id, clue.id);
+    expect(await listOpenClues(book.id)).toEqual([]);
+  });
+
+  it('rejects blank open clue text instead of storing an invisible clue', async () => {
+    const book = await createBook({ title: 'X' });
+
+    await expect(createOpenClue({ bookId: book.id, text: '   ', chapterIntroduced: 1 })).rejects.toThrow(/required/);
+    expect(await listOpenClues(book.id)).toEqual([]);
   });
 
   it('deleteBook removes the row', async () => {

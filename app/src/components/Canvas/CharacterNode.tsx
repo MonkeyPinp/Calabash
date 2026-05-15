@@ -1,8 +1,9 @@
 import { memo, useEffect, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { CharacterRole } from '@/types';
+import type { CharacterKind, CharacterRole } from '@/types';
 import { usePortraitUrl } from '@/hooks/usePortraitUrl';
 import { useT } from '@/i18n';
+import { formatNonCharacterKind, normalizeCharacterKind } from '@/lib/characterKinds';
 import { formatCharacterRole, getCharacterRoleCssVar, getCharacterRoleVisualKey } from '@/lib/roles';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
 
@@ -10,6 +11,7 @@ export interface CharacterNodeData {
   name: string;
   width?: number;
   height?: number;
+  kind?: CharacterKind;
   role?: CharacterRole;
   profession?: string;
   portraitId?: string;
@@ -21,6 +23,8 @@ function CharacterNodeImpl(props: NodeProps) {
   const t       = useT();
   const data    = props.data as unknown as CharacterNodeData;
   const sel     = props.selected ?? false;
+  const kind = normalizeCharacterKind(data.kind);
+  const kindLabel = formatNonCharacterKind(kind, t);
   const roleKey = getCharacterRoleVisualKey(data.role);
   const isVictim = roleKey === 'victim';
   const roleVar = getCharacterRoleCssVar(data.role);
@@ -29,6 +33,7 @@ function CharacterNodeImpl(props: NodeProps) {
 
   const initial = data.name.trim().charAt(0).toUpperCase() || '?';
   const roleLabel = formatCharacterRole(data.role, t);
+  const fileLabel = kindLabel || roleLabel;
 
   useEffect(() => {
     setPortraitFailed(false);
@@ -118,9 +123,9 @@ function CharacterNodeImpl(props: NodeProps) {
           <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             FILE {initial}-{String(data.chapterIntroduced ?? 0).padStart(2, '0')}
           </span>
-          {roleLabel && (
+          {fileLabel && (
             <span style={{ color: roleVar, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {roleLabel}
+              {fileLabel}
             </span>
           )}
         </div>
@@ -246,7 +251,7 @@ function CharacterNodeImpl(props: NodeProps) {
               CH.{String(data.chapterIntroduced).padStart(2, '0')}
             </div>
           )}
-          {data.profession && (
+          {(kindLabel || data.profession) && (
             <div
               style={{
                 marginTop: 2,
@@ -260,7 +265,7 @@ function CharacterNodeImpl(props: NodeProps) {
                 paddingRight: data.chapterIntroduced !== undefined ? 46 : 0,
               }}
             >
-              {data.profession}
+              {[kindLabel, data.profession].filter(Boolean).join(' · ')}
             </div>
           )}
         </div>
@@ -346,6 +351,23 @@ function CharacterNodeImpl(props: NodeProps) {
             lineHeight: 1.25,
             flexWrap: 'wrap',
           }}>
+            {kindLabel && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9.5,
+                  color: 'var(--ink-500)',
+                  textTransform: 'uppercase',
+                  minWidth: 0,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {kindLabel}
+              </span>
+            )}
+            {kindLabel && (roleLabel || data.profession) && (
+              <span style={{ fontSize: 9, color: 'var(--ink-400)', flexShrink: 0 }}>·</span>
+            )}
             {roleLabel && (
               <span
                 style={{

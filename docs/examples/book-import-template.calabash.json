@@ -12,6 +12,7 @@
     {
       "key": "detective",
       "name": "Detective Lin",
+      "kind": "character",
       "role": "detective",
       "profession": "Private investigator",
       "chapterIntroduced": 1,
@@ -22,6 +23,7 @@
     {
       "key": "host",
       "name": "Morgan Vale",
+      "kind": "character",
       "role": "victim",
       "profession": "Club owner",
       "chapterIntroduced": 1,
@@ -31,6 +33,7 @@
     {
       "key": "heir",
       "name": "Ada Vale",
+      "kind": "character",
       "role": "suspect",
       "profession": "Singer",
       "chapterIntroduced": 1,
@@ -38,6 +41,16 @@
         { "name": "The Nightingale", "chapterRevealed": 2 }
       ],
       "position": { "x": 600, "y": 0 }
+    }
+  ],
+  "clues": [
+    {
+      "text": "Who had access to the locked back room?",
+      "chapterIntroduced": 1
+    },
+    {
+      "text": "Why did the missing letter reappear after midnight?",
+      "chapterIntroduced": 2
     }
   ],
   "relationships": [

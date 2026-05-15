@@ -7,6 +7,7 @@ import CharacterInspector from './components/Inspector/CharacterInspector';
 import RelationshipInspector from './components/Inspector/RelationshipInspector';
 import StickyNoteInspector from './components/Inspector/StickyNoteInspector';
 import GroupRangeInspector from './components/Inspector/GroupRangeInspector';
+import OpenCluesPanel from './components/Inspector/OpenCluesPanel';
 import SettingsPanel from './components/Settings/SettingsPanel';
 import OnboardingPanel from './components/Onboarding/OnboardingPanel';
 import CalabashLogo from './components/Brand/CalabashLogo';
@@ -173,7 +174,15 @@ function viewModeButtonStyle(active: boolean): React.CSSProperties {
   };
 }
 
-function EmptyInspectorGuide({ t }: { t: ReturnType<typeof useT> }) {
+function EmptyInspectorGuide({
+  t,
+  bookId,
+  currentChapter,
+}: {
+  t: ReturnType<typeof useT>;
+  bookId: string | null;
+  currentChapter: number;
+}) {
   const rows = [
     {
       icon: <UserPlus size={13} />,
@@ -199,6 +208,11 @@ function EmptyInspectorGuide({ t }: { t: ReturnType<typeof useT> }) {
 
   return (
     <div style={{ padding: 18, color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.55 }}>
+      {bookId && (
+        <div style={{ marginBottom: 18 }}>
+          <OpenCluesPanel bookId={bookId} currentChapter={currentChapter} />
+        </div>
+      )}
       <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>
         {t('app.inspector')}
       </div>
@@ -1390,7 +1404,7 @@ export default function App() {
                 onDuplicated={(id) => setSelectedGroupRangeId(id)}
               />
             ) : (
-              <EmptyInspectorGuide t={t} />
+              <EmptyInspectorGuide t={t} bookId={activeBookId} currentChapter={currentChapter} />
             )}
           </div>
         </div>

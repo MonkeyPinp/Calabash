@@ -26,6 +26,7 @@ import GroupRangeNode from './GroupRangeNode';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
+import { formatNonCharacterKind, normalizeCharacterKind } from '@/lib/characterKinds';
 import { formatCharacterRole, getCharacterRoleVisualKey, resolveCharacterRole } from '@/lib/roles';
 import { getRelationshipTypeMarkerColor, isRelationshipDirected } from '@/lib/relationshipTypes';
 import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/characters';
@@ -227,9 +228,13 @@ function CalabashCanvasInner({
         .filter((c) => c.chapterIntroduced <= currentChapter)
         .map((c) => {
           const name = resolveDisplayName(c.aliases, currentChapter);
+          const kind = normalizeCharacterKind(c.kind);
+          const kindLabel = formatNonCharacterKind(kind, t);
           const role = resolveCharacterRole(c, currentChapter);
           const roleLabel = formatCharacterRole(role, t);
-          const { width, height } = getCharacterNodeSize(characterNodeViewMode, name, roleLabel, c.profession);
+          const metaLabel = [kindLabel, roleLabel].filter(Boolean).join(' · ');
+          const subtitle = [kindLabel, c.profession].filter(Boolean).join(' · ');
+          const { width, height } = getCharacterNodeSize(characterNodeViewMode, name, metaLabel, subtitle);
           return {
             id: c.id,
             type: 'character',
@@ -242,6 +247,7 @@ function CalabashCanvasInner({
               width,
               height,
               viewMode: characterNodeViewMode,
+              kind,
               role,
               profession: c.profession,
               portraitId: c.portraitId,
@@ -378,9 +384,12 @@ function CalabashCanvasInner({
     const nodeSizes = new Map(
       visible.map((c) => {
         const name = resolveDisplayName(c.aliases, currentChapter);
+        const kindLabel = formatNonCharacterKind(c.kind, t);
         const role = resolveCharacterRole(c, currentChapter);
         const roleLabel = formatCharacterRole(role, t);
-        return [c.id, getCharacterNodeSize(characterNodeViewMode, name, roleLabel, c.profession)] as const;
+        const metaLabel = [kindLabel, roleLabel].filter(Boolean).join(' · ');
+        const subtitle = [kindLabel, c.profession].filter(Boolean).join(' · ');
+        return [c.id, getCharacterNodeSize(characterNodeViewMode, name, metaLabel, subtitle)] as const;
       }),
     );
     const visibleEdges = relationships

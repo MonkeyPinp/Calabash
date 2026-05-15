@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2, Copy } from 'lucide-react';
-import type { Alias } from '@/types';
+import type { Alias, CharacterKind } from '@/types';
 import { updateCharacter, deleteCharacter, restoreCharacter, createCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { savePortrait, getPortrait } from '@/db/portraits';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
+import { CHARACTER_KIND_PRESETS, formatCharacterKind, normalizeCharacterKind } from '@/lib/characterKinds';
 import {
   CHARACTER_ROLE_PRESETS,
   formatCharacterRole,
@@ -135,6 +136,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
     const copy = await createCharacter({
       bookId,
       name: `${character.name} (copy)`,
+      kind: normalizeCharacterKind(character.kind),
       role: character.role,
       roleReveals: character.roleReveals?.map((reveal) => ({ ...reveal })),
       chapterIntroduced: character.chapterIntroduced,
@@ -157,6 +159,11 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
   function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
     const val = e.target.value.trim();
     if (val && val !== character!.name) void persist({ name: val });
+  }
+
+  function handleKindChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = normalizeCharacterKind(e.target.value);
+    if (val !== normalizeCharacterKind(character!.kind)) void persist({ kind: val });
   }
 
   function handleRoleCommit(value: string) {
@@ -232,6 +239,11 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
     value: role,
     label: formatCharacterRole(role, t),
   }));
+  const kindOptions: Array<{ value: CharacterKind; label: string }> = CHARACTER_KIND_PRESETS.map((kind) => ({
+    value: kind,
+    label: formatCharacterKind(kind, t),
+  }));
+  const kindLabel = formatCharacterKind(character.kind, t);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -295,7 +307,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
             {character.name}
           </div>
           <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {[character.profession, t('character.introducedChapterShort', { chapter: character.chapterIntroduced })].filter(Boolean).join(' · ')}
+            {[kindLabel, character.profession, t('character.introducedChapterShort', { chapter: character.chapterIntroduced })].filter(Boolean).join(' · ')}
           </div>
         </div>
         <button
@@ -337,6 +349,21 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
           key={`name-${characterId}`}
           onBlur={handleNameBlur}
         />
+      </div>
+
+      {/* Kind */}
+      <div style={fieldStyle}>
+        <label style={labelStyle}>{t('character.kind')}</label>
+        <select
+          style={inputStyle}
+          defaultValue={normalizeCharacterKind(character.kind)}
+          key={`kind-${characterId}`}
+          onChange={handleKindChange}
+        >
+          {kindOptions.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Role */}

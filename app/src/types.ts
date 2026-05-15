@@ -4,6 +4,10 @@ export type CharacterRole = string;
 
 export type RelationshipType = string;
 
+export type CharacterKind = 'character' | 'location' | 'room' | 'item' | 'testimony';
+
+export type OpenClueStatus = 'open' | 'explained';
+
 export interface Alias {
   name: string;
   chapterRevealed: number;
@@ -25,6 +29,7 @@ export interface Book {
   spoilerShield: boolean;
   spoilerChapters: number[];
   highlightedChapters: number[];
+  openClues?: OpenClue[];
   createdAt: number;
   updatedAt: number;
 }
@@ -51,6 +56,7 @@ export interface Character {
   id: string;
   bookId: string;
   name: string;
+  kind?: CharacterKind;
   aliases: Alias[];
   role?: CharacterRole;
   roleReveals?: RoleReveal[];
@@ -60,6 +66,15 @@ export interface Character {
   portraitId?: string;
   chapterIntroduced: number;
   position: { x: number; y: number };
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface OpenClue {
+  id: string;
+  text: string;
+  status: OpenClueStatus;
+  chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;
 }

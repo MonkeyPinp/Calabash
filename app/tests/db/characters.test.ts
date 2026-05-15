@@ -23,9 +23,22 @@ describe('characters DAO', () => {
       chapterIntroduced: 1,
     });
     expect(c.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(c.kind).toBe('character');
     expect(c.aliases).toEqual([{ name: 'Hercule Poirot', chapterRevealed: 1 }]);
     expect(c.position).toEqual({ x: 0, y: 0 });
     expect(c.createdAt).toBeGreaterThan(0);
+  });
+
+  it('stores non-person node kinds on the character row', async () => {
+    const c = await createCharacter({
+      bookId: BOOK_ID,
+      name: 'Locked study',
+      kind: 'room',
+      chapterIntroduced: 2,
+    });
+
+    expect(c.kind).toBe('room');
+    await expect(updateCharacter(c.id, { kind: 'item' })).resolves.toMatchObject({ kind: 'item' });
   });
 
   it('createCharacter accepts custom aliases and position', async () => {

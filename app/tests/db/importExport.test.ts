@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { db } from '@/db/schema';
-import { createBook } from '@/db/books';
+import { createBook, createOpenClue, listOpenClues } from '@/db/books';
 import { createCategory } from '@/db/categories';
 import { createCharacter, listCharactersByBook } from '@/db/characters';
 import { createRelationship, listRelationshipsByBook } from '@/db/relationships';
@@ -39,6 +39,7 @@ describe('importExport', () => {
     const json = await exportBookAsJson(book.id);
     expect(json.calabashVersion).toBe('0.2.1');
     expect(json.book.title).toBe('Empty');
+    expect(json.book.openClues).toEqual([]);
     expect(json.characters).toEqual([]);
     expect(json.relationships).toEqual([]);
     expect(json.portraits).toEqual([]);
@@ -65,6 +66,7 @@ describe('importExport', () => {
       type: 'professional', chapterRevealed: 1, certainty: 'confirmed',
     });
     await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 }, chapterIntroduced: 7 });
+    await createOpenClue({ bookId: book.id, text: 'Who had the key to the study?', chapterIntroduced: 5 });
     await createGroupRange({
       bookId: book.id,
       label: 'Village circle',
@@ -80,6 +82,7 @@ describe('importExport', () => {
     expect(exported.book.highlightedChapters).toEqual([3, 8]);
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
     expect(exported.annotations).toHaveLength(1);
+    expect(exported.book.openClues).toMatchObject([{ text: 'Who had the key to the study?', chapterIntroduced: 5 }]);
     expect(exported.groupRanges).toHaveLength(1);
 
     await Promise.all([
@@ -114,6 +117,9 @@ describe('importExport', () => {
     expect(reNotes).toHaveLength(1);
     expect(reNotes[0].content).toBe('check alibi');
     expect(reNotes[0].chapterIntroduced).toBe(7);
+    expect(await listOpenClues(newBookId)).toMatchObject([
+      { text: 'Who had the key to the study?', chapterIntroduced: 5, status: 'open' },
+    ]);
 
     const reRanges = await listGroupRangesByBook(newBookId);
     expect(reRanges).toHaveLength(1);
@@ -253,14 +259,17 @@ describe('importExport', () => {
       certainty: 'confirmed',
     });
     expect(normalized.annotations).toHaveLength(1);
+    expect(normalized.book.openClues).toHaveLength(2);
     expect(normalized.groupRanges).toHaveLength(1);
 
     const newBookId = await importBookFromJson(template, 'reader-1');
     const book = await db.books.get(newBookId);
     expect(book).toMatchObject({ title: 'Example Mystery Night', userId: 'reader-1', totalChapters: 6 });
+    expect(book?.openClues).toHaveLength(2);
 
     const characters = await listCharactersByBook(newBookId);
     expect(characters).toHaveLength(3);
+    expect(characters.every((character) => character.kind === 'character')).toBe(true);
     expect(characters.find((character) => character.name === 'Ada Vale')?.aliases).toEqual([
       { name: 'The Nightingale', chapterRevealed: 2 },
     ]);

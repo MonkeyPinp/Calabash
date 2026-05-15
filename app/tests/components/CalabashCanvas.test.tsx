@@ -186,7 +186,7 @@ describe('CalabashCanvas', () => {
     );
     expect(screen.getByLabelText('Keyboard shortcuts')).toBeInTheDocument();
     expect(screen.getByText('N')).toBeInTheDocument();
-    expect(screen.getByText('New character')).toBeInTheDocument();
+    expect(screen.getByText('New node')).toBeInTheDocument();
     expect(screen.getByText('Ctrl Z')).toBeInTheDocument();
   });
 

@@ -142,6 +142,27 @@ describe('CharacterNode', () => {
     expect(container.querySelector('[data-testid="character-node"]')!.innerHTML).toMatch(/--node-other/);
   });
 
+  it('renders non-person node kinds as metadata', () => {
+    renderInFlow(
+      <CharacterNode
+        id="item"
+        type="character"
+        data={{ name: 'Missing letter', kind: 'item' }}
+        dragging={false}
+        isConnectable={true}
+        positionAbsoluteX={0}
+        positionAbsoluteY={0}
+        selected={false}
+        zIndex={0}
+        // @ts-expect-error
+        xPos={0}
+        yPos={0}
+      />,
+    );
+
+    expect(screen.getByText('Item')).toBeInTheDocument();
+  });
+
   it('keeps hidden handles from intercepting clicks on neighboring characters', () => {
     const { container } = renderInFlow(
       <CharacterNode

@@ -7,11 +7,13 @@ import type { Character } from '@/types';
 import { createCharacter, deleteCharacter, restoreCharacter } from '@/db/characters';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
+import { CHARACTER_KIND_PRESETS, formatCharacterKind, normalizeCharacterKind } from '@/lib/characterKinds';
 import { CHARACTER_ROLE_PRESETS, formatCharacterRole, normalizeCharacterRole } from '@/lib/roles';
 import PresetTextInput from '@/components/Form/PresetTextInput';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
+  kind: z.enum(['character', 'location', 'room', 'item', 'testimony']),
   role: z.string().max(80).optional(),
   profession: z.string().optional(),
   chapterIntroduced: z.number().min(1),
@@ -54,7 +56,7 @@ export default function NewCharacterModal({
 
   const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', role: '', profession: '', chapterIntroduced: currentChapter },
+    defaultValues: { name: '', kind: 'character', role: '', profession: '', chapterIntroduced: currentChapter },
   });
 
   // Focus name input on open
@@ -72,6 +74,7 @@ export default function NewCharacterModal({
     const char = await createCharacter({
       bookId,
       name: values.name,
+      kind: normalizeCharacterKind(values.kind),
       role: normalizeCharacterRole(values.role),
       profession: values.profession || undefined,
       chapterIntroduced: values.chapterIntroduced,
@@ -90,6 +93,10 @@ export default function NewCharacterModal({
   const roleOptions = CHARACTER_ROLE_PRESETS.map((role) => ({
     value: role,
     label: formatCharacterRole(role, t),
+  }));
+  const kindOptions = CHARACTER_KIND_PRESETS.map((kind) => ({
+    value: kind,
+    label: formatCharacterKind(kind, t),
   }));
 
   const modal = (
@@ -134,6 +141,26 @@ export default function NewCharacterModal({
             {errors.name && <span style={{ fontSize: 11, color: 'var(--accent)' }}>{errors.name.message}</span>}
           </div>
 
+          {/* Kind + Chapter introduced */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>{t('character.kind')}</label>
+              <select {...register('kind')} style={inputStyle}>
+                {kindOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ width: 118, flexShrink: 0 }}>
+              <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>{t('character.chapterIntroduced')}</label>
+              <input
+                {...register('chapterIntroduced', { valueAsNumber: true })}
+                type="number" min={1}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
           {/* Role + Profession side-by-side */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -165,15 +192,6 @@ export default function NewCharacterModal({
             </div>
           </div>
 
-          {/* Chapter introduced */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: '0.11em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: 6 }}>{t('character.chapterIntroduced')}</label>
-            <input
-              {...register('chapterIntroduced', { valueAsNumber: true })}
-              type="number" min={1}
-              style={{ ...inputStyle, width: 90 }}
-            />
-          </div>
           </div>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '12px 18px', borderTop: '1px solid var(--ink-150)', background: 'var(--bg-panel)', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>

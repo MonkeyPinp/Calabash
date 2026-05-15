@@ -13,6 +13,8 @@ import type {
   User,
 } from '@/types';
 import { APP_VERSION } from '@/version';
+import { normalizeCharacter, normalizeCharacterKind } from '@/lib/characterKinds';
+import { normalizeOpenClues } from '@/lib/clues';
 import { normalizeStickyNote, STICKY_NOTE_DEFAULT_FONT_SIZE } from '@/lib/stickyNotes';
 import {
   GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE,
@@ -53,9 +55,11 @@ export interface CalabashBookImportTemplate {
     spoilerShield?: boolean;
     spoilerChapters?: number[];
     highlightedChapters?: number[];
+    openClues?: Array<Record<string, unknown> | string>;
   };
   characters?: Array<Record<string, unknown>>;
   relationships?: Array<Record<string, unknown>>;
+  clues?: Array<Record<string, unknown> | string>;
   notes?: Array<Record<string, unknown>>;
   annotations?: Array<Record<string, unknown>>;
   groups?: Array<Record<string, unknown>>;
@@ -104,6 +108,7 @@ function normalizeBookForPortableData(book: Book): Book {
     spoilerShield: book.spoilerShield ?? false,
     spoilerChapters: book.spoilerChapters ?? [],
     highlightedChapters: book.highlightedChapters ?? [],
+    openClues: normalizeOpenClues(book.openClues),
   };
 }
 
@@ -162,7 +167,7 @@ function normalizeFullBookExport(payload: CalabashExport): CalabashExport {
     calabashVersion: payload.calabashVersion || CALABASH_VERSION,
     importType: 'book',
     book: normalizeBookForPortableData(payload.book),
-    characters: payload.characters ?? [],
+    characters: (payload.characters ?? []).map(normalizeCharacter),
     relationships: payload.relationships ?? [],
     portraits: payload.portraits ?? [],
     annotations: (payload.annotations ?? []).map(normalizeStickyNote),
@@ -181,6 +186,10 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
   const characterIds = new Set<string>();
   const characterLookup = new Map<string, string>();
   const rawCharacters = arrayOfRecords(payload.characters);
+  const openClues = normalizeOpenClues([
+    ...arrayOfClueInputs(bookInput.openClues),
+    ...arrayOfClueInputs(payload.clues),
+  ]);
 
   const characters: Character[] = rawCharacters.map((raw, index) => {
     const name = stringValue(raw.name) ?? stringValue(raw.label) ?? `Character ${index + 1}`;
@@ -195,6 +204,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       id,
       bookId: templateBookId,
       name,
+      kind: normalizeCharacterKind(stringValue(raw.kind ?? raw.nodeKind ?? raw.category)),
       aliases,
       role: stringValue(raw.role),
       roleReveals: normalizeRoleReveals(raw.roleReveals),
@@ -270,6 +280,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     1,
     ...characters.map((character) => character.chapterIntroduced),
     ...relationships.map((relationship) => relationship.chapterRevealed),
+    ...openClues.map((clue) => clue.chapterIntroduced),
     ...annotations.map((note) => note.chapterIntroduced),
     ...groupRanges.map((group) => group.chapterIntroduced),
   );
@@ -287,6 +298,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       spoilerShield: typeof bookInput.spoilerShield === 'boolean' ? bookInput.spoilerShield : false,
       spoilerChapters: numberArray(bookInput.spoilerChapters),
       highlightedChapters: numberArray(bookInput.highlightedChapters),
+      openClues,
       createdAt: 0,
       updatedAt: 0,
     },
@@ -323,6 +335,14 @@ function numberArray(value: unknown): number[] {
 
 function arrayOfRecords(value: unknown): Array<Record<string, unknown>> {
   return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function arrayOfClueInputs(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === 'string' && item.trim()) return [{ text: item.trim() }];
+    return isRecord(item) ? [item] : [];
+  });
 }
 
 function normalizePoint(value: unknown, fallback: { x: number; y: number }): { x: number; y: number } {
@@ -422,7 +442,7 @@ function defaultGroupPosition(index: number): { x: number; y: number } {
 export async function exportBookAsJson(bookId: string): Promise<CalabashExport> {
   const book = await db.books.get(bookId);
   if (!book) throw new Error(`Book ${bookId} not found`);
-  const characters    = await db.characters.where('bookId').equals(bookId).toArray();
+  const characters    = (await db.characters.where('bookId').equals(bookId).toArray()).map(normalizeCharacter);
   const relationships = await db.relationships.where('bookId').equals(bookId).toArray();
   const portraitRows  = await db.portraits.where('bookId').equals(bookId).toArray();
   const annotations   = (await db.annotations.where('bookId').equals(bookId).toArray()).map(normalizeStickyNote);
@@ -462,7 +482,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     users,
     categories,
     books: books.map(normalizeBookForPortableData),
-    characters,
+    characters: characters.map(normalizeCharacter),
     relationships,
     annotations: annotations.map(normalizeStickyNote),
     groupRanges: groupRanges.map(normalizeGroupRange),
@@ -488,7 +508,7 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
     const newId = crypto.randomUUID();
     charIdMap.set(c.id, newId);
     return {
-      ...c,
+      ...normalizeCharacter(c),
       id: newId,
       bookId: newBookId,
       portraitId: c.portraitId ? portraitIdMap.get(c.portraitId) : undefined,
@@ -559,6 +579,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
     };
   });
   const books = (payload.books ?? []).map(normalizeBookForPortableData);
+  const characters = (payload.characters ?? []).map(normalizeCharacter);
   const annotations = (payload.annotations ?? []).map(normalizeStickyNote);
   const groupRanges = (payload.groupRanges ?? []).map(normalizeGroupRange);
 
@@ -569,7 +590,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
       if (payload.users?.length) await db.users.bulkPut(payload.users);
       if (payload.categories?.length) await db.categories.bulkPut(payload.categories);
       if (books.length) await db.books.bulkPut(books);
-      if (payload.characters?.length) await db.characters.bulkPut(payload.characters);
+      if (characters.length) await db.characters.bulkPut(characters);
       if (payload.relationships?.length) await db.relationships.bulkPut(payload.relationships);
       if (annotations.length) await db.annotations.bulkPut(annotations);
       if (groupRanges.length) await db.groupRanges.bulkPut(groupRanges);

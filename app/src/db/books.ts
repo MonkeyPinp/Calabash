@@ -1,5 +1,6 @@
 import { db } from './schema';
 import type { Book } from '@/types';
+import { createOpenClueDraft, normalizeOpenClues } from '@/lib/clues';
 
 function normalizeBook(book: Book): Book {
   return {
@@ -7,6 +8,7 @@ function normalizeBook(book: Book): Book {
     spoilerShield: book.spoilerShield ?? false,
     spoilerChapters: normalizeChapters(book.spoilerChapters),
     highlightedChapters: normalizeChapters(book.highlightedChapters),
+    openClues: normalizeOpenClues(book.openClues),
   };
 }
 
@@ -32,6 +34,7 @@ export async function createBook(input: {
     spoilerShield: input.spoilerShield ?? false,
     spoilerChapters: normalizeChapters(input.spoilerChapters),
     highlightedChapters: normalizeChapters(input.highlightedChapters),
+    openClues: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -60,6 +63,7 @@ export async function updateBook(
   const next: Book = { ...normalizeBook(existing), ...patch, updatedAt: Date.now() };
   if (patch.spoilerChapters) next.spoilerChapters = normalizeChapters(patch.spoilerChapters);
   if (patch.highlightedChapters) next.highlightedChapters = normalizeChapters(patch.highlightedChapters);
+  if (patch.openClues) next.openClues = normalizeOpenClues(patch.openClues);
   await db.books.put(next);
   return next;
 }
@@ -84,4 +88,55 @@ export async function deleteBook(id: string): Promise<void> {
       await db.books.delete(id);
     },
   );
+}
+
+export async function listOpenClues(bookId: string) {
+  const book = await getBook(bookId);
+  return book?.openClues ?? [];
+}
+
+export async function createOpenClue(input: {
+  bookId: string;
+  text: string;
+  chapterIntroduced: number;
+}) {
+  const book = await getBook(input.bookId);
+  if (!book) throw new Error(`Book ${input.bookId} not found`);
+  const text = input.text.trim();
+  if (!text) throw new Error('Clue text is required');
+  const clue = createOpenClueDraft(text, input.chapterIntroduced);
+  await updateBook(input.bookId, { openClues: [...(book.openClues ?? []), clue] });
+  return clue;
+}
+
+export async function updateOpenClue(
+  bookId: string,
+  clueId: string,
+  patch: Partial<Omit<NonNullable<Book['openClues']>[number], 'id' | 'createdAt'>>,
+) {
+  const book = await getBook(bookId);
+  if (!book) throw new Error(`Book ${bookId} not found`);
+  const openClues = book.openClues ?? [];
+  const existing = openClues.find((clue) => clue.id === clueId);
+  if (!existing) throw new Error(`Clue ${clueId} not found`);
+  const text = patch.text?.trim();
+  if ('text' in patch && !text) throw new Error('Clue text is required');
+  const nextClue = {
+    ...existing,
+    ...patch,
+    text: text === undefined ? existing.text : text,
+    updatedAt: Date.now(),
+  };
+  await updateBook(bookId, {
+    openClues: openClues.map((clue) => clue.id === clueId ? nextClue : clue),
+  });
+  return nextClue;
+}
+
+export async function deleteOpenClue(bookId: string, clueId: string) {
+  const book = await getBook(bookId);
+  if (!book) throw new Error(`Book ${bookId} not found`);
+  await updateBook(bookId, {
+    openClues: (book.openClues ?? []).filter((clue) => clue.id !== clueId),
+  });
 }

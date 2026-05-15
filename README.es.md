@@ -4,17 +4,19 @@
   <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
 </p>
 
-> Un tablero de relaciones sin spoilers para lectores de misterio.
+> Un tablero de casos, grafo de relaciones y rastreador de pistas sin spoilers para lectores de misterio.
 
 [Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.2.1`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · **Español** · [Português (Brasil)](README.pt-BR.md)
 
-![Calabash demo screenshot](docs/assets/calabash-demo.png)
+![Captura de Calabash como tablero de casos, notas de misterio y grafo de relaciones sin spoilers](docs/assets/calabash-demo.png)
 
 ## Qué Es
 
 Calabash es un tablero local-first para registrar personajes, alias, pistas, relaciones y teorías mientras lees. Su nombre viene de la pipa calabash asociada con Sherlock Holmes: la herramienta no resuelve el caso por ti, pero te acompaña mientras piensas.
+
+Puedes usarlo como app de notas para misterio, grafo de relaciones de personajes, rastreador de pistas o tablero privado para novelas largas, casos de manga, misterios fair-play y concursos de puzzles.
 
 La demo pública actual funciona completamente en el navegador. No hay cuentas, base de datos de lectores alojada ni guardado en servidor.
 
@@ -64,6 +66,7 @@ Calabash es para lectores que disfrutan hacer el trabajo detectivesco:
 
 - Lectores de misterio clásico: Agatha Christie, Ellery Queen, John Dickson Carr, S. S. Van Dine.
 - Fans de manga y series de misterio con alias, identidades ocultas y revelaciones tardías.
+- Solucionadores de puzzles y concursos de misterio que necesitan un tablero temporal para personas, pistas, lugares e hipótesis.
 - Lectores de ficción con muchos personajes: fantasía, novela histórica, sagas familiares, thrillers políticos.
 - Cualquiera que quiera una herramienta privada, tranquila y sin cuenta para pensar con una historia.
 

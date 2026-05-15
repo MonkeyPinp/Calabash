@@ -4,17 +4,19 @@
   <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
 </p>
 
-> A spoiler-safe relationship board for detective fiction readers.
+> A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
 [Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.2.1`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
-![Calabash demo screenshot](docs/assets/calabash-demo.png)
+![Calabash spoiler-safe mystery reading notes and relationship board screenshot](docs/assets/calabash-demo.png)
 
 ## What It Is
 
 Calabash is a local-first case-file board for tracking characters, aliases, clues, relationships, and theories while you read. It is named after Sherlock Holmes' calabash pipe: the tool does not solve the case for you, but it sits beside you while you think.
+
+Use it as a mystery reading notes app, detective fiction relationship graph, clue tracker, or private case board for long novels, fair-play mysteries, manga cases, and puzzle competitions.
 
 The current public demo runs entirely in the browser. There is no account system, no hosted reader database, and no server-side save file.
 
@@ -76,6 +78,7 @@ Calabash is for readers who enjoy doing the detective work themselves:
 
 - Classic mystery readers: Agatha Christie, Ellery Queen, John Dickson Carr, S. S. Van Dine.
 - Manga and TV mystery fans tracking aliases, masked identities, and late reveals.
+- Mystery puzzle and contest solvers who need a temporary case board for people, clues, locations, and hypotheses.
 - Readers of character-dense fiction: fantasy, historical novels, family sagas, political thrillers.
 - Anyone who wants a quiet, private, no-account tool for thinking with a story.
 

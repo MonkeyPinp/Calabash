@@ -1,5 +1,5 @@
 {
-  "calabashVersion": "0.2.2",
+  "calabashVersion": "0.3.0",
   "importType": "book",
   "book": {
     "title": "Example Mystery Night",
@@ -82,6 +82,20 @@
       "position": { "x": 0, "y": 260 },
       "width": 360,
       "height": 150
+    }
+  ],
+  "illustrations": [
+    {
+      "title": "Back room floor plan",
+      "kind": "floorPlan",
+      "layer": "background",
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+      "mimeType": "image/png",
+      "chapterIntroduced": 1,
+      "position": { "x": 420, "y": 260 },
+      "width": 360,
+      "height": 240,
+      "notes": "Optional: replace dataUrl with a real illustration image exported from Calabash. Use screenshots for tables, documents, and puzzle pages."
     }
   ],
   "groups": [

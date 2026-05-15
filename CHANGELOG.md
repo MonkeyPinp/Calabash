@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 - 2026-05-15
+
+- Added chapter-aware illustrations for floor plans, screenshots, and other visual references, including upload, clipboard paste, drag/resize, preview, and background/board layering.
+- Kept illustration import/export compatible with earlier attachment and evidence image payloads while publishing the new `illustrations` JSON field.
+- Redesigned Settings into the case-folder interface, with Look as the first screen for language/theme changes and Guides as the second screen.
+- Removed the About panel's Built On row and bumped web, desktop, import/export, and template metadata to `0.3.0`.
+
 ## 0.2.2 - 2026-05-15
 
 - Added Japanese as a first-class UI language, including system-locale detection and Settings/onboarding language choices.

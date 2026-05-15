@@ -106,6 +106,10 @@ export type StickyNoteColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
 
 export type GroupRangeColor = 'ochre' | 'blue' | 'green' | 'red' | 'violet';
 
+export type EvidenceImageKind = string;
+
+export type EvidenceImageLayer = 'board' | 'background';
+
 export interface StickyNote {
   id: string;
   bookId: string;
@@ -130,6 +134,23 @@ export interface GroupRange {
   color: GroupRangeColor;
   labelFontSize: number;
   labelPosition: { x: number; y: number };
+  chapterIntroduced: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface EvidenceImage {
+  id: string;
+  bookId: string;
+  title: string;
+  notes?: string;
+  kind: EvidenceImageKind;
+  layer: EvidenceImageLayer;
+  dataUrl: string;
+  mimeType: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
   chapterIntroduced: number;
   createdAt: number;
   updatedAt: number;

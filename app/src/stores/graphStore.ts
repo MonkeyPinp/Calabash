@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
+import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 
 const MAX_UNDO = 100;
 
@@ -13,10 +13,12 @@ interface GraphStoreState {
   relationships: Relationship[];
   stickyNotes: StickyNote[];
   groupRanges: GroupRange[];
+  evidenceImages: EvidenceImage[];
   setCharacters: (cs: Character[]) => void;
   setRelationships: (rs: Relationship[]) => void;
   setStickyNotes: (notes: StickyNote[]) => void;
   setGroupRanges: (ranges: GroupRange[]) => void;
+  setEvidenceImages: (images: EvidenceImage[]) => void;
   addCharacter: (char: Character) => void;
   removeCharacter: (id: string) => void;
   updateCharacterInStore: (char: Character) => void;
@@ -29,6 +31,9 @@ interface GraphStoreState {
   addGroupRange: (range: GroupRange) => void;
   removeGroupRange: (id: string) => void;
   updateGroupRangeInStore: (range: GroupRange) => void;
+  addEvidenceImage: (image: EvidenceImage) => void;
+  removeEvidenceImage: (id: string) => void;
+  updateEvidenceImageInStore: (image: EvidenceImage) => void;
 
   undoStack: UndoEntry[];
   redoStack: UndoEntry[];
@@ -42,6 +47,7 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   relationships: [],
   stickyNotes: [],
   groupRanges: [],
+  evidenceImages: [],
   undoStack: [],
   redoStack: [],
 
@@ -49,6 +55,7 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   setRelationships: (relationships) => set({ relationships }),
   setStickyNotes: (stickyNotes) => set({ stickyNotes }),
   setGroupRanges: (groupRanges) => set({ groupRanges }),
+  setEvidenceImages: (evidenceImages) => set({ evidenceImages }),
   addCharacter: (char) =>
     set((state) => ({ characters: [...state.characters, char] })),
   removeCharacter: (id) =>
@@ -87,6 +94,14 @@ export const useGraphStore = create<GraphStoreState>((set, get) => ({
   updateGroupRangeInStore: (range) =>
     set((state) => ({
       groupRanges: state.groupRanges.map((r) => (r.id === range.id ? range : r)),
+    })),
+  addEvidenceImage: (image) =>
+    set((state) => ({ evidenceImages: [...state.evidenceImages, image] })),
+  removeEvidenceImage: (id) =>
+    set((state) => ({ evidenceImages: state.evidenceImages.filter((image) => image.id !== id) })),
+  updateEvidenceImageInStore: (image) =>
+    set((state) => ({
+      evidenceImages: state.evidenceImages.map((item) => (item.id === image.id ? image : item)),
     })),
 
   pushUndo: (undoFn, redoFn) =>

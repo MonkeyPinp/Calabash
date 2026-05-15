@@ -18,11 +18,12 @@ import {
   type EdgeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
+import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
 import RelationshipEdge from './RelationshipEdge';
 import StickyNoteNode from './StickyNoteNode';
 import GroupRangeNode from './GroupRangeNode';
+import EvidenceImageNode from './EvidenceImageNode';
 import NewCharacterModal from './NewCharacterModal';
 import NewRelationshipModal from './NewRelationshipModal';
 import { resolveDisplayName } from '@/lib/aliases';
@@ -33,17 +34,20 @@ import { deleteCharacter, restoreCharacter, updateCharacter } from '@/db/charact
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
+import { deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from '@/db/evidenceImages';
 import { computeForceLayout } from '@/lib/layout';
 import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
+import { isEvidenceImageVisibleAtChapter } from '@/lib/evidenceImages';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
 
-const nodeTypes = { groupRange: GroupRangeNode, character: CharacterNode, stickyNote: StickyNoteNode };
+const nodeTypes = { groupRange: GroupRangeNode, evidenceImage: EvidenceImageNode, character: CharacterNode, stickyNote: StickyNoteNode };
 const edgeTypes = { relationship: RelationshipEdge };
 const EMPTY_STICKY_NOTES: StickyNote[] = [];
 const EMPTY_GROUP_RANGES: GroupRange[] = [];
+const EMPTY_EVIDENCE_IMAGES: EvidenceImage[] = [];
 
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
@@ -145,6 +149,7 @@ export interface CalabashCanvasProps {
   relationships: Relationship[];
   stickyNotes?: StickyNote[];
   groupRanges?: GroupRange[];
+  evidenceImages?: EvidenceImage[];
   characterNodeViewMode?: CharacterNodeViewMode;
   currentChapter: number;
   bookId: string | null;
@@ -155,6 +160,7 @@ export interface CalabashCanvasProps {
   onEdgeSelect?: (id: string | null) => void;
   onStickyNoteSelect?: (id: string | null) => void;
   onGroupRangeSelect?: (id: string | null) => void;
+  onEvidenceImageSelect?: (id: string | null) => void;
   onFitViewReady?: (fn: () => void) => void;
   onLayoutReady?: (fn: () => Promise<void>) => void;
 }
@@ -164,6 +170,7 @@ function CalabashCanvasInner({
   relationships,
   stickyNotes = EMPTY_STICKY_NOTES,
   groupRanges = EMPTY_GROUP_RANGES,
+  evidenceImages = EMPTY_EVIDENCE_IMAGES,
   characterNodeViewMode = 'text',
   currentChapter,
   bookId,
@@ -174,6 +181,7 @@ function CalabashCanvasInner({
   onEdgeSelect,
   onStickyNoteSelect,
   onGroupRangeSelect,
+  onEvidenceImageSelect,
   onFitViewReady,
   onLayoutReady,
 }: CalabashCanvasProps) {
@@ -201,6 +209,9 @@ function CalabashCanvasInner({
   const addGroupRange = useGraphStore((s) => s.addGroupRange);
   const removeGroupRange = useGraphStore((s) => s.removeGroupRange);
   const updateGroupRangeInStore = useGraphStore((s) => s.updateGroupRangeInStore);
+  const addEvidenceImage = useGraphStore((s) => s.addEvidenceImage);
+  const removeEvidenceImage = useGraphStore((s) => s.removeEvidenceImage);
+  const updateEvidenceImageInStore = useGraphStore((s) => s.updateEvidenceImageInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   const { fitView, screenToFlowPosition, getViewport } = useReactFlow();
@@ -293,9 +304,29 @@ function CalabashCanvasInner({
     [groupRanges, currentChapter],
   );
 
+  const evidenceImageNodes: Node[] = useMemo(
+    () =>
+      evidenceImages
+        .filter((image) => isEvidenceImageVisibleAtChapter(image, currentChapter))
+        .map((image) => {
+          const zIndex = image.layer === 'background' ? -30 : -1;
+          return {
+            id: image.id,
+            type: 'evidenceImage',
+            position: image.position,
+            width: image.width,
+            height: image.height,
+            zIndex,
+            style: { width: image.width, height: image.height, zIndex },
+            data: { image },
+          };
+        }),
+    [evidenceImages, currentChapter],
+  );
+
   const allComputedNodes: Node[] = useMemo(
-    () => [...groupRangeNodes, ...characterNodes, ...stickyNoteNodes],
-    [groupRangeNodes, characterNodes, stickyNoteNodes],
+    () => [...groupRangeNodes, ...evidenceImageNodes, ...characterNodes, ...stickyNoteNodes],
+    [groupRangeNodes, evidenceImageNodes, characterNodes, stickyNoteNodes],
   );
 
   const visibleCharIds = useMemo(() => new Set(characterNodes.map((n) => n.id)), [characterNodes]);
@@ -443,6 +474,7 @@ function CalabashCanvasInner({
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(node.id);
         onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(null);
         return;
       }
       if (node.type === 'groupRange') {
@@ -453,6 +485,18 @@ function CalabashCanvasInner({
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(null);
         onGroupRangeSelect?.(node.id);
+        onEvidenceImageSelect?.(null);
+        return;
+      }
+      if (node.type === 'evidenceImage') {
+        setSelectedNodeIds(new Set([node.id]));
+        setSelectedEdgeIds(new Set());
+        setEdgeStartId(null);
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(node.id);
         return;
       }
       if (edgeStartId && edgeStartId !== node.id && node.type === 'character') {
@@ -469,8 +513,9 @@ function CalabashCanvasInner({
       onEdgeSelect?.(null);
       onStickyNoteSelect?.(null);
       onGroupRangeSelect?.(null);
+      onEvidenceImageSelect?.(null);
     },
-    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect],
+    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
@@ -481,8 +526,9 @@ function CalabashCanvasInner({
       onNodeSelect?.(null);
       onStickyNoteSelect?.(null);
       onGroupRangeSelect?.(null);
+      onEvidenceImageSelect?.(null);
     },
-    [onEdgeSelect, onNodeSelect, onStickyNoteSelect, onGroupRangeSelect],
+    [onEdgeSelect, onNodeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   const handlePaneClick = useCallback(() => {
@@ -493,7 +539,8 @@ function CalabashCanvasInner({
     onEdgeSelect?.(null);
     onStickyNoteSelect?.(null);
     onGroupRangeSelect?.(null);
-  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect]);
+    onEvidenceImageSelect?.(null);
+  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect]);
 
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
@@ -507,24 +554,34 @@ function CalabashCanvasInner({
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(null);
         onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(null);
       } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'stickyNote') {
         onNodeSelect?.(null);
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(selNodes[0].id);
         onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(null);
       } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'groupRange') {
         onNodeSelect?.(null);
         onEdgeSelect?.(null);
         onStickyNoteSelect?.(null);
         onGroupRangeSelect?.(selNodes[0].id);
+        onEvidenceImageSelect?.(null);
+      } else if (selNodes.length === 1 && selEdges.length === 0 && selNodes[0].type === 'evidenceImage') {
+        onNodeSelect?.(null);
+        onEdgeSelect?.(null);
+        onStickyNoteSelect?.(null);
+        onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(selNodes[0].id);
       } else if (selEdges.length === 1 && selNodes.length === 0) {
         onEdgeSelect?.(selEdges[0].id);
         onNodeSelect?.(null);
         onStickyNoteSelect?.(null);
         onGroupRangeSelect?.(null);
+        onEvidenceImageSelect?.(null);
       }
     },
-    [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect],
+    [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   // ── Delete key ─────────────────────────────────────────────────────────────
@@ -542,6 +599,7 @@ function CalabashCanvasInner({
         const charsToDelete = characters.filter((c) => selectedNodeIds.has(c.id));
         const stickiesToDelete = stickyNotes.filter((s) => selectedNodeIds.has(s.id));
         const rangesToDelete = groupRanges.filter((r) => selectedNodeIds.has(r.id));
+        const evidenceImagesToDelete = evidenceImages.filter((image) => selectedNodeIds.has(image.id));
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
@@ -549,20 +607,24 @@ function CalabashCanvasInner({
         for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
         for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
         for (const range of rangesToDelete) { await deleteGroupRange(range.id); removeGroupRange(range.id); }
+        for (const image of evidenceImagesToDelete) { await deleteEvidenceImage(image.id); removeEvidenceImage(image.id); }
         if (stickiesToDelete.length > 0) onStickyNoteSelect?.(null);
         if (rangesToDelete.length > 0) onGroupRangeSelect?.(null);
+        if (evidenceImagesToDelete.length > 0) onEvidenceImageSelect?.(null);
         pushUndo(
           async () => {
             for (const char of charsToDelete) { await restoreCharacter(char); addCharacter(char); }
             for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); }
             for (const note of stickiesToDelete) { await restoreAnnotation(note); addStickyNote(note); }
             for (const range of rangesToDelete) { await restoreGroupRange(range); addGroupRange(range); }
+            for (const image of evidenceImagesToDelete) { await restoreEvidenceImage(image); addEvidenceImage(image); }
           },
           async () => {
             for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
             for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
             for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
             for (const range of rangesToDelete) { await deleteGroupRange(range.id); removeGroupRange(range.id); }
+            for (const image of evidenceImagesToDelete) { await deleteEvidenceImage(image.id); removeEvidenceImage(image.id); }
           },
         );
       }
@@ -576,9 +638,10 @@ function CalabashCanvasInner({
         );
       }
     },
-    [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes, groupRanges,
+    [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes, groupRanges, evidenceImages,
      addCharacter, removeCharacter, addRelationship, removeRelationship,
-     addStickyNote, removeStickyNote, addGroupRange, removeGroupRange, pushUndo, onStickyNoteSelect, onGroupRangeSelect],
+     addStickyNote, removeStickyNote, addGroupRange, removeGroupRange, addEvidenceImage, removeEvidenceImage,
+     pushUndo, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   // ── Node add + drag ────────────────────────────────────────────────────────
@@ -676,9 +739,20 @@ function CalabashCanvasInner({
             async () => { await updateGroupRange(node.id, { position: newPos }); updateGroupRangeInStore({ ...range, position: newPos }); },
           );
         }
+      } else if (node.type === 'evidenceImage') {
+        const image = evidenceImages.find((item) => item.id === node.id);
+        if (!image) return;
+        void updateEvidenceImage(node.id, { position: newPos });
+        updateEvidenceImageInStore({ ...image, position: newPos });
+        if (oldPos && (oldPos.x !== newPos.x || oldPos.y !== newPos.y)) {
+          pushUndo(
+            async () => { await updateEvidenceImage(node.id, { position: oldPos }); updateEvidenceImageInStore({ ...image, position: oldPos }); },
+            async () => { await updateEvidenceImage(node.id, { position: newPos }); updateEvidenceImageInStore({ ...image, position: newPos }); },
+          );
+        }
       }
     },
-    [bookId, characters, stickyNotes, groupRanges, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, pushUndo],
+    [bookId, characters, stickyNotes, groupRanges, evidenceImages, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, updateEvidenceImageInStore, pushUndo],
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -733,6 +807,7 @@ function CalabashCanvasInner({
               };
               return colorMap[note?.color ?? 'yellow'] ?? '#fde047';
             }
+            if (node.type === 'evidenceImage') return '#8a6d3b';
             const role = getCharacterRoleVisualKey((node.data as { role?: string }).role);
             const map: Record<string, string> = {
               detective: '#2c5f7c', suspect: '#8b2e2e', victim: '#5c5c5c',

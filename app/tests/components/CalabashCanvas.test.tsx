@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { Character, GroupRange, Relationship, StickyNote } from '@/types';
+import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CalabashCanvas from '@/components/Canvas/CalabashCanvas';
 
 // In jsdom React Flow's layout cycle doesn't complete, so edges are never drawn.
@@ -9,7 +9,7 @@ import CalabashCanvas from '@/components/Canvas/CalabashCanvas';
 vi.mock('@xyflow/react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@xyflow/react')>();
   const React = await import('react');
-  type NodeLike = { id: string; type?: string; position: { x: number; y: number }; data: Record<string, unknown> };
+  type NodeLike = { id: string; type?: string; position: { x: number; y: number }; zIndex?: number; data: Record<string, unknown> };
   type EdgeLike = { id: string; source: string; target: string; type?: string; data?: Record<string, unknown> };
   return {
     ...actual,
@@ -30,6 +30,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
             key: n.id,
             type: 'button',
             'data-testid': `flow-node-${n.id}`,
+            'data-z-index': n.zIndex ?? '',
             onClick: () => onNodeClick?.({}, n),
           }, React.createElement(Comp, { id: n.id, data: n.data })) : null;
         }),
@@ -111,6 +112,39 @@ const groupRanges: GroupRange[] = [
     labelFontSize: 16,
     labelPosition: { x: 0.5, y: 0.18 },
     chapterIntroduced: 3,
+    createdAt: 0,
+    updatedAt: 0,
+  },
+];
+
+const evidenceImages: EvidenceImage[] = [
+  {
+    id: 'image-1',
+    bookId: 'b',
+    title: 'Study floor plan',
+    kind: 'floorPlan',
+    layer: 'background',
+    dataUrl: 'data:image/png;base64,AAECAw==',
+    mimeType: 'image/png',
+    position: { x: 80, y: 340 },
+    width: 280,
+    height: 180,
+    chapterIntroduced: 4,
+    createdAt: 0,
+    updatedAt: 0,
+  },
+  {
+    id: 'image-2',
+    bookId: 'b',
+    title: 'Clue photo',
+    kind: 'general',
+    layer: 'board',
+    dataUrl: 'data:image/png;base64,AAECAw==',
+    mimeType: 'image/png',
+    position: { x: 400, y: 340 },
+    width: 280,
+    height: 180,
+    chapterIntroduced: 4,
     createdAt: 0,
     updatedAt: 0,
   },
@@ -239,6 +273,61 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('Village suspects')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('flow-node-range-1'));
     expect(onGroupRangeSelect).toHaveBeenCalledWith('range-1');
+  });
+
+  it('shows evidence images only after their display chapter and selects them', () => {
+    const onEvidenceImageSelect = vi.fn();
+    const { rerender } = render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          evidenceImages={evidenceImages}
+          currentChapter={3}
+          bookId={null}
+          onEvidenceImageSelect={onEvidenceImageSelect}
+        />
+      </div>,
+    );
+
+    expect(screen.queryByText('Study floor plan')).not.toBeInTheDocument();
+
+    rerender(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          evidenceImages={evidenceImages}
+          currentChapter={4}
+          bookId={null}
+          onEvidenceImageSelect={onEvidenceImageSelect}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('Study floor plan')).toBeInTheDocument();
+    expect(screen.getAllByText('CH.04').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId('flow-node-image-1'));
+    expect(onEvidenceImageSelect).toHaveBeenCalledWith('image-1');
+  });
+
+  it('layers background images under groups and board images above groups', () => {
+    render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[]}
+          relationships={[]}
+          groupRanges={groupRanges}
+          evidenceImages={evidenceImages}
+          currentChapter={4}
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByTestId('flow-node-image-1')).toHaveAttribute('data-z-index', '-30');
+    expect(screen.getByTestId('flow-node-range-1')).toHaveAttribute('data-z-index', '-20');
+    expect(screen.getByTestId('flow-node-image-2')).toHaveAttribute('data-z-index', '-1');
   });
 
   it('exits keyboard edge mode after creating one relationship', () => {

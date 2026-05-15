@@ -76,7 +76,7 @@ function normalizeChapters(chapters: number[] = []): number[] {
 export async function deleteBook(id: string): Promise<void> {
   await db.transaction(
     'rw',
-    [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges],
+    [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges, db.evidenceImages],
     async () => {
       await Promise.all([
         db.characters.where('bookId').equals(id).delete(),
@@ -84,6 +84,7 @@ export async function deleteBook(id: string): Promise<void> {
         db.portraits.where('bookId').equals(id).delete(),
         db.annotations.where('bookId').equals(id).delete(),
         db.groupRanges.where('bookId').equals(id).delete(),
+        db.evidenceImages.where('bookId').equals(id).delete(),
       ]);
       await db.books.delete(id);
     },

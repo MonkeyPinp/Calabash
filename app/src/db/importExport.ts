@@ -5,6 +5,9 @@ import type {
   Category,
   CertaintyLevel,
   Character,
+  EvidenceImage,
+  EvidenceImageKind,
+  EvidenceImageLayer,
   GroupRange,
   GroupRangeColor,
   Relationship,
@@ -21,6 +24,14 @@ import {
   GROUP_RANGE_DEFAULT_LABEL_POSITION,
   normalizeGroupRange,
 } from '@/lib/groupRanges';
+import {
+  EVIDENCE_IMAGE_DEFAULT_HEIGHT,
+  EVIDENCE_IMAGE_DEFAULT_WIDTH,
+  EVIDENCE_IMAGE_LAYERS,
+  isValidEvidenceImageDataUrl,
+  mimeTypeFromDataUrl,
+  normalizeEvidenceImage,
+} from '@/lib/evidenceImages';
 
 const CALABASH_VERSION = APP_VERSION;
 
@@ -41,6 +52,9 @@ export interface CalabashExport {
   portraits: PortraitExport[];
   annotations?: StickyNote[];
   groupRanges?: GroupRange[];
+  illustrations?: EvidenceImage[];
+  attachments?: EvidenceImage[];
+  evidenceImages?: EvidenceImage[];
 }
 
 export interface CalabashBookImportTemplate {
@@ -64,6 +78,11 @@ export interface CalabashBookImportTemplate {
   annotations?: Array<Record<string, unknown>>;
   groups?: Array<Record<string, unknown>>;
   groupRanges?: Array<Record<string, unknown>>;
+  illustrations?: Array<Record<string, unknown>>;
+  attachments?: Array<Record<string, unknown>>;
+  images?: Array<Record<string, unknown>>;
+  assets?: Array<Record<string, unknown>>;
+  evidenceImages?: Array<Record<string, unknown>>;
 }
 
 export interface CalabashLibraryExport {
@@ -77,6 +96,9 @@ export interface CalabashLibraryExport {
   relationships: Relationship[];
   annotations: StickyNote[];
   groupRanges: GroupRange[];
+  illustrations?: EvidenceImage[];
+  attachments?: EvidenceImage[];
+  evidenceImages?: EvidenceImage[];
   portraits: PortraitExport[];
 }
 
@@ -163,6 +185,7 @@ function isCalabashBookExport(payload: unknown): payload is CalabashExport {
 }
 
 function normalizeFullBookExport(payload: CalabashExport): CalabashExport {
+  const illustrations = (payload.illustrations ?? payload.attachments ?? payload.evidenceImages ?? []).map(normalizeEvidenceImage);
   return {
     calabashVersion: payload.calabashVersion || CALABASH_VERSION,
     importType: 'book',
@@ -172,6 +195,7 @@ function normalizeFullBookExport(payload: CalabashExport): CalabashExport {
     portraits: payload.portraits ?? [],
     annotations: (payload.annotations ?? []).map(normalizeStickyNote),
     groupRanges: (payload.groupRanges ?? []).map(normalizeGroupRange),
+    illustrations,
   };
 }
 
@@ -276,6 +300,34 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     updatedAt: 0,
   })).map(normalizeGroupRange);
 
+  const imageIds = new Set<string>();
+  const evidenceImages = [
+    ...arrayOfRecords(payload.illustrations),
+    ...arrayOfRecords(payload.attachments),
+    ...arrayOfRecords(payload.images),
+    ...arrayOfRecords(payload.assets),
+    ...arrayOfRecords(payload.evidenceImages),
+  ].flatMap((raw, index): EvidenceImage[] => {
+    const dataUrl = stringValue(raw.dataUrl ?? raw.src ?? raw.image);
+    if (!isValidEvidenceImageDataUrl(dataUrl)) return [];
+    return [normalizeEvidenceImage({
+      id: uniqueId(stringValue(raw.id) ?? `image-${index + 1}`, imageIds),
+      bookId: templateBookId,
+      title: stringValue(raw.title ?? raw.label ?? raw.name) ?? `Illustration ${index + 1}`,
+      notes: stringValue(raw.notes),
+      kind: normalizeEvidenceImageKind(raw.kind ?? raw.type),
+      layer: normalizeEvidenceImageLayer(raw.layer),
+      dataUrl,
+      mimeType: stringValue(raw.mimeType) ?? mimeTypeFromDataUrl(dataUrl) ?? 'image/png',
+      position: normalizePoint(raw.position, defaultImagePosition(index)),
+      width: positiveNumber(raw.width, EVIDENCE_IMAGE_DEFAULT_WIDTH),
+      height: positiveNumber(raw.height, EVIDENCE_IMAGE_DEFAULT_HEIGHT),
+      chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+      createdAt: 0,
+      updatedAt: 0,
+    })];
+  });
+
   const maxMentionedChapter = Math.max(
     1,
     ...characters.map((character) => character.chapterIntroduced),
@@ -283,6 +335,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     ...openClues.map((clue) => clue.chapterIntroduced),
     ...annotations.map((note) => note.chapterIntroduced),
     ...groupRanges.map((group) => group.chapterIntroduced),
+    ...evidenceImages.map((image) => image.chapterIntroduced),
   );
   const totalChapters = positiveInt(bookInput.totalChapters, maxMentionedChapter);
 
@@ -307,6 +360,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     portraits: [],
     annotations,
     groupRanges,
+    illustrations: evidenceImages,
   };
 }
 
@@ -401,6 +455,21 @@ function normalizeGroupRangeColor(value: unknown): GroupRangeColor {
     : 'blue';
 }
 
+function normalizeEvidenceImageKind(value: unknown): EvidenceImageKind {
+  const normalized = stringValue(value);
+  if (!normalized) return 'general';
+  if (normalized === 'image') return 'general';
+  if (normalized === 'table' || normalized === 'document') return 'screenshot';
+  return normalized;
+}
+
+function normalizeEvidenceImageLayer(value: unknown): EvidenceImageLayer {
+  const normalized = stringValue(value);
+  return normalized && EVIDENCE_IMAGE_LAYERS.includes(normalized as EvidenceImageLayer)
+    ? normalized as EvidenceImageLayer
+    : 'board';
+}
+
 function resolveCharacterRef(value: unknown, lookup: Map<string, string>): string | undefined {
   const ref = stringValue(value);
   return ref ? lookup.get(ref) : undefined;
@@ -439,6 +508,10 @@ function defaultGroupPosition(index: number): { x: number; y: number } {
   return { x: -60 + (index % 2) * 580, y: -70 + Math.floor(index / 2) * 380 };
 }
 
+function defaultImagePosition(index: number): { x: number; y: number } {
+  return { x: -220 + (index % 2) * 440, y: 540 + Math.floor(index / 2) * 300 };
+}
+
 export async function exportBookAsJson(bookId: string): Promise<CalabashExport> {
   const book = await db.books.get(bookId);
   if (!book) throw new Error(`Book ${bookId} not found`);
@@ -447,6 +520,7 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
   const portraitRows  = await db.portraits.where('bookId').equals(bookId).toArray();
   const annotations   = (await db.annotations.where('bookId').equals(bookId).toArray()).map(normalizeStickyNote);
   const groupRanges   = (await db.groupRanges.where('bookId').equals(bookId).toArray()).map(normalizeGroupRange);
+  const evidenceImages = (await db.evidenceImages.where('bookId').equals(bookId).toArray()).map(normalizeEvidenceImage);
   const portraits: PortraitExport[] = portraitRows.map((p) => ({
     id: p.id,
     bookId: p.bookId,
@@ -454,11 +528,20 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
     dataUrl: bufferToDataUrl(p.blobBuffer, p.mimeType),
     createdAt: p.createdAt,
   }));
-  return { calabashVersion: CALABASH_VERSION, book: normalizeBookForPortableData(book), characters, relationships, portraits, annotations, groupRanges };
+  return {
+    calabashVersion: CALABASH_VERSION,
+    book: normalizeBookForPortableData(book),
+    characters,
+    relationships,
+    portraits,
+    annotations,
+    groupRanges,
+    illustrations: evidenceImages,
+  };
 }
 
 export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
-  const [users, categories, books, characters, relationships, portraitRows, annotations, groupRanges] = await Promise.all([
+  const [users, categories, books, characters, relationships, portraitRows, annotations, groupRanges, evidenceImages] = await Promise.all([
     db.users.toArray(),
     db.categories.toArray(),
     db.books.toArray(),
@@ -467,6 +550,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     db.portraits.toArray(),
     db.annotations.toArray(),
     db.groupRanges.toArray(),
+    db.evidenceImages.toArray(),
   ]);
   const portraits: PortraitExport[] = portraitRows.map((p) => ({
     id: p.id,
@@ -475,6 +559,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     dataUrl: bufferToDataUrl(p.blobBuffer, p.mimeType),
     createdAt: p.createdAt,
   }));
+  const illustrations = evidenceImages.map(normalizeEvidenceImage);
   return {
     calabashVersion: CALABASH_VERSION,
     exportType: 'library',
@@ -486,6 +571,7 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
     relationships,
     annotations: annotations.map(normalizeStickyNote),
     groupRanges: groupRanges.map(normalizeGroupRange),
+    illustrations,
     portraits,
   };
 }
@@ -543,7 +629,15 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
     updatedAt: now,
   }));
 
-  await db.transaction('rw', [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges], async () => {
+  const newEvidenceImages = (portablePayload.illustrations ?? portablePayload.attachments ?? portablePayload.evidenceImages ?? []).map((image) => ({
+    ...normalizeEvidenceImage(image),
+    id: crypto.randomUUID(),
+    bookId: newBookId,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  await db.transaction('rw', [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges, db.evidenceImages], async () => {
     await db.books.put({
       ...portablePayload.book,
       id: newBookId,
@@ -560,6 +654,7 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
     if (newRelationships.length) await db.relationships.bulkAdd(newRelationships);
     if (newAnnotations.length)   await db.annotations.bulkAdd(newAnnotations);
     if (newGroupRanges.length)   await db.groupRanges.bulkAdd(newGroupRanges);
+    if (newEvidenceImages.length) await db.evidenceImages.bulkAdd(newEvidenceImages);
   });
 
   return newBookId;
@@ -582,10 +677,11 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
   const characters = (payload.characters ?? []).map(normalizeCharacter);
   const annotations = (payload.annotations ?? []).map(normalizeStickyNote);
   const groupRanges = (payload.groupRanges ?? []).map(normalizeGroupRange);
+  const evidenceImages = (payload.illustrations ?? payload.attachments ?? payload.evidenceImages ?? []).map(normalizeEvidenceImage);
 
   await db.transaction(
     'rw',
-    [db.users, db.categories, db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges],
+    [db.users, db.categories, db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges, db.evidenceImages],
     async () => {
       if (payload.users?.length) await db.users.bulkPut(payload.users);
       if (payload.categories?.length) await db.categories.bulkPut(payload.categories);
@@ -594,6 +690,7 @@ export async function importLibraryFromJson(payload: CalabashLibraryExport): Pro
       if (payload.relationships?.length) await db.relationships.bulkPut(payload.relationships);
       if (annotations.length) await db.annotations.bulkPut(annotations);
       if (groupRanges.length) await db.groupRanges.bulkPut(groupRanges);
+      if (evidenceImages.length) await db.evidenceImages.bulkPut(evidenceImages);
       if (portraits.length) await db.portraits.bulkPut(portraits);
     },
   );

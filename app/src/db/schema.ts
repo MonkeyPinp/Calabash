@@ -1,7 +1,8 @@
 import Dexie, { type Table } from 'dexie';
-import type { Book, Category, Character, GroupRange, Relationship, StickyNote, User } from '@/types';
+import type { Book, Category, Character, EvidenceImage, GroupRange, Relationship, StickyNote, User } from '@/types';
 import { normalizeStickyNote } from '@/lib/stickyNotes';
 import { normalizeGroupRange } from '@/lib/groupRanges';
+import { normalizeEvidenceImage } from '@/lib/evidenceImages';
 
 // Internal DB row: stores blobBuffer (ArrayBuffer) instead of Blob
 // so fake-indexeddb can serialize it in tests. The DAO converts at the boundary.
@@ -22,6 +23,7 @@ export class CalabashDB extends Dexie {
   portraits!:     Table<PortraitRow, string>;
   annotations!:   Table<StickyNote, string>;
   groupRanges!:   Table<GroupRange, string>;
+  evidenceImages!: Table<EvidenceImage, string>;
 
   constructor() {
     super('calabash');
@@ -108,6 +110,29 @@ export class CalabashDB extends Dexie {
         }),
         tx.table('groupRanges').toCollection().modify((range: GroupRange) => {
           Object.assign(range, normalizeGroupRange(range));
+        }),
+      ]),
+    );
+    this.version(9).stores({
+      users:         'id, updatedAt',
+      books:         'id, userId, updatedAt, categoryId',
+      categories:    'id, userId, order',
+      characters:    'id, bookId, chapterIntroduced',
+      relationships: 'id, bookId, sourceId, targetId, chapterRevealed',
+      portraits:     'id, bookId',
+      annotations:   'id, bookId, chapterIntroduced',
+      groupRanges:   'id, bookId, chapterIntroduced',
+      evidenceImages: 'id, bookId, chapterIntroduced',
+    }).upgrade((tx) =>
+      Promise.all([
+        tx.table('annotations').toCollection().modify((note: StickyNote) => {
+          Object.assign(note, normalizeStickyNote(note));
+        }),
+        tx.table('groupRanges').toCollection().modify((range: GroupRange) => {
+          Object.assign(range, normalizeGroupRange(range));
+        }),
+        tx.table('evidenceImages').toCollection().modify((image: EvidenceImage) => {
+          Object.assign(image, normalizeEvidenceImage(image));
         }),
       ]),
     );

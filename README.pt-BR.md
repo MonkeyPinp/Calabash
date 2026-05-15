@@ -6,7 +6,7 @@
 
 > Um quadro de casos, grafo de relações e rastreador de pistas sem spoilers para leitores de mistério.
 
-[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.2.2`
+[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.3.0`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · **Português (Brasil)**
 
@@ -35,11 +35,12 @@ Calabash é deliberadamente manual. Ele não extrai personagens automaticamente,
 - **Certeza de relações**: marque conexões como confirmadas, suspeitas ou descartadas.
 - **Campos abertos**: papéis e tipos de relação são sugestões, não limites.
 - **Notas e grupos**: mantenha pistas perto do quadro e desenhe regiões coloridas atrás dos personagens.
+- **Ilustrações**: fixe plantas, capturas de tela e outras referências visuais acima ou abaixo do quadro.
 - **Importações iniciais**: comece um livro a partir de um JSON de livro, com template amigável para LLM.
 - **Biblioteca local**: salve livros no IndexedDB e faça backup com Exportar/Importar.
 - **Tutoriais incluídos**: teste *The Murder of Roger Ackroyd* ou *Hida Trick House Murder Case*.
 - **Interface multilíngue**: inglês, chinês simplificado, japonês, espanhol e português do Brasil.
-- **Beta desktop**: `v0.2.2` publica binários sem assinatura para Windows/Linux e imagens DMG para macOS, com verificação de versões no app.
+- **Beta desktop**: `v0.3.0` publica binários sem assinatura para Windows/Linux e imagens DMG para macOS, com verificação de versões no app.
 
 ## Dados E Privacidade
 
@@ -107,7 +108,7 @@ O roadmap do produto não fica no repositório público. O planejamento público
 
 ## Versão
 
-Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi.
+Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi. `0.3.0` adiciona ilustrações por capítulo, colar da área de transferência, camadas de fundo e o redesign de Settings como pasta de caso.
 
 ## License
 

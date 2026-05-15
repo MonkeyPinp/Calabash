@@ -40,6 +40,9 @@ describe('NewRelationshipModal', () => {
         },
       ],
       relationships: [],
+      stickyNotes: [],
+      groupRanges: [],
+      evidenceImages: [],
       undoStack: [],
       redoStack: [],
     });

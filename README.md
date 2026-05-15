@@ -6,7 +6,7 @@
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.2.2`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.3.0`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -35,11 +35,12 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Relationship certainty**: mark connections as confirmed, suspected, or disproven.
 - **Open text fields**: roles and relationship types are suggestions, not hard limits.
 - **Sticky notes and groups**: keep clues near the board and draw colored group regions behind characters.
+- **Illustrations**: pin floor plans, screenshots, and other visual references above or below the board.
 - **Starter imports**: start a new book from a single-book JSON file, including an LLM-friendly template.
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
-- **Desktop beta**: `v0.2.2` ships unsigned Windows/Linux binaries and macOS DMG images, with an in-app release checker.
+- **Desktop beta**: `v0.3.0` ships unsigned Windows/Linux binaries and macOS DMG images, with an in-app release checker.
 
 ## Data And Privacy
 
@@ -144,6 +145,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.2.0`: desktop shell, cross-platform binary release setup, onboarding language selection, chapter-aware notes/groups, relationship rendering fixes, and adjustable board annotations.
 - `0.2.1`: active update checks from Settings and single-book JSON imports for faster case setup.
 - `0.2.2`: Japanese UI support, Japanese README/SEO metadata, and localized tutorial demo copy, especially the Kindaichi case.
+- `0.3.0`: chapter-aware illustrations for floor plans/screenshots, clipboard paste, background layering, and the case-folder Settings redesign.
 
 ## License
 

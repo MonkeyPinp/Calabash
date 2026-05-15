@@ -32,6 +32,7 @@ describe('GroupRangeNode', () => {
     await db.groupRanges.clear();
     useGraphStore.setState({
       groupRanges: [],
+      evidenceImages: [],
       undoStack: [],
       redoStack: [],
     });

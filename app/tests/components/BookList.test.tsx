@@ -31,6 +31,7 @@ describe('BookList', () => {
       db.portraits.clear(),
       db.annotations.clear(),
       db.groupRanges.clear(),
+      db.evidenceImages.clear(),
       db.users.clear(),
     ]);
     useBookStore.setState({
@@ -46,6 +47,7 @@ describe('BookList', () => {
       relationships: [],
       stickyNotes: [],
       groupRanges: [],
+      evidenceImages: [],
       undoStack: [],
       redoStack: [],
     });

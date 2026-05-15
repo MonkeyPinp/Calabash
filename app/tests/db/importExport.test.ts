@@ -9,6 +9,7 @@ import { createRelationship, listRelationshipsByBook } from '@/db/relationships'
 import { savePortrait, getPortrait } from '@/db/portraits';
 import { createAnnotation, listAnnotationsByBook } from '@/db/annotations';
 import { createGroupRange, listGroupRangesByBook } from '@/db/groupRanges';
+import { createEvidenceImage, listEvidenceImagesByBook } from '@/db/evidenceImages';
 import { createUser } from '@/db/users';
 import {
   exportBookAsJson,
@@ -30,6 +31,7 @@ describe('importExport', () => {
       db.portraits.clear(),
       db.annotations.clear(),
       db.groupRanges.clear(),
+      db.evidenceImages.clear(),
       db.users.clear(),
     ]);
   });
@@ -37,15 +39,18 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.2.2');
+    expect(json.calabashVersion).toBe('0.3.0');
     expect(json.book.title).toBe('Empty');
     expect(json.book.openClues).toEqual([]);
     expect(json.characters).toEqual([]);
     expect(json.relationships).toEqual([]);
     expect(json.portraits).toEqual([]);
+    expect(json.illustrations).toEqual([]);
+    expect(json.attachments).toBeUndefined();
+    expect(json.evidenceImages).toBeUndefined();
   });
 
-  it('round-trips a book with characters, relationships, a portrait, notes, and ranges', async () => {
+  it('round-trips a book with characters, relationships, a portrait, notes, ranges, and illustrations', async () => {
     const book = await createBook({ title: 'Murder of Roger Ackroyd', highlightedChapters: [3, 8] });
     const portrait = await savePortrait({
       bookId: book.id,
@@ -76,6 +81,18 @@ describe('importExport', () => {
       color: 'green',
       chapterIntroduced: 5,
     });
+    await createEvidenceImage({
+      bookId: book.id,
+      title: 'Study floor plan',
+      kind: 'floorPlan',
+      layer: 'background',
+      dataUrl: 'data:image/png;base64,AAECAw==',
+      mimeType: 'image/png',
+      position: { x: 40, y: 60 },
+      width: 420,
+      height: 280,
+      chapterIntroduced: 6,
+    });
 
     const exported = await exportBookAsJson(book.id);
     expect(exported.portraits).toHaveLength(1);
@@ -84,9 +101,13 @@ describe('importExport', () => {
     expect(exported.annotations).toHaveLength(1);
     expect(exported.book.openClues).toMatchObject([{ text: 'Who had the key to the study?', chapterIntroduced: 5 }]);
     expect(exported.groupRanges).toHaveLength(1);
+    expect(exported.illustrations).toHaveLength(1);
+    expect(exported.illustrations?.[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', chapterIntroduced: 6 });
+    expect(exported.attachments).toBeUndefined();
+    expect(exported.evidenceImages).toBeUndefined();
 
     await Promise.all([
-      db.books.clear(), db.characters.clear(), db.relationships.clear(), db.portraits.clear(), db.annotations.clear(), db.groupRanges.clear(),
+      db.books.clear(), db.characters.clear(), db.relationships.clear(), db.portraits.clear(), db.annotations.clear(), db.groupRanges.clear(), db.evidenceImages.clear(),
     ]);
 
     const newBookId = await importBookFromJson(exported, 'reader-1');
@@ -125,6 +146,11 @@ describe('importExport', () => {
     expect(reRanges).toHaveLength(1);
     expect(reRanges[0]).toMatchObject({ label: 'Village circle', color: 'green', width: 420, height: 260, chapterIntroduced: 5 });
     expect(reRanges[0].id).not.toBe(exported.groupRanges?.[0].id);
+
+    const reImages = await listEvidenceImagesByBook(newBookId);
+    expect(reImages).toHaveLength(1);
+    expect(reImages[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', width: 420, height: 280, chapterIntroduced: 6 });
+    expect(reImages[0].id).not.toBe(exported.illustrations?.[0].id);
   });
 
   it('exports and imports the whole local library as collection JSON', async () => {
@@ -168,6 +194,14 @@ describe('importExport', () => {
     });
     await createAnnotation({ bookId: book.id, content: 'TV 18 note', position: { x: 0, y: 0 } });
     await createGroupRange({ bookId: book.id, label: 'Samurai inn', position: { x: -20, y: 40 }, color: 'red' });
+    await createEvidenceImage({
+      bookId: book.id,
+      title: 'Trick house plan',
+      kind: 'floorPlan',
+      layer: 'background',
+      dataUrl: 'data:image/png;base64,AQIDBA==',
+      mimeType: 'image/png',
+    });
 
     const exported = await exportLibraryAsJson();
     expect(isLibraryExport(exported)).toBe(true);
@@ -180,6 +214,9 @@ describe('importExport', () => {
     expect(exported.relationships).toHaveLength(1);
     expect(exported.annotations).toHaveLength(1);
     expect(exported.groupRanges).toHaveLength(1);
+    expect(exported.illustrations).toHaveLength(1);
+    expect(exported.attachments).toBeUndefined();
+    expect(exported.evidenceImages).toBeUndefined();
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
 
     await Promise.all([
@@ -191,6 +228,7 @@ describe('importExport', () => {
       db.portraits.clear(),
       db.annotations.clear(),
       db.groupRanges.clear(),
+      db.evidenceImages.clear(),
     ]);
 
     const result = await importLibraryFromJson(exported);
@@ -206,6 +244,7 @@ describe('importExport', () => {
       { role: 'murderer', chapterRevealed: 3 },
     ]);
     expect(await listGroupRangesByBook(book.id)).toHaveLength(1);
+    expect(await listEvidenceImagesByBook(book.id)).toHaveLength(1);
 
     const rePortrait = await getPortrait(portrait.id);
     expect(rePortrait).toBeDefined();
@@ -224,11 +263,12 @@ describe('importExport', () => {
     expect(await db.relationships.count()).toBe(2);
     expect(await db.annotations.count()).toBe(1);
     expect(await db.groupRanges.count()).toBe(0);
+    expect(await db.evidenceImages.count()).toBe(0);
     const reNotes = await listAnnotationsByBook('book-beta-case');
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.2.2');
+    expect(exported.calabashVersion).toBe('0.3.0');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,
@@ -261,6 +301,9 @@ describe('importExport', () => {
     expect(normalized.annotations).toHaveLength(1);
     expect(normalized.book.openClues).toHaveLength(2);
     expect(normalized.groupRanges).toHaveLength(1);
+    expect(normalized.illustrations).toHaveLength(1);
+    expect(normalized.attachments).toBeUndefined();
+    expect(normalized.evidenceImages).toBeUndefined();
 
     const newBookId = await importBookFromJson(template, 'reader-1');
     const book = await db.books.get(newBookId);
@@ -279,6 +322,43 @@ describe('importExport', () => {
     expect(relationships[0].sourceId).not.toBe('detective');
     expect(await listAnnotationsByBook(newBookId)).toHaveLength(1);
     expect(await listGroupRangesByBook(newBookId)).toHaveLength(1);
+    expect(await listEvidenceImagesByBook(newBookId)).toHaveLength(1);
+  });
+
+  it('imports legacy evidenceImages as illustrations', async () => {
+    const legacyPayload = {
+      calabashVersion: '0.2.2',
+      importType: 'book',
+      book: { id: 'legacy-book', title: 'Legacy Case' },
+      characters: [],
+      relationships: [],
+      portraits: [],
+      evidenceImages: [
+        {
+          id: 'legacy-image',
+          bookId: 'legacy-book',
+          title: 'Old floor plan',
+          kind: 'floorPlan',
+          layer: 'background',
+          dataUrl: 'data:image/png;base64,AAECAw==',
+          mimeType: 'image/png',
+          position: { x: 10, y: 20 },
+          width: 300,
+          height: 180,
+          chapterIntroduced: 1,
+        },
+      ],
+    };
+
+    const normalized = normalizeBookImportPayload(legacyPayload);
+    expect(normalized.illustrations).toHaveLength(1);
+    expect(normalized.attachments).toBeUndefined();
+    expect(normalized.evidenceImages).toBeUndefined();
+
+    const newBookId = await importBookFromJson(legacyPayload, 'reader-1');
+    const importedIllustrations = await listEvidenceImagesByBook(newBookId);
+    expect(importedIllustrations).toHaveLength(1);
+    expect(importedIllustrations[0]).toMatchObject({ title: 'Old floor plan', layer: 'background' });
   });
 
   it('skips template relationships that reference unknown characters', () => {
@@ -300,7 +380,7 @@ describe('importExport', () => {
 
   it('rejects whole-library exports in the single-book importer', async () => {
     await expect(importBookFromJson({
-      calabashVersion: '0.2.2',
+      calabashVersion: '0.3.0',
       exportType: 'library',
       exportedAt: Date.now(),
       users: [],
@@ -310,6 +390,9 @@ describe('importExport', () => {
       relationships: [],
       annotations: [],
       groupRanges: [],
+      illustrations: [],
+      attachments: [],
+      evidenceImages: [],
       portraits: [],
     })).rejects.toThrow(/Invalid Calabash book import/);
   });

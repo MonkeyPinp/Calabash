@@ -4,6 +4,7 @@ import { listCharactersByBook } from '@/db/characters';
 import { listRelationshipsByBook } from '@/db/relationships';
 import { listAnnotationsByBook } from '@/db/annotations';
 import { listGroupRangesByBook } from '@/db/groupRanges';
+import { listEvidenceImagesByBook } from '@/db/evidenceImages';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
 import { useUserStore } from '@/stores/userStore';
@@ -22,6 +23,7 @@ export function useBookHydration(): { loading: boolean } {
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
   const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
+  const setEvidenceImages = useGraphStore((s) => s.setEvidenceImages);
   const activeUserId = useUserStore((s) => s.activeUserId);
   const usersHydrated = useUserStore((s) => s.hydrated);
   const hydrateUsers = useUserStore((s) => s.hydrateUsers);
@@ -49,6 +51,7 @@ export function useBookHydration(): { loading: boolean } {
       setRelationships([]);
       setStickyNotes([]);
       setGroupRanges([]);
+      setEvidenceImages([]);
       setSpoilerShield(false);
       setSpoilerChapters([]);
       setHighlightedChapters([]);
@@ -76,6 +79,7 @@ export function useBookHydration(): { loading: boolean } {
       setRelationships([]);
       setStickyNotes([]);
       setGroupRanges([]);
+      setEvidenceImages([]);
       setSpoilerShield(false);
       setSpoilerChapters([]);
       setHighlightedChapters([]);
@@ -84,18 +88,20 @@ export function useBookHydration(): { loading: boolean } {
 
     let cancelled = false;
     (async () => {
-      const [characters, relationships, book, annotations, groupRanges] = await Promise.all([
+      const [characters, relationships, book, annotations, groupRanges, evidenceImages] = await Promise.all([
         listCharactersByBook(activeBookId),
         listRelationshipsByBook(activeBookId),
         getBook(activeBookId),
         listAnnotationsByBook(activeBookId),
         listGroupRangesByBook(activeBookId),
+        listEvidenceImagesByBook(activeBookId),
       ]);
       if (cancelled) return;
       setCharacters(characters);
       setRelationships(relationships);
       setStickyNotes(annotations);
       setGroupRanges(groupRanges);
+      setEvidenceImages(evidenceImages);
       if (book) {
         setCurrentChapter(book.currentChapter);
         setTotalChapters(book.totalChapters);

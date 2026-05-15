@@ -114,6 +114,7 @@ export default function BookList() {
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
   const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
+  const setEvidenceImages = useGraphStore((s) => s.setEvidenceImages);
   const activeUserId = useUserStore((s) => s.activeUserId);
   const resolvedLanguage = useUiStore((s) => s.resolvedLanguage);
   const setCharacterNodeViewMode = useUiStore((s) => s.setCharacterNodeViewMode);
@@ -195,6 +196,7 @@ export default function BookList() {
     setRelationships([]);
     setStickyNotes([]);
     setGroupRanges([]);
+    setEvidenceImages([]);
   }
 
   async function handleCreate() {

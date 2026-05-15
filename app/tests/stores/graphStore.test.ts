@@ -15,7 +15,7 @@ const r: Relationship = {
 
 describe('graphStore', () => {
   beforeEach(() => {
-    useGraphStore.setState({ characters: [], relationships: [] });
+    useGraphStore.setState({ characters: [], relationships: [], stickyNotes: [], groupRanges: [], evidenceImages: [] });
   });
 
   it('initial state is empty', () => {

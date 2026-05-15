@@ -21,6 +21,38 @@ describe('SettingsPanel', () => {
     });
   });
 
+  it('opens on the look tab so language is immediately editable', () => {
+    render(
+      <SettingsPanel
+        onClose={() => {}}
+        onExportLibrary={() => {}}
+        onImportLibrary={() => {}}
+        onOpenOnboarding={() => {}}
+        onCreateTutorial={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Look/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Reading conditions')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveValue('system');
+  });
+
+  it('keeps About focused on release links without the built-on row', () => {
+    render(
+      <SettingsPanel
+        onClose={() => {}}
+        onExportLibrary={() => {}}
+        onImportLibrary={() => {}}
+        onOpenOnboarding={() => {}}
+        onCreateTutorial={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /About/i }));
+    expect(screen.getByText('0.3.0')).toBeInTheDocument();
+    expect(screen.queryByText('Built on')).not.toBeInTheDocument();
+  });
+
   it('checks GitHub releases and opens the matching update asset', async () => {
     Object.defineProperty(window.navigator, 'userAgent', {
       configurable: true,
@@ -29,11 +61,11 @@ describe('SettingsPanel', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{
-        tag_name: 'v0.2.3',
-        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.2.3',
+        tag_name: 'v0.3.1',
+        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.3.1',
         draft: false,
         assets: [
-          { name: 'Calabash_0.2.3_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
+          { name: 'Calabash_0.3.1_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
         ],
       }],
     }));
@@ -49,10 +81,11 @@ describe('SettingsPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Check for updates'));
-    await waitFor(() => expect(screen.getByText('Download 0.2.3')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /About/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Check for updates/i }));
+    await waitFor(() => expect(screen.getByText('Download 0.3.1')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Download 0.2.3'));
+    fireEvent.click(screen.getByText('Download 0.3.1'));
     expect(open).toHaveBeenCalledWith('https://example.com/calabash.exe', '_blank', 'noopener,noreferrer');
   });
 
@@ -77,7 +110,8 @@ describe('SettingsPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Check for updates'));
+    fireEvent.click(screen.getByRole('button', { name: /About/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Check for updates/i }));
     await waitFor(() => expect(screen.getByText('This build is up to date.')).toBeInTheDocument());
   });
 });

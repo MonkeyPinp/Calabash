@@ -54,6 +54,9 @@ describe('RelationshipInspector', () => {
         },
       ],
       relationships: [relationship],
+      stickyNotes: [],
+      groupRanges: [],
+      evidenceImages: [],
       undoStack: [],
       redoStack: [],
     });

@@ -10,6 +10,7 @@ describe('StickyNoteInspector', () => {
     await db.annotations.clear();
     useGraphStore.setState({
       stickyNotes: [],
+      evidenceImages: [],
       undoStack: [],
       redoStack: [],
     });

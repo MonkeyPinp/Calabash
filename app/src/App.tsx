@@ -7,6 +7,7 @@ import CharacterInspector from './components/Inspector/CharacterInspector';
 import RelationshipInspector from './components/Inspector/RelationshipInspector';
 import StickyNoteInspector from './components/Inspector/StickyNoteInspector';
 import GroupRangeInspector from './components/Inspector/GroupRangeInspector';
+import EvidenceImageInspector from './components/Inspector/EvidenceImageInspector';
 import OpenCluesPanel from './components/Inspector/OpenCluesPanel';
 import SettingsPanel from './components/Settings/SettingsPanel';
 import OnboardingPanel from './components/Onboarding/OnboardingPanel';
@@ -22,12 +23,14 @@ import GlobalSearch from './components/CommandBar/GlobalSearch';
 import { createBook, getBook, updateBook } from './db/books';
 import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
 import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
+import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage } from './db/evidenceImages';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { useT } from './i18n';
-import type { Book } from './types';
+import type { Book, EvidenceImageKind } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
+import { EVIDENCE_IMAGE_DEFAULT_HEIGHT, EVIDENCE_IMAGE_DEFAULT_WIDTH } from './lib/evidenceImages';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const ONBOARDING_SEEN_KEY = 'calabash-onboarding-seen';
@@ -174,6 +177,54 @@ function viewModeButtonStyle(active: boolean): React.CSSProperties {
   };
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('Illustration file could not be read'));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Illustration file could not be read'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth || EVIDENCE_IMAGE_DEFAULT_WIDTH, height: img.naturalHeight || EVIDENCE_IMAGE_DEFAULT_HEIGHT });
+    img.onerror = () => resolve({ width: EVIDENCE_IMAGE_DEFAULT_WIDTH, height: EVIDENCE_IMAGE_DEFAULT_HEIGHT });
+    img.src = dataUrl;
+  });
+}
+
+function fitEvidenceImageSize(dimensions: { width: number; height: number }) {
+  const maxWidth = 820;
+  const maxHeight = 560;
+  const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height, 1);
+  return {
+    width: Math.max(180, Math.round(dimensions.width * scale)),
+    height: Math.max(120, Math.round(dimensions.height * scale)),
+  };
+}
+
+function titleFromFileName(fileName: string) {
+  return fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Illustration';
+}
+
+function inferEvidenceImageKind(fileName: string): EvidenceImageKind {
+  const normalized = fileName.toLowerCase();
+  if (/floor|plan|map|layout|平面|地图|地圖/.test(normalized)) return 'floorPlan';
+  if (/screenshot|screen|capture|table|sheet|chart|page|截图|截圖|表格|一覧|リスト|スクリーンショット|captura/.test(normalized)) return 'screenshot';
+  return 'general';
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
 function EmptyInspectorGuide({
   t,
   bookId,
@@ -203,6 +254,11 @@ function EmptyInspectorGuide({
       icon: <CircleDashed size={13} />,
       title: t('app.inspectGroupRange'),
       body: t('app.inspectGroupRangeBody'),
+    },
+    {
+      icon: <ImageIcon size={13} />,
+      title: t('app.inspectEvidenceImage'),
+      body: t('app.inspectEvidenceImageBody'),
     },
   ];
 
@@ -359,6 +415,7 @@ export default function App() {
   const [spoilerConfirmOpen, setSpoilerConfirmOpen] = useState(false);
   const [activeBookSummary, setActiveBookSummary] = useState<Book | null>(null);
   const libraryImportInputRef = useRef<HTMLInputElement>(null);
+  const evidenceImageInputRef = useRef<HTMLInputElement>(null);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setActiveBook = useBookStore((s) => s.setActiveBook);
@@ -378,14 +435,18 @@ export default function App() {
   const relationships = useGraphStore((s) => s.relationships);
   const stickyNotes = useGraphStore((s) => s.stickyNotes);
   const groupRanges = useGraphStore((s) => s.groupRanges);
+  const evidenceImages = useGraphStore((s) => s.evidenceImages);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
   const setGroupRanges = useGraphStore((s) => s.setGroupRanges);
+  const setEvidenceImages = useGraphStore((s) => s.setEvidenceImages);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
   const addGroupRange = useGraphStore((s) => s.addGroupRange);
   const removeGroupRange = useGraphStore((s) => s.removeGroupRange);
+  const addEvidenceImage = useGraphStore((s) => s.addEvidenceImage);
+  const removeEvidenceImage = useGraphStore((s) => s.removeEvidenceImage);
   const pushUndo = useGraphStore((s) => s.pushUndo);
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
@@ -424,6 +485,7 @@ export default function App() {
   const [selectedRelId, setSelectedRelId] = useState<string | null>(null);
   const [selectedStickyNoteId, setSelectedStickyNoteId] = useState<string | null>(null);
   const [selectedGroupRangeId, setSelectedGroupRangeId] = useState<string | null>(null);
+  const [selectedEvidenceImageId, setSelectedEvidenceImageId] = useState<string | null>(null);
 
   // Reset selection when active book changes
   useEffect(() => {
@@ -431,6 +493,7 @@ export default function App() {
     setSelectedRelId(null);
     setSelectedStickyNoteId(null);
     setSelectedGroupRangeId(null);
+    setSelectedEvidenceImageId(null);
     setRevealedSpoilerKey(null);
     setSpoilerConfirmOpen(false);
   }, [activeBookId]);
@@ -442,8 +505,8 @@ export default function App() {
 
   // Auto-open inspector panel when a node or edge is selected
   useEffect(() => {
-    if (selectedCharId || selectedRelId || selectedStickyNoteId || selectedGroupRangeId) setInspectorOpen(true);
-  }, [selectedCharId, selectedRelId, selectedStickyNoteId, selectedGroupRangeId]);
+    if (selectedCharId || selectedRelId || selectedStickyNoteId || selectedGroupRangeId || selectedEvidenceImageId) setInspectorOpen(true);
+  }, [selectedCharId, selectedRelId, selectedStickyNoteId, selectedGroupRangeId, selectedEvidenceImageId]);
 
   // fitView ref — populated by CalabashCanvas on mount
   const fitViewRef = useRef<((opts?: { padding?: number }) => void) | undefined>(undefined);
@@ -508,6 +571,7 @@ export default function App() {
     setRelationships([]);
     setStickyNotes([]);
     setGroupRanges([]);
+    setEvidenceImages([]);
   }
 
   async function handleCreateTutorialBook(kind: TutorialKind = 'ackroyd') {
@@ -521,6 +585,7 @@ export default function App() {
     setRelationships([]);
     setStickyNotes([]);
     setGroupRanges([]);
+    setEvidenceImages([]);
   }
 
   function closeOnboarding() {
@@ -557,11 +622,67 @@ export default function App() {
     setSelectedRelId(null);
     setSelectedStickyNoteId(null);
     setSelectedGroupRangeId(range.id);
+    setSelectedEvidenceImageId(null);
     pushUndo(
       async () => { await deleteGroupRange(range.id); removeGroupRange(range.id); },
       async () => { await restoreGroupRange(range); addGroupRange(range); },
     );
   }
+
+  const handleEvidenceImageFile = useCallback(async (
+    file: File,
+    options?: { title?: string; kind?: EvidenceImageKind },
+  ) => {
+    if (!activeBookId || !file.type.startsWith('image/')) return;
+    const dataUrl = await readFileAsDataUrl(file);
+    const dimensions = await loadImageDimensions(dataUrl);
+    const size = fitEvidenceImageSize(dimensions);
+    const kind = options?.kind ?? inferEvidenceImageKind(file.name);
+    const image = await createEvidenceImage({
+      bookId: activeBookId,
+      title: options?.title ?? titleFromFileName(file.name),
+      kind,
+      dataUrl,
+      mimeType: file.type,
+      width: size.width,
+      height: size.height,
+      position: {
+        x: -Math.round(size.width / 2) + (Math.random() - 0.5) * 120,
+        y: -Math.round(size.height / 2) + (Math.random() - 0.5) * 120,
+      },
+      chapterIntroduced: currentChapter,
+      layer: kind === 'floorPlan' ? 'background' : 'board',
+    });
+    addEvidenceImage(image);
+    setSelectedCharId(null);
+    setSelectedRelId(null);
+    setSelectedStickyNoteId(null);
+    setSelectedGroupRangeId(null);
+    setSelectedEvidenceImageId(image.id);
+    pushUndo(
+      async () => { await deleteEvidenceImage(image.id); removeEvidenceImage(image.id); },
+      async () => { await restoreEvidenceImage(image); addEvidenceImage(image); },
+    );
+  }, [activeBookId, addEvidenceImage, currentChapter, pushUndo, removeEvidenceImage]);
+
+  useEffect(() => {
+    async function handlePaste(e: ClipboardEvent) {
+      if (!activeBookId || isTextEditingTarget(e.target)) return;
+      const item = Array.from(e.clipboardData?.items ?? []).find((candidate) => (
+        candidate.kind === 'file' && candidate.type.startsWith('image/')
+      ));
+      const file = item?.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      await handleEvidenceImageFile(file, {
+        title: t('evidenceImage.pastedTitle'),
+        kind: 'screenshot',
+      });
+    }
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [activeBookId, handleEvidenceImageFile, t]);
 
   const chapterHasAutomaticSpoilers = useMemo(
     () => hasSpoilerSensitiveRoleAtChapter(characters, currentChapter),
@@ -1002,6 +1123,28 @@ export default function App() {
               <CircleDashed size={13} />
               {t('app.range')}
             </button>
+
+            <button
+              className="toolbar-btn"
+              onClick={() => evidenceImageInputRef.current?.click()}
+              disabled={!activeBookId}
+              title={t('app.image')}
+              style={{ ...toolbarBtnStyle, border: 'none' }}
+            >
+              <ImageIcon size={13} />
+              {t('app.image')}
+            </button>
+            <input
+              ref={evidenceImageInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleEvidenceImageFile(file);
+                e.target.value = '';
+              }}
+            />
           </div>
 
           <div style={historyClusterStyle}>
@@ -1273,6 +1416,7 @@ export default function App() {
                   relationships={relationships}
                   stickyNotes={stickyNotes}
                   groupRanges={groupRanges}
+                  evidenceImages={evidenceImages}
                   characterNodeViewMode={characterNodeViewMode}
                   currentChapter={currentChapter}
                   bookId={activeBookId}
@@ -1285,6 +1429,7 @@ export default function App() {
                       setSelectedRelId(null);
                       setSelectedStickyNoteId(null);
                       setSelectedGroupRangeId(null);
+                      setSelectedEvidenceImageId(null);
                     }
                   }}
                   onEdgeSelect={(id) => {
@@ -1293,6 +1438,7 @@ export default function App() {
                       setSelectedCharId(null);
                       setSelectedStickyNoteId(null);
                       setSelectedGroupRangeId(null);
+                      setSelectedEvidenceImageId(null);
                     }
                   }}
                   onStickyNoteSelect={(id) => {
@@ -1301,6 +1447,7 @@ export default function App() {
                       setSelectedCharId(null);
                       setSelectedRelId(null);
                       setSelectedGroupRangeId(null);
+                      setSelectedEvidenceImageId(null);
                     }
                   }}
                   onGroupRangeSelect={(id) => {
@@ -1309,6 +1456,16 @@ export default function App() {
                       setSelectedCharId(null);
                       setSelectedRelId(null);
                       setSelectedStickyNoteId(null);
+                      setSelectedEvidenceImageId(null);
+                    }
+                  }}
+                  onEvidenceImageSelect={(id) => {
+                    setSelectedEvidenceImageId(id);
+                    if (id) {
+                      setSelectedCharId(null);
+                      setSelectedRelId(null);
+                      setSelectedStickyNoteId(null);
+                      setSelectedGroupRangeId(null);
                     }
                   }}
                   onFitViewReady={handleFitViewReady}
@@ -1403,6 +1560,13 @@ export default function App() {
                 onDeleted={() => setSelectedGroupRangeId(null)}
                 onDuplicated={(id) => setSelectedGroupRangeId(id)}
               />
+            ) : selectedEvidenceImageId && activeBookId ? (
+              <EvidenceImageInspector
+                evidenceImageId={selectedEvidenceImageId}
+                bookId={activeBookId}
+                onDeleted={() => setSelectedEvidenceImageId(null)}
+                onDuplicated={(id) => setSelectedEvidenceImageId(id)}
+              />
             ) : (
               <EmptyInspectorGuide t={t} bookId={activeBookId} currentChapter={currentChapter} />
             )}
@@ -1418,6 +1582,7 @@ export default function App() {
             setSelectedRelId(null);
             setSelectedStickyNoteId(null);
             setSelectedGroupRangeId(null);
+            setSelectedEvidenceImageId(null);
             setInspectorOpen(true);
           }}
           onSelectRelationship={(id) => {
@@ -1425,6 +1590,7 @@ export default function App() {
             setSelectedCharId(null);
             setSelectedStickyNoteId(null);
             setSelectedGroupRangeId(null);
+            setSelectedEvidenceImageId(null);
             setInspectorOpen(true);
           }}
           onClose={() => setSearchOpen(false)}

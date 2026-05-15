@@ -51,6 +51,13 @@ describe('uiStore', () => {
     expect(document.documentElement.getAttribute('lang')).toBe('es');
   });
 
+  it('supports Japanese as an initial localized UI language', () => {
+    useUiStore.getState().setLanguage('ja');
+    expect(useUiStore.getState().language).toBe('ja');
+    expect(useUiStore.getState().resolvedLanguage).toBe('ja');
+    expect(document.documentElement.getAttribute('lang')).toBe('ja');
+  });
+
   it('supports Brazilian Portuguese as an initial localized UI language', () => {
     useUiStore.getState().setLanguage('pt-BR');
     expect(useUiStore.getState().language).toBe('pt-BR');

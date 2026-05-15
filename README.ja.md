@@ -1,0 +1,104 @@
+# Calabash
+
+<p align="center">
+  <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
+</p>
+
+> ミステリ読者のための、ネタバレ防止事件ボード・人物関係図・手がかりトラッカー。
+
+[ライブ demo](https://guesswhat-studio.github.io/Calabash/) · [Issue を報告](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · バージョン `0.2.2`
+
+言語: [English](README.md) · [简体中文](README.zh-CN.md) · **日本語** · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
+
+![Calabash spoiler-safe mystery reading notes and relationship board screenshot](docs/assets/calabash-demo.png)
+
+## これは何か
+
+Calabash は、読書中に人物、別名、手がかり、関係、推理を記録するローカルファーストの事件ファイルボードです。名前は Sherlock Holmes の calabash pipe から来ています。このツールは事件を解くのではなく、あなたが考えるための余白を作ります。
+
+推理小説メモ、探偵小説の人物関係図、手がかり整理、長編小説や漫画ケース、推理コンテスト用の一時的な事件ボードとして使えます。
+
+現在の公開 demo は完全にブラウザ内で動きます。アカウント、クラウド保存、サーバー側の読書データベースはありません。
+
+## AI なし
+
+探偵小説は外注するパズルではなく、自分で入り込むためのパズルです。
+
+Calabash はあえて手作業です。人物の自動抽出も、あらすじ生成も、犯人予想もありません。追加する人物、描く関係線、確定に変える推理は、すべて読者自身の注意から生まれます。
+
+## 主な機能
+
+- **章スライダー**: 読書位置に合わせて、その時点で知っている情報だけを表示します。
+- **ネタバレシールド**: 重要な開示を含む章を、見ると決めるまで隠せます。
+- **人物ボード**: ポートレート、別名、役割、職業、登場章、メモを追跡できます。
+- **ボード表示**: コンパクトなテキストカードと大きなポートレートカードを切り替えられます。
+- **関係の確度**: 関係を確認済み、疑い、否定済みにできます。
+- **自由な入力欄**: 役割や関係タイプは候補であり、入力を制限しません。
+- **付箋とグループ**: 手がかりをボード上に置き、人物の背面に色つきグループを描けます。
+- **スターターインポート**: 単体本 JSON と LLM 向けテンプレートから本を開始できます。
+- **ローカルライブラリ**: IndexedDB に保存し、Export/Import でバックアップできます。
+- **内蔵チュートリアル**: *The Murder of Roger Ackroyd* と *飛騨からくり屋敷殺人事件* を試せます。
+- **多言語 UI**: 英語、簡体字中国語、日本語、スペイン語、ブラジルポルトガル語。
+- **デスクトップ beta**: `v0.2.2` は Windows、macOS、Linux 向けの未署名プレーンバイナリとアプリ内更新チェックを提供します。
+
+## データとプライバシー
+
+Calabash はローカルファーストです。
+
+- 本はブラウザの IndexedDB に保存されます。
+- テーマ、言語、オンボーディング設定は localStorage を使います。
+- 他の demo 訪問者はあなたのボードを変更できず、あなたも他の人のボードを変更しません。
+- beta 期間中、ブラウザのサイトデータを消すとローカルライブラリが削除されることがあります。
+- バックアップには **Export Library**、移行には **Import Library** を使ってください。
+
+## クイックスタート
+
+1. [ライブ demo](https://guesswhat-studio.github.io/Calabash/) を開きます。
+2. Ackroyd チュートリアル、金田一チュートリアル、または空の本を選びます。
+3. `N` で人物を追加します。
+4. 人物を選択して `E` を押し、別の人物をクリックして関係を追加します。
+5. 章スライダーを読書進度に合わせて動かします。
+6. バックアップしたいときはライブラリをエクスポートします。
+
+## 対象読者
+
+Calabash は、自分で推理を進めるのが好きな読者向けです。
+
+- Agatha Christie、Ellery Queen、John Dickson Carr などの古典ミステリ読者。
+- 別名、仮面の正体、後半の開示を追いたい漫画・ドラマのミステリファン。
+- 人物、手がかり、場所、仮説を一時的に整理したい推理パズルやコンテスト参加者。
+- 人物が多い作品を読む人: ファンタジー、歴史小説、家族サーガ、政治スリラーなど。
+- 静かで私的な、アカウント不要の思考ツールがほしい人。
+
+Calabash は読書記録アプリ、電子書籍リーダー、執筆ツール、AI 要約ツール、SNS ではありません。
+
+## 開発
+
+アプリは `app/` にあり、Vite + React で動きます。
+
+```bash
+cd app
+npm install
+npm run dev
+npm run typecheck
+npm test
+npm run build
+```
+
+デスクトップ shell:
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+デスクトップビルドには Rust が必要で、`src-tauri/` の Tauri 2 shell を使います。React app は web と desktop の共通フロントエンドです。
+
+## バージョン
+
+Calabash は現在 `0.x` beta バージョニングです。`0.2.0` はデスクトップ shell、章ごとの付箋/グループ、関係線の修正、調整可能なボード注釈を追加しました。`0.2.1` は Settings の更新チェックと単体本 JSON インポートを追加しました。`0.2.2` は日本語 UI、日本語 README/SEO、そして特に金田一 case の日本語チュートリアル demo を追加しました。
+
+## License
+
+MIT

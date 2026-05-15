@@ -258,6 +258,107 @@ describe('Ackroyd demo data', () => {
     expect(noteText).not.toContain('假面威胁');
   });
 
+  it('creates a Japanese Kindaichi tutorial with canonical demo relationships', async () => {
+    const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'ja' });
+    const book = await getBook(bookId);
+    const categories = await listCategories();
+    const characters = await listCharactersByBook(bookId);
+    const relationships = await listRelationshipsByBook(bookId);
+    const notes = await listAnnotationsByBook(bookId);
+    const groups = await listGroupRangesByBook(bookId);
+    const names = characters.map((character) => character.name);
+    const shino = characters.find((character) => character.name === '巽紫乃');
+    const ayako = characters.find((character) => character.name === '巽綾子');
+    const seimaru = characters.find((character) => character.name === '巽征丸');
+    const ryunosuke = characters.find((character) => character.name === '巽龍之介');
+    const hayato = characters.find((character) => character.name === '巽隼人');
+    const moegi = characters.find((character) => character.name === '巽もえぎ');
+    const headless = characters.find((character) => character.name === '首狩り武者');
+    const senda = characters.find((character) => character.name === '仙田猿彦');
+    const kenmochi = characters.find((character) => character.name === '剣持勇');
+
+    expect(book?.title).toBe('飛騨からくり屋敷殺人事件');
+    expect(book?.author).toBe('金田一少年の事件簿 · TV 18-20');
+    expect(categories.find((category) => category.name === 'チュートリアル')?.id).toBe(book?.categoryId);
+    expect(names).toEqual(expect.arrayContaining([
+      '金田一一',
+      '七瀬美雪',
+      '剣持勇',
+      '巽紫乃',
+      '巽綾子',
+      '巽征丸',
+      '巽龍之介',
+      '巽隼人',
+      '巽もえぎ',
+      '冬木倫太郎',
+      '仙田猿彦',
+      '首狩り武者',
+    ]));
+    expect(ayako?.profession).toBe('巽家の亡き先妻');
+    expect(seimaru?.profession).toBe('紫乃の戸籍上の息子');
+    expect(ryunosuke?.profession).toBe('巽家の戸籍上の長男');
+    expect(headless?.aliases).toEqual([
+      { name: '首狩り武者', chapterRevealed: 1 },
+      { name: '巽紫乃（首狩り武者）', chapterRevealed: 3 },
+    ]);
+    expect(kenmochi?.notes).toContain('幼なじみ');
+    expect(relationships).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: seimaru?.id,
+        chapterRevealed: 1,
+        label: '戸籍上の母子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: hayato?.id,
+        chapterRevealed: 1,
+        label: '実の母子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: moegi?.id,
+        chapterRevealed: 1,
+        label: '実の母娘',
+      }),
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: ryunosuke?.id,
+        chapterRevealed: 3,
+        label: '実の母子',
+      }),
+      expect.objectContaining({
+        sourceId: ayako?.id,
+        targetId: seimaru?.id,
+        chapterRevealed: 3,
+        label: '実の母子',
+      }),
+      expect.objectContaining({
+        sourceId: senda?.id,
+        targetId: ryunosuke?.id,
+        chapterRevealed: 3,
+        label: '実の父子',
+      }),
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: headless?.id,
+        chapterRevealed: 3,
+        label: '正体',
+        notes: '第3話で、首狩り武者の正体が巽紫乃だと明かされます。',
+      }),
+      expect.objectContaining({
+        sourceId: shino?.id,
+        targetId: senda?.id,
+        chapterRevealed: 3,
+        label: '共犯',
+      }),
+    ]));
+    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining(['捜査チーム', '巽家']));
+    expect(notes.map((note) => note.content).join(' ')).toContain('テキスト版/ポートレート版');
+    expect(notes.map((note) => note.content).join(' ')).toContain('自動保存');
+    expect(notes.map((note) => note.content).join(' ')).toContain('章スライダー');
+  });
+
   it('attaches optional local portrait assets to the tutorial when available', async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn(async () => new Response(

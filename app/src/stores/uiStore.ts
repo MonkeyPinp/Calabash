@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 type Theme = 'light' | 'dark';
 export type ThemePreference = Theme | 'system';
-export type ResolvedLanguage = 'en' | 'zh-CN' | 'es' | 'pt-BR';
+export type ResolvedLanguage = 'en' | 'zh-CN' | 'ja' | 'es' | 'pt-BR';
 export type LanguagePreference = ResolvedLanguage | 'system';
 export type CharacterNodeViewMode = 'text' | 'portrait';
 
@@ -11,7 +11,7 @@ function isThemePreference(value: string | null): value is ThemePreference {
 }
 
 function isLanguagePreference(value: string | null): value is LanguagePreference {
-  return value === 'system' || value === 'en' || value === 'zh-CN' || value === 'es' || value === 'pt-BR';
+  return value === 'system' || value === 'en' || value === 'zh-CN' || value === 'ja' || value === 'es' || value === 'pt-BR';
 }
 
 function isCharacterNodeViewMode(value: string | null): value is CharacterNodeViewMode {
@@ -33,6 +33,7 @@ function systemLanguage(): ResolvedLanguage {
   try {
     const locale = navigator.language.toLowerCase();
     if (locale.startsWith('zh')) return 'zh-CN';
+    if (locale.startsWith('ja')) return 'ja';
     if (locale.startsWith('es')) return 'es';
     if (locale.startsWith('pt')) return 'pt-BR';
   } catch { /* test env */ }

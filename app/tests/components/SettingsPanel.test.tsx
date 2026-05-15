@@ -29,11 +29,11 @@ describe('SettingsPanel', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{
-        tag_name: 'v0.2.2',
-        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.2.2',
+        tag_name: 'v0.2.3',
+        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.2.3',
         draft: false,
         assets: [
-          { name: 'Calabash_0.2.2_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
+          { name: 'Calabash_0.2.3_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
         ],
       }],
     }));
@@ -50,9 +50,9 @@ describe('SettingsPanel', () => {
     );
 
     fireEvent.click(screen.getByText('Check for updates'));
-    await waitFor(() => expect(screen.getByText('Download 0.2.2')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Download 0.2.3')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Download 0.2.2'));
+    fireEvent.click(screen.getByText('Download 0.2.3'));
     expect(open).toHaveBeenCalledWith('https://example.com/calabash.exe', '_blank', 'noopener,noreferrer');
   });
 

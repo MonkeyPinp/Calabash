@@ -13,10 +13,11 @@ function resolveInitialTheme(): 'light' | 'dark' {
   return preference === 'dark' ? 'dark' : 'light';
 }
 
-function resolveInitialLanguage(): 'en' | 'zh-CN' | 'es' | 'pt-BR' {
+function resolveInitialLanguage(): 'en' | 'zh-CN' | 'ja' | 'es' | 'pt-BR' {
   const preference = localStorage.getItem('calabash-language') ?? 'system';
   const locale = preference === 'system' ? navigator.language.toLowerCase() : preference.toLowerCase();
   if (locale.startsWith('zh')) return 'zh-CN';
+  if (locale.startsWith('ja')) return 'ja';
   if (locale.startsWith('es')) return 'es';
   if (locale.startsWith('pt')) return 'pt-BR';
   return 'en';

@@ -243,6 +243,13 @@ const ackroydGuideCopy: Record<ResolvedLanguage, {
     detectiveGroup: '调查视角',
     householdGroup: 'Fernly Park 人物圈',
   },
+  ja: {
+    start: 'ここから開始: これはあなたのローカルなチュートリアルコピーです。人物を動かし、ラベルを編集し、不要なものを削除しても、公開 demo は他の人には変わりません。',
+    chapters: '章スライダーを試してみましょう。第2章で Fernly Park の人物圏、第5章で殺人、第10章で女中の名前、第21章で隠された結婚が表示されます。第25章以降はネタバレシールドで保護されます。',
+    edit: '試してみましょう: Poirot を選び、E を押してから別の人物をクリックすると、自分の推理線を描けます。バックアップしたいときはライブラリをエクスポートしてください。',
+    detectiveGroup: '捜査視点',
+    householdGroup: 'Fernly Park 人物圏',
+  },
   es: {
     start: 'Empieza aquí: esta es tu copia local del tutorial. Mueve personajes, edita etiquetas y borra lo que quieras; la demo pública no cambia para nadie más.',
     chapters: 'Prueba el control de capítulos: el capítulo 2 muestra el círculo de Fernly Park, el 5 marca el asesinato, el 10 nombra a la doncella y el 21 revela el matrimonio oculto. A partir del capítulo 25, el escudo anti-spoilers protege la lectura.',
@@ -595,6 +602,31 @@ const tutorialCopy: Record<ResolvedLanguage, {
     investigationGroup: '调查组',
     familyGroup: '巽家成员',
   },
+  ja: {
+    category: 'チュートリアル',
+    title: '飛騨からくり屋敷殺人事件',
+    author: '金田一少年の事件簿 · TV 18-20',
+    hajime: '金田一一',
+    miyuki: '七瀬美雪',
+    kenmochi: '剣持勇',
+    shino: '巽紫乃',
+    ayako: '巽綾子',
+    seimaru: '巽征丸',
+    ryunosuke: '巽龍之介',
+    hayato: '巽隼人',
+    moegi: '巽もえぎ',
+    fuyuki: '冬木倫太郎',
+    senda: '仙田猿彦',
+    headless: '首狩り武者',
+    notes: {
+      start: 'ここから開始: これはあなたのローカルなチュートリアルコピーです。カードを動かし、ラベルを変え、テキスト版/ポートレート版を切り替えると、このブラウザに自動保存されます。バックアップしたいときはライブラリをエクスポートしてください。',
+      chapters: 'TV 18-20 用に章スライダーを動かしてみましょう。事件が進むにつれて、新しい事実、別名、関係線が表示されます。第3話の犯人開示前はネタバレシールドで保護されます。',
+      edit: '推理線を試す: 金田一を選び、E を押してから首狩り武者をクリックします。右サイドバーでラベル、向き、確度、メモを変更できます。',
+      groups: 'グループは人物と関係線の背面に置かれます。捜査チームや巽家のようなまとまりに使い、サイドバーで色、ラベル位置、フォントサイズ、複製、削除を編集できます。',
+    },
+    investigationGroup: '捜査チーム',
+    familyGroup: '巽家',
+  },
   es: {
     category: 'Tutorial',
     title: 'Caso de la mansión mecánica de Hida',
@@ -666,10 +698,12 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.hajime,
     role: 'detective',
-    profession: language === 'zh-CN' ? '高中生侦探' : language === 'es' ? 'Detective de instituto' : 'High school detective',
+    profession: language === 'ja' ? '高校生探偵' : language === 'zh-CN' ? '高中生侦探' : language === 'es' ? 'Detective de instituto' : 'High school detective',
     chapterIntroduced: 1,
     position: { x: -689.025, y: 60.356 },
-    notes: language === 'zh-CN'
+    notes: language === 'ja'
+      ? '推理視点の起点として、左側に置いておきます。'
+      : language === 'zh-CN'
       ? '把他放在图的左侧，当作推理视角的锚点。'
       : language === 'es'
         ? 'Colócalo a la izquierda como ancla del punto de vista detectivesco.'
@@ -680,7 +714,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.miyuki,
     role: 'witness',
-    profession: language === 'zh-CN' ? '金田一的青梅竹马' : language === 'es' ? 'Amiga de la infancia de Kindaichi' : "Kindaichi's childhood friend",
+    profession: language === 'ja' ? '金田一の幼なじみ' : language === 'zh-CN' ? '金田一的青梅竹马' : language === 'es' ? 'Amiga de la infancia de Kindaichi' : "Kindaichi's childhood friend",
     chapterIntroduced: 1,
     position: { x: -1017.701, y: 79.148 },
   });
@@ -689,10 +723,12 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.kenmochi,
     role: 'detective',
-    profession: language === 'zh-CN' ? '搜查一课警部' : language === 'es' ? 'Inspector de homicidios' : 'Tokyo homicide detective',
+    profession: language === 'ja' ? '警視庁捜査一課警部' : language === 'zh-CN' ? '搜查一课警部' : language === 'es' ? 'Inspector de homicidios' : 'Tokyo homicide detective',
     chapterIntroduced: 2,
     position: { x: -916.68, y: -245.119 },
-    notes: language === 'zh-CN'
+    notes: language === 'ja'
+      ? `剣持は${copy.shino}の幼なじみで、その縁で金田一を巽家へ連れてきます。`
+      : language === 'zh-CN'
       ? `剑持与${copy.shino}是儿时好友，所以才会带金田一来到巽家。`
       : language === 'es'
         ? `Kenmochi y ${copy.shino} son amigos de la infancia; por eso lleva a Kindaichi a la casa Tatsumi.`
@@ -704,7 +740,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     name: copy.shino,
     role: 'suspect',
     roleReveals: [{ role: 'murderer', chapterRevealed: 3 }],
-    profession: language === 'zh-CN' ? '巽家遗孀' : language === 'es' ? 'Viuda de la familia Tatsumi' : 'Widow of the Tatsumi family',
+    profession: language === 'ja' ? '巽家の後妻' : language === 'zh-CN' ? '巽家遗孀' : language === 'es' ? 'Viuda de la familia Tatsumi' : 'Widow of the Tatsumi family',
     chapterIntroduced: 1,
     position: { x: -275.553, y: -279.84 },
   });
@@ -713,7 +749,9 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.ayako,
     role: 'other',
-    profession: language === 'zh-CN'
+    profession: language === 'ja'
+      ? '巽家の亡き先妻'
+      : language === 'zh-CN'
       ? '巽家已故先妻'
       : language === 'es'
         ? 'Primera esposa fallecida de los Tatsumi'
@@ -726,7 +764,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.seimaru,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '紫乃名义上的儿子' : language === 'es' ? 'Hijo legal de Shino' : "Shino's legal son",
+    profession: language === 'ja' ? '紫乃の戸籍上の息子' : language === 'zh-CN' ? '紫乃名义上的儿子' : language === 'es' ? 'Hijo legal de Shino' : "Shino's legal son",
     chapterIntroduced: 1,
     position: { x: -213.488, y: 202.854 },
   });
@@ -735,7 +773,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.ryunosuke,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '巽家名义长子' : language === 'es' ? 'Hijo mayor legal de los Tatsumi' : "Tatsumi family's legal oldest son",
+    profession: language === 'ja' ? '巽家の戸籍上の長男' : language === 'zh-CN' ? '巽家名义长子' : language === 'es' ? 'Hijo mayor legal de los Tatsumi' : "Tatsumi family's legal oldest son",
     chapterIntroduced: 1,
     position: { x: 333.888, y: -318.33 },
   });
@@ -744,7 +782,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.hayato,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '绫子之子，巽家次子' : language === 'es' ? 'Hijo de Ayako; segundo hijo de los Tatsumi' : "Ayako's son; Tatsumi family's second son",
+    profession: language === 'ja' ? '綾子の子、巽家の次男' : language === 'zh-CN' ? '绫子之子，巽家次子' : language === 'es' ? 'Hijo de Ayako; segundo hijo de los Tatsumi' : "Ayako's son; Tatsumi family's second son",
     chapterIntroduced: 1,
     position: { x: 631.189, y: -25.238 },
   });
@@ -753,7 +791,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.moegi,
     role: 'witness',
-    profession: language === 'zh-CN' ? '绫子之女，巽家长女' : language === 'es' ? 'Hija de Ayako; hija mayor de los Tatsumi' : "Ayako's daughter; Tatsumi family's oldest daughter",
+    profession: language === 'ja' ? '綾子の娘、巽家の長女' : language === 'zh-CN' ? '绫子之女，巽家长女' : language === 'es' ? 'Hija de Ayako; hija mayor de los Tatsumi' : "Ayako's daughter; Tatsumi family's oldest daughter",
     chapterIntroduced: 2,
     position: { x: 435.159, y: 303.094 },
   });
@@ -762,7 +800,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.fuyuki,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '巽家医生' : language === 'es' ? 'Médico de la familia Tatsumi' : 'Tatsumi family doctor',
+    profession: language === 'ja' ? '巽家の主治医' : language === 'zh-CN' ? '巽家医生' : language === 'es' ? 'Médico de la familia Tatsumi' : 'Tatsumi family doctor',
     chapterIntroduced: 2,
     position: { x: 83.333, y: -476.661 },
   });
@@ -771,7 +809,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.senda,
     role: 'suspect',
-    profession: language === 'zh-CN' ? '巽家佣人' : language === 'es' ? 'Sirviente de los Tatsumi' : 'Servant to the Tatsumi family',
+    profession: language === 'ja' ? '巽家の使用人' : language === 'zh-CN' ? '巽家佣人' : language === 'es' ? 'Sirviente de los Tatsumi' : 'Servant to the Tatsumi family',
     chapterIntroduced: 1,
     position: { x: 68.254, y: -113.411 },
   });
@@ -780,19 +818,23 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     bookId,
     name: copy.headless,
     role: 'other',
-    profession: language === 'zh-CN' ? '怪人别名' : language === 'es' ? 'Alias enmascarado' : 'Masked alias',
+    profession: language === 'ja' ? '仮面の別名' : language === 'zh-CN' ? '怪人别名' : language === 'es' ? 'Alias enmascarado' : 'Masked alias',
     chapterIntroduced: 1,
     position: { x: -500.155, y: -669.441 },
     aliases: [
       { name: copy.headless, chapterRevealed: 1 },
       {
-        name: language === 'zh-CN'
+        name: language === 'ja'
+          ? `${copy.shino}（${copy.headless}）`
+          : language === 'zh-CN'
           ? `${copy.shino}（${copy.headless}）`
           : `${copy.shino} (${copy.headless})`,
         chapterRevealed: 3,
       },
     ],
-    notes: language === 'zh-CN'
+    notes: language === 'ja'
+      ? 'チュートリアルでは、まず「正体不明の脅威」として記録します。第3話で実在の人物につながります。'
+      : language === 'zh-CN'
       ? '教程里先把它当作“身份未知的威胁”记录；第 3 集再连接到真实人物。'
       : language === 'es'
         ? 'En el tutorial empieza como una amenaza sin identidad; el episodio 3 la conecta con una persona real.'
@@ -820,7 +862,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'professional',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '同行' : language === 'es' ? 'acompaña' : 'travels with',
+    label: language === 'ja' ? '同行' : language === 'zh-CN' ? '同行' : language === 'es' ? 'acompaña' : 'travels with',
   });
   await createRelationship({
     bookId,
@@ -829,7 +871,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'professional',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '受邀到飞驒' : language === 'es' ? 'viaja a Hida' : 'called to Hida',
+    label: language === 'ja' ? '飛騨へ同行' : language === 'zh-CN' ? '受邀到飞驒' : language === 'es' ? 'viaja a Hida' : 'called to Hida',
   });
   await createRelationship({
     bookId,
@@ -838,7 +880,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '名义母子' : language === 'es' ? 'madre legal-hijo' : 'legal mother-son',
+    label: language === 'ja' ? '戸籍上の母子' : language === 'zh-CN' ? '名义母子' : language === 'es' ? 'madre legal-hijo' : 'legal mother-son',
   });
   await createRelationship({
     bookId,
@@ -847,7 +889,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+    label: language === 'ja' ? '実の母子' : language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
   });
   await createRelationship({
     bookId,
@@ -856,7 +898,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生母女' : language === 'es' ? 'madre biológica-hija' : 'biological mother-daughter',
+    label: language === 'ja' ? '実の母娘' : language === 'zh-CN' ? '亲生母女' : language === 'es' ? 'madre biológica-hija' : 'biological mother-daughter',
   });
   await createRelationship({
     bookId,
@@ -865,7 +907,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '名义兄弟' : language === 'es' ? 'hermanos legales' : 'legal brothers',
+    label: language === 'ja' ? '戸籍上の兄弟' : language === 'zh-CN' ? '名义兄弟' : language === 'es' ? 'hermanos legales' : 'legal brothers',
   });
   await createRelationship({
     bookId,
@@ -874,7 +916,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '继母/继子' : language === 'es' ? 'madrastra-hijastro' : 'stepmother-stepson',
+    label: language === 'ja' ? '継母/継子' : language === 'zh-CN' ? '继母/继子' : language === 'es' ? 'madrastra-hijastro' : 'stepmother-stepson',
   });
   await createRelationship({
     bookId,
@@ -883,7 +925,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'professional',
     chapterRevealed: 1,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '侍奉' : language === 'es' ? 'sirve' : 'serves',
+    label: language === 'ja' ? '仕える' : language === 'zh-CN' ? '侍奉' : language === 'es' ? 'sirve' : 'serves',
   });
   await createRelationship({
     bookId,
@@ -892,7 +934,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'hostile',
     chapterRevealed: 1,
     certainty: 'suspected',
-    label: language === 'zh-CN' ? '威胁信' : language === 'es' ? 'amenaza' : 'warning',
+    label: language === 'ja' ? '脅迫状' : language === 'zh-CN' ? '威胁信' : language === 'es' ? 'amenaza' : 'warning',
   });
   await createRelationship({
     bookId,
@@ -901,7 +943,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'professional',
     chapterRevealed: 2,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '介入调查' : language === 'es' ? 'investiga con' : 'investigates with',
+    label: language === 'ja' ? '捜査に加わる' : language === 'zh-CN' ? '介入调查' : language === 'es' ? 'investiga con' : 'investigates with',
   });
   await createRelationship({
     bookId,
@@ -910,12 +952,16 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'other',
     chapterRevealed: 2,
     certainty: 'confirmed',
-    label: language === 'zh-CN'
+    label: language === 'ja'
+      ? '幼なじみ'
+      : language === 'zh-CN'
       ? '儿时好友'
       : language === 'es'
         ? 'amigos de infancia'
         : 'childhood friends',
-    notes: language === 'zh-CN'
+    notes: language === 'ja'
+      ? `剣持は${copy.shino}を幼いころから知っており、${copy.headless}からの脅迫を受けた彼女に頼まれて介入します。`
+      : language === 'zh-CN'
       ? `剑持与${copy.shino}是儿时好友；她收到${copy.headless}的威胁后请他介入。`
       : language === 'es'
         ? `Kenmochi conoce a ${copy.shino} desde la infancia; ella le pide ayuda tras recibir la amenaza del ${copy.headless}.`
@@ -928,7 +974,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'professional',
     chapterRevealed: 2,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '家庭医生' : language === 'es' ? 'médico familiar' : 'family doctor',
+    label: language === 'ja' ? '主治医' : language === 'zh-CN' ? '家庭医生' : language === 'es' ? 'médico familiar' : 'family doctor',
   });
   await createRelationship({
     bookId,
@@ -937,7 +983,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 2,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生兄妹' : language === 'es' ? 'hermanos biológicos' : 'biological siblings',
+    label: language === 'ja' ? '実の兄妹' : language === 'zh-CN' ? '亲生兄妹' : language === 'es' ? 'hermanos biológicos' : 'biological siblings',
   });
   await createRelationship({
     bookId,
@@ -946,7 +992,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'suspicion',
     chapterRevealed: 3,
     certainty: 'suspected',
-    label: language === 'zh-CN' ? '锁定假面' : language === 'es' ? 'sigue la máscara' : 'tracks the mask',
+    label: language === 'ja' ? '仮面を追う' : language === 'zh-CN' ? '锁定假面' : language === 'es' ? 'sigue la máscara' : 'tracks the mask',
   });
   await createRelationship({
     bookId,
@@ -955,8 +1001,10 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'other',
     chapterRevealed: 3,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '真实身份' : language === 'es' ? 'identidad real' : 'true identity',
-    notes: language === 'zh-CN'
+    label: language === 'ja' ? '正体' : language === 'zh-CN' ? '真实身份' : language === 'es' ? 'identidad real' : 'true identity',
+    notes: language === 'ja'
+      ? `第3話で、${copy.headless}の正体が${copy.shino}だと明かされます。`
+      : language === 'zh-CN'
       ? `第 3 集揭示：${copy.headless}的真实身份是${copy.shino}。`
       : language === 'es'
         ? `El episodio 3 revela que ${copy.shino} es la identidad real del ${copy.headless}.`
@@ -969,7 +1017,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 3,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+    label: language === 'ja' ? '実の母子' : language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
   });
   await createRelationship({
     bookId,
@@ -978,7 +1026,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 3,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
+    label: language === 'ja' ? '実の母子' : language === 'zh-CN' ? '亲生母子' : language === 'es' ? 'madre biológica-hijo' : 'biological mother-son',
   });
   await createRelationship({
     bookId,
@@ -987,7 +1035,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'family',
     chapterRevealed: 3,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '亲生父子' : language === 'es' ? 'padre biológico-hijo' : 'biological father-son',
+    label: language === 'ja' ? '実の父子' : language === 'zh-CN' ? '亲生父子' : language === 'es' ? 'padre biológico-hijo' : 'biological father-son',
   });
   await createRelationship({
     bookId,
@@ -996,7 +1044,7 @@ export async function seedTutorialBook(options: SeedOptions = {}): Promise<strin
     type: 'other',
     chapterRevealed: 3,
     certainty: 'confirmed',
-    label: language === 'zh-CN' ? '共犯' : language === 'es' ? 'cómplices' : 'co-conspirators',
+    label: language === 'ja' ? '共犯' : language === 'zh-CN' ? '共犯' : language === 'es' ? 'cómplices' : 'co-conspirators',
   });
 
   await Promise.all([

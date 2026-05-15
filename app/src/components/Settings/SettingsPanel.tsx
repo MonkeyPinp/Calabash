@@ -70,6 +70,7 @@ export default function SettingsPanel({
     { value: 'system', label: t('settings.langSystem') },
     { value: 'en', label: t('settings.langEn') },
     { value: 'zh-CN', label: t('settings.langZh') },
+    { value: 'ja', label: t('settings.langJa') },
     { value: 'es', label: t('settings.langEs') },
     { value: 'pt-BR', label: t('settings.langPtBr') },
   ];

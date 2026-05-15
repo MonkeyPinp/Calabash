@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-05-15
+
+- Added Japanese as a first-class UI language, including system-locale detection and Settings/onboarding language choices.
+- Localized the tutorial demo copy in Japanese, with special coverage for the Kindaichi Hida case names, aliases, family relationships, culprit reveal, groups, and sticky notes.
+- Added a Japanese README and Japanese SEO/search metadata for the public web demo.
+- Bumped web, desktop, import/export, and template metadata to `0.2.2`.
+
 ## 0.2.1 - 2026-05-15
 
 - Made the Settings update button active: desktop builds can check GitHub Releases, report whether the build is current, and open the matching platform asset or release page when a newer version exists.

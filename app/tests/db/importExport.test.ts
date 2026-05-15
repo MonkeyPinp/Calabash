@@ -16,6 +16,7 @@ import {
   importBookFromJson,
   importLibraryFromJson,
   isLibraryExport,
+  normalizeBookImportPayload,
   type CalabashLibraryExport,
 } from '@/db/importExport';
 
@@ -36,7 +37,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.2.0');
+    expect(json.calabashVersion).toBe('0.2.1');
     expect(json.book.title).toBe('Empty');
     expect(json.characters).toEqual([]);
     expect(json.relationships).toEqual([]);
@@ -221,7 +222,7 @@ describe('importExport', () => {
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.2.0');
+    expect(exported.calabashVersion).toBe('0.2.1');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,
@@ -234,7 +235,73 @@ describe('importExport', () => {
     expect(exported.portraits[0].dataUrl).toBe('data:image/png;base64,AAECAwQ=');
   });
 
+  it('imports an LLM-friendly single-book template', async () => {
+    const template = JSON.parse(
+      readFileSync(path.join(process.cwd(), '..', 'docs', 'examples', 'book-import-template.calabash.json'), 'utf8'),
+    ) as unknown;
+
+    const normalized = normalizeBookImportPayload(template);
+    expect(normalized.book.title).toBe('Example Mystery Night');
+    expect(normalized.characters.map((character) => character.name)).toEqual([
+      'Detective Lin',
+      'Morgan Vale',
+      'Ada Vale',
+    ]);
+    expect(normalized.relationships[0]).toMatchObject({
+      sourceId: 'detective',
+      targetId: 'host',
+      certainty: 'confirmed',
+    });
+    expect(normalized.annotations).toHaveLength(1);
+    expect(normalized.groupRanges).toHaveLength(1);
+
+    const newBookId = await importBookFromJson(template, 'reader-1');
+    const book = await db.books.get(newBookId);
+    expect(book).toMatchObject({ title: 'Example Mystery Night', userId: 'reader-1', totalChapters: 6 });
+
+    const characters = await listCharactersByBook(newBookId);
+    expect(characters).toHaveLength(3);
+    expect(characters.find((character) => character.name === 'Ada Vale')?.aliases).toEqual([
+      { name: 'The Nightingale', chapterRevealed: 2 },
+    ]);
+
+    const relationships = await listRelationshipsByBook(newBookId);
+    expect(relationships).toHaveLength(2);
+    expect(relationships[0].sourceId).not.toBe('detective');
+    expect(await listAnnotationsByBook(newBookId)).toHaveLength(1);
+    expect(await listGroupRangesByBook(newBookId)).toHaveLength(1);
+  });
+
+  it('skips template relationships that reference unknown characters', () => {
+    const normalized = normalizeBookImportPayload({
+      book: { title: 'Broken Link Case' },
+      characters: [{ key: 'known', name: 'Known Person' }],
+      relationships: [
+        { source: 'known', target: 'missing', type: 'suspicion' },
+        { source: 'missing', target: 'known', type: 'suspicion' },
+      ],
+    });
+
+    expect(normalized.relationships).toEqual([]);
+  });
+
   it('throws when exporting an unknown book id', async () => {
     await expect(exportBookAsJson('nope')).rejects.toThrow(/not found/);
+  });
+
+  it('rejects whole-library exports in the single-book importer', async () => {
+    await expect(importBookFromJson({
+      calabashVersion: '0.2.1',
+      exportType: 'library',
+      exportedAt: Date.now(),
+      users: [],
+      categories: [],
+      books: [],
+      characters: [],
+      relationships: [],
+      annotations: [],
+      groupRanges: [],
+      portraits: [],
+    })).rejects.toThrow(/Invalid Calabash book import/);
   });
 });

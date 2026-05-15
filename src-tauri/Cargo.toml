@@ -1,6 +1,6 @@
 [package]
 name = "calabash"
-version = "0.2.0"
+version = "0.2.1"
 description = "A spoiler-safe relationship board for detective fiction readers."
 authors = ["Guesswhat Studio"]
 edition = "2021"

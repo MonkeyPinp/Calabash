@@ -1,8 +1,24 @@
 import { db, type PortraitRow } from './schema';
-import type { Book, Category, Character, GroupRange, Relationship, StickyNote, User } from '@/types';
+import type {
+  Alias,
+  Book,
+  Category,
+  CertaintyLevel,
+  Character,
+  GroupRange,
+  GroupRangeColor,
+  Relationship,
+  StickyNote,
+  StickyNoteColor,
+  User,
+} from '@/types';
 import { APP_VERSION } from '@/version';
-import { normalizeStickyNote } from '@/lib/stickyNotes';
-import { normalizeGroupRange } from '@/lib/groupRanges';
+import { normalizeStickyNote, STICKY_NOTE_DEFAULT_FONT_SIZE } from '@/lib/stickyNotes';
+import {
+  GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE,
+  GROUP_RANGE_DEFAULT_LABEL_POSITION,
+  normalizeGroupRange,
+} from '@/lib/groupRanges';
 
 const CALABASH_VERSION = APP_VERSION;
 
@@ -16,12 +32,34 @@ export interface PortraitExport {
 
 export interface CalabashExport {
   calabashVersion: string;
+  importType?: 'book';
   book: Book;
   characters: Character[];
   relationships: Relationship[];
   portraits: PortraitExport[];
   annotations?: StickyNote[];
   groupRanges?: GroupRange[];
+}
+
+export interface CalabashBookImportTemplate {
+  calabashVersion?: string;
+  importType?: 'book';
+  book: {
+    id?: string;
+    title: string;
+    author?: string;
+    totalChapters?: number;
+    currentChapter?: number;
+    spoilerShield?: boolean;
+    spoilerChapters?: number[];
+    highlightedChapters?: number[];
+  };
+  characters?: Array<Record<string, unknown>>;
+  relationships?: Array<Record<string, unknown>>;
+  notes?: Array<Record<string, unknown>>;
+  annotations?: Array<Record<string, unknown>>;
+  groups?: Array<Record<string, unknown>>;
+  groupRanges?: Array<Record<string, unknown>>;
 }
 
 export interface CalabashLibraryExport {
@@ -77,6 +115,310 @@ export function isLibraryExport(payload: unknown): payload is CalabashLibraryExp
   );
 }
 
+export function normalizeBookImportPayload(payload: unknown): CalabashExport {
+  if (!isRecord(payload) || isLibraryExport(payload)) throw new Error('Invalid Calabash book import');
+  if (isCalabashBookExport(payload)) return normalizeFullBookExport(payload);
+  return normalizeBookTemplate(payload);
+}
+
+const STICKY_NOTE_COLORS: StickyNoteColor[] = ['yellow', 'green', 'blue', 'pink', 'purple'];
+const GROUP_RANGE_COLORS: GroupRangeColor[] = ['ochre', 'blue', 'green', 'red', 'violet'];
+const CERTAINTY_LEVELS: CertaintyLevel[] = ['confirmed', 'suspected', 'disproven'];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isCalabashBookExport(payload: unknown): payload is CalabashExport {
+  if (!isRecord(payload)) return false;
+  const characters = payload.characters;
+  const relationships = payload.relationships;
+  return Boolean(
+    isRecord(payload.book) &&
+    typeof payload.book.id === 'string' &&
+    typeof payload.book.title === 'string' &&
+    Array.isArray(characters) &&
+    Array.isArray(relationships) &&
+    characters.every((character) => (
+      isRecord(character) &&
+      typeof character.id === 'string' &&
+      typeof character.bookId === 'string' &&
+      typeof character.name === 'string' &&
+      Array.isArray(character.aliases) &&
+      isRecord(character.position)
+    )) &&
+    relationships.every((relationship) => (
+      isRecord(relationship) &&
+      typeof relationship.id === 'string' &&
+      typeof relationship.bookId === 'string' &&
+      typeof relationship.sourceId === 'string' &&
+      typeof relationship.targetId === 'string'
+    )),
+  );
+}
+
+function normalizeFullBookExport(payload: CalabashExport): CalabashExport {
+  return {
+    calabashVersion: payload.calabashVersion || CALABASH_VERSION,
+    importType: 'book',
+    book: normalizeBookForPortableData(payload.book),
+    characters: payload.characters ?? [],
+    relationships: payload.relationships ?? [],
+    portraits: payload.portraits ?? [],
+    annotations: (payload.annotations ?? []).map(normalizeStickyNote),
+    groupRanges: (payload.groupRanges ?? []).map(normalizeGroupRange),
+  };
+}
+
+function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport {
+  const bookInput = payload.book;
+  if (!isRecord(bookInput)) throw new Error('Invalid Calabash book import');
+
+  const title = stringValue(bookInput.title);
+  if (!title) throw new Error('Invalid Calabash book import');
+
+  const templateBookId = uniqueId(stringValue(bookInput.id) ?? slugify(title) ?? 'imported-book', new Set());
+  const characterIds = new Set<string>();
+  const characterLookup = new Map<string, string>();
+  const rawCharacters = arrayOfRecords(payload.characters);
+
+  const characters: Character[] = rawCharacters.map((raw, index) => {
+    const name = stringValue(raw.name) ?? stringValue(raw.label) ?? `Character ${index + 1}`;
+    const id = uniqueId(stringValue(raw.id) ?? stringValue(raw.key) ?? slugify(name) ?? `character-${index + 1}`, characterIds);
+    const chapterIntroduced = positiveInt(raw.chapterIntroduced ?? raw.chapter ?? raw.firstChapter, 1);
+    const aliases = normalizeAliases(raw.aliases, name, chapterIntroduced);
+    for (const ref of [raw.id, raw.key, raw.name, raw.label, name, id]) {
+      const normalized = stringValue(ref);
+      if (normalized) characterLookup.set(normalized, id);
+    }
+    return {
+      id,
+      bookId: templateBookId,
+      name,
+      aliases,
+      role: stringValue(raw.role),
+      roleReveals: normalizeRoleReveals(raw.roleReveals),
+      profession: stringValue(raw.profession),
+      socialPosition: stringValue(raw.socialPosition),
+      notes: stringValue(raw.notes),
+      chapterIntroduced,
+      position: normalizePoint(raw.position, defaultCharacterPosition(index)),
+      createdAt: 0,
+      updatedAt: 0,
+    };
+  });
+
+  const relationshipIds = new Set<string>();
+  const relationships = arrayOfRecords(payload.relationships).flatMap((raw, index): Relationship[] => {
+    const source = resolveCharacterRef(raw.sourceId ?? raw.source ?? raw.from, characterLookup);
+    const target = resolveCharacterRef(raw.targetId ?? raw.target ?? raw.to, characterLookup);
+    if (!source || !target) return [];
+    return [{
+      id: uniqueId(stringValue(raw.id) ?? `relationship-${index + 1}`, relationshipIds),
+      bookId: templateBookId,
+      sourceId: source,
+      targetId: target,
+      type: stringValue(raw.type),
+      directed: typeof raw.directed === 'boolean' ? raw.directed : undefined,
+      label: stringValue(raw.label),
+      notes: stringValue(raw.notes),
+      chapterRevealed: positiveInt(raw.chapterRevealed ?? raw.chapter ?? raw.chapterIntroduced, 1),
+      certainty: normalizeCertainty(raw.certainty),
+      createdAt: 0,
+      updatedAt: 0,
+    }];
+  });
+
+  const noteIds = new Set<string>();
+  const annotations = [
+    ...arrayOfRecords(payload.notes),
+    ...arrayOfRecords(payload.annotations),
+  ].map((raw, index): StickyNote => ({
+    id: uniqueId(stringValue(raw.id) ?? `note-${index + 1}`, noteIds),
+    bookId: templateBookId,
+    content: stringValue(raw.content) ?? stringValue(raw.text) ?? '',
+    position: normalizePoint(raw.position, defaultNotePosition(index)),
+    width: positiveNumber(raw.width, 280),
+    height: positiveNumber(raw.height, 160),
+    color: normalizeStickyNoteColor(raw.color),
+    fontSize: positiveInt(raw.fontSize, STICKY_NOTE_DEFAULT_FONT_SIZE),
+    chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    createdAt: 0,
+    updatedAt: 0,
+  })).map(normalizeStickyNote);
+
+  const groupIds = new Set<string>();
+  const groupRanges = [
+    ...arrayOfRecords(payload.groups),
+    ...arrayOfRecords(payload.groupRanges),
+  ].map((raw, index): GroupRange => ({
+    id: uniqueId(stringValue(raw.id) ?? `group-${index + 1}`, groupIds),
+    bookId: templateBookId,
+    label: stringValue(raw.label) ?? stringValue(raw.name) ?? `Group ${index + 1}`,
+    position: normalizePoint(raw.position, defaultGroupPosition(index)),
+    width: positiveNumber(raw.width, 520),
+    height: positiveNumber(raw.height, 320),
+    color: normalizeGroupRangeColor(raw.color),
+    labelFontSize: positiveInt(raw.labelFontSize ?? raw.fontSize, GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE),
+    labelPosition: normalizePoint(raw.labelPosition, GROUP_RANGE_DEFAULT_LABEL_POSITION),
+    chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    createdAt: 0,
+    updatedAt: 0,
+  })).map(normalizeGroupRange);
+
+  const maxMentionedChapter = Math.max(
+    1,
+    ...characters.map((character) => character.chapterIntroduced),
+    ...relationships.map((relationship) => relationship.chapterRevealed),
+    ...annotations.map((note) => note.chapterIntroduced),
+    ...groupRanges.map((group) => group.chapterIntroduced),
+  );
+  const totalChapters = positiveInt(bookInput.totalChapters, maxMentionedChapter);
+
+  return {
+    calabashVersion: stringValue(payload.calabashVersion) ?? CALABASH_VERSION,
+    importType: 'book',
+    book: {
+      id: templateBookId,
+      title,
+      author: stringValue(bookInput.author),
+      totalChapters,
+      currentChapter: Math.min(totalChapters, positiveInt(bookInput.currentChapter, 1)),
+      spoilerShield: typeof bookInput.spoilerShield === 'boolean' ? bookInput.spoilerShield : false,
+      spoilerChapters: numberArray(bookInput.spoilerChapters),
+      highlightedChapters: numberArray(bookInput.highlightedChapters),
+      createdAt: 0,
+      updatedAt: 0,
+    },
+    characters,
+    relationships,
+    portraits: [],
+    annotations,
+    groupRanges,
+  };
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(1, Math.trunc(parsed));
+}
+
+function positiveNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function numberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const parsed = typeof item === 'number' ? item : Number.parseInt(String(item ?? ''), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? [Math.trunc(parsed)] : [];
+  });
+}
+
+function arrayOfRecords(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function normalizePoint(value: unknown, fallback: { x: number; y: number }): { x: number; y: number } {
+  if (!isRecord(value)) return fallback;
+  const x = typeof value.x === 'number' ? value.x : Number(value.x);
+  const y = typeof value.y === 'number' ? value.y : Number(value.y);
+  return {
+    x: Number.isFinite(x) ? x : fallback.x,
+    y: Number.isFinite(y) ? y : fallback.y,
+  };
+}
+
+function normalizeAliases(value: unknown, name: string, chapterIntroduced: number): Alias[] {
+  const aliases = Array.isArray(value)
+    ? value.flatMap((item): Alias[] => {
+      if (typeof item === 'string' && item.trim()) {
+        return [{ name: item.trim(), chapterRevealed: chapterIntroduced }];
+      }
+      if (isRecord(item)) {
+        const alias = stringValue(item.name);
+        if (alias) return [{ name: alias, chapterRevealed: positiveInt(item.chapterRevealed ?? item.chapter, chapterIntroduced) }];
+      }
+      return [];
+    })
+    : [];
+  return aliases.length ? aliases : [{ name, chapterRevealed: chapterIntroduced }];
+}
+
+function normalizeRoleReveals(value: unknown): Character['roleReveals'] {
+  const reveals = arrayOfRecords(value).flatMap((item) => {
+    const role = stringValue(item.role);
+    if (!role) return [];
+    return [{ role, chapterRevealed: positiveInt(item.chapterRevealed ?? item.chapter, 1) }];
+  });
+  return reveals.length ? reveals : undefined;
+}
+
+function normalizeCertainty(value: unknown): CertaintyLevel {
+  const normalized = stringValue(value);
+  return normalized && CERTAINTY_LEVELS.includes(normalized as CertaintyLevel)
+    ? normalized as CertaintyLevel
+    : 'suspected';
+}
+
+function normalizeStickyNoteColor(value: unknown): StickyNoteColor {
+  const normalized = stringValue(value);
+  return normalized && STICKY_NOTE_COLORS.includes(normalized as StickyNoteColor)
+    ? normalized as StickyNoteColor
+    : 'yellow';
+}
+
+function normalizeGroupRangeColor(value: unknown): GroupRangeColor {
+  const normalized = stringValue(value);
+  return normalized && GROUP_RANGE_COLORS.includes(normalized as GroupRangeColor)
+    ? normalized as GroupRangeColor
+    : 'blue';
+}
+
+function resolveCharacterRef(value: unknown, lookup: Map<string, string>): string | undefined {
+  const ref = stringValue(value);
+  return ref ? lookup.get(ref) : undefined;
+}
+
+function uniqueId(value: string, used: Set<string>): string {
+  const base = slugify(value) ?? 'item';
+  let candidate = base;
+  let index = 2;
+  while (used.has(candidate)) {
+    candidate = `${base}-${index}`;
+    index++;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+function slugify(value: string): string | undefined {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || undefined;
+}
+
+function defaultCharacterPosition(index: number): { x: number; y: number } {
+  return { x: (index % 4) * 260, y: Math.floor(index / 4) * 190 };
+}
+
+function defaultNotePosition(index: number): { x: number; y: number } {
+  return { x: 40 + (index % 2) * 320, y: 360 + Math.floor(index / 2) * 190 };
+}
+
+function defaultGroupPosition(index: number): { x: number; y: number } {
+  return { x: -60 + (index % 2) * 580, y: -70 + Math.floor(index / 2) * 380 };
+}
+
 export async function exportBookAsJson(bookId: string): Promise<CalabashExport> {
   const book = await db.books.get(bookId);
   if (!book) throw new Error(`Book ${bookId} not found`);
@@ -128,20 +470,21 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
   };
 }
 
-export async function importBookFromJson(payload: CalabashExport, userId?: string): Promise<string> {
+export async function importBookFromJson(payload: unknown, userId?: string): Promise<string> {
+  const portablePayload = normalizeBookImportPayload(payload);
   const now = Date.now();
   const newBookId = crypto.randomUUID();
   const charIdMap = new Map<string, string>();
   const portraitIdMap = new Map<string, string>();
 
-  const newPortraits = (payload.portraits ?? []).map((p) => {
+  const newPortraits = (portablePayload.portraits ?? []).map((p) => {
     const newId = crypto.randomUUID();
     portraitIdMap.set(p.id, newId);
     const { buffer, mimeType } = dataUrlToBuffer(p.dataUrl);
     return { id: newId, bookId: newBookId, blobBuffer: buffer, mimeType, createdAt: now };
   });
 
-  const newCharacters = payload.characters.map((c) => {
+  const newCharacters = portablePayload.characters.map((c) => {
     const newId = crypto.randomUUID();
     charIdMap.set(c.id, newId);
     return {
@@ -154,7 +497,7 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
     };
   });
 
-  const newRelationships = payload.relationships.map((r) => ({
+  const newRelationships = portablePayload.relationships.map((r) => ({
     ...r,
     id: crypto.randomUUID(),
     bookId: newBookId,
@@ -164,7 +507,7 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
     updatedAt: now,
   }));
 
-  const newAnnotations = (payload.annotations ?? []).map((annotation) => ({
+  const newAnnotations = (portablePayload.annotations ?? []).map((annotation) => ({
     ...normalizeStickyNote(annotation),
     id: crypto.randomUUID(),
     bookId: newBookId,
@@ -172,7 +515,7 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
     updatedAt: now,
   }));
 
-  const newGroupRanges = (payload.groupRanges ?? []).map((range) => ({
+  const newGroupRanges = (portablePayload.groupRanges ?? []).map((range) => ({
     ...normalizeGroupRange(range),
     id: crypto.randomUUID(),
     bookId: newBookId,
@@ -182,13 +525,13 @@ export async function importBookFromJson(payload: CalabashExport, userId?: strin
 
   await db.transaction('rw', [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges], async () => {
     await db.books.put({
-      ...payload.book,
+      ...portablePayload.book,
       id: newBookId,
       userId,
       categoryId: undefined,
-      spoilerShield: payload.book.spoilerShield ?? false,
-      spoilerChapters: payload.book.spoilerChapters ?? [],
-      highlightedChapters: payload.book.highlightedChapters ?? [],
+      spoilerShield: portablePayload.book.spoilerShield ?? false,
+      spoilerChapters: portablePayload.book.spoilerChapters ?? [],
+      highlightedChapters: portablePayload.book.highlightedChapters ?? [],
       createdAt: now,
       updatedAt: now,
     });

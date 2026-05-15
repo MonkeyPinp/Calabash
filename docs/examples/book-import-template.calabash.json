@@ -1,0 +1,85 @@
+{
+  "calabashVersion": "0.2.1",
+  "importType": "book",
+  "book": {
+    "title": "Example Mystery Night",
+    "author": "Table Host",
+    "totalChapters": 6,
+    "currentChapter": 1,
+    "highlightedChapters": [2, 4]
+  },
+  "characters": [
+    {
+      "key": "detective",
+      "name": "Detective Lin",
+      "role": "detective",
+      "profession": "Private investigator",
+      "chapterIntroduced": 1,
+      "aliases": ["Lin"],
+      "notes": "The reader/player viewpoint character.",
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "key": "host",
+      "name": "Morgan Vale",
+      "role": "victim",
+      "profession": "Club owner",
+      "chapterIntroduced": 1,
+      "notes": "Found dead before dinner.",
+      "position": { "x": 300, "y": 0 }
+    },
+    {
+      "key": "heir",
+      "name": "Ada Vale",
+      "role": "suspect",
+      "profession": "Singer",
+      "chapterIntroduced": 1,
+      "aliases": [
+        { "name": "The Nightingale", "chapterRevealed": 2 }
+      ],
+      "position": { "x": 600, "y": 0 }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "detective",
+      "target": "host",
+      "type": "investigation",
+      "label": "investigates death",
+      "certainty": "confirmed",
+      "chapterRevealed": 1,
+      "directed": true
+    },
+    {
+      "source": "heir",
+      "target": "host",
+      "type": "family",
+      "label": "daughter",
+      "certainty": "confirmed",
+      "chapterRevealed": 1,
+      "directed": false
+    }
+  ],
+  "notes": [
+    {
+      "content": "Ch. 01: Use this JSON as a starter. Replace names, roles, relationships, notes, and chapters.",
+      "chapterIntroduced": 1,
+      "color": "yellow",
+      "fontSize": 14,
+      "position": { "x": 0, "y": 260 },
+      "width": 360,
+      "height": 150
+    }
+  ],
+  "groups": [
+    {
+      "label": "Club circle",
+      "chapterIntroduced": 1,
+      "color": "blue",
+      "labelFontSize": 24,
+      "position": { "x": -80, "y": -80 },
+      "width": 760,
+      "height": 260
+    }
+  ]
+}

@@ -76,4 +76,58 @@ describe('BookList', () => {
     expect(useBookStore.getState().activeBookId).toBe(book.id);
     expect(useGraphStore.getState().characters).toEqual([character]);
   });
+
+  it('asks how to start a new book before showing the blank form', async () => {
+    render(<BookList />);
+
+    fireEvent.click(screen.getByLabelText('New book or category'));
+    fireEvent.click(screen.getByText('Book'));
+
+    expect(screen.getByText('Start from scratch')).toBeInTheDocument();
+    expect(screen.getByText('Import book JSON')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Start from scratch'));
+    expect(screen.getByPlaceholderText('Title')).toBeInTheDocument();
+  });
+
+  it('imports a single-book JSON from the new-book choice', async () => {
+    const { container } = render(<BookList />);
+    fireEvent.click(screen.getByLabelText('New book or category'));
+    fireEvent.click(screen.getByText('Book'));
+
+    const file = new File([
+      JSON.stringify({
+        importType: 'book',
+        book: { title: 'Imported Party Case', totalChapters: 3 },
+        characters: [
+          { key: 'host', name: 'Host', role: 'victim' },
+          { key: 'guest', name: 'Guest', role: 'suspect' },
+        ],
+        relationships: [
+          { source: 'guest', target: 'host', type: 'motive', certainty: 'suspected' },
+        ],
+      }),
+    ], 'case.calabash.json', { type: 'application/json' });
+    Object.defineProperty(file, 'text', {
+      value: () => Promise.resolve(JSON.stringify({
+        importType: 'book',
+        book: { title: 'Imported Party Case', totalChapters: 3 },
+        characters: [
+          { key: 'host', name: 'Host', role: 'victim' },
+          { key: 'guest', name: 'Guest', role: 'suspect' },
+        ],
+        relationships: [
+          { source: 'guest', target: 'host', type: 'motive', certainty: 'suspected' },
+        ],
+      })),
+    });
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText('Imported Party Case')).toBeInTheDocument());
+    expect(useBookStore.getState().activeBookId).toBeTruthy();
+    expect(await db.characters.count()).toBe(2);
+    expect(await db.relationships.count()).toBe(1);
+  });
 });

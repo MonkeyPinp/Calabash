@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Upload } from 'lucide-react';
 import type { Book, Category } from '@/types';
 import { listBooks, createBook, updateBook, deleteBook, getBook } from '@/db/books';
 import { createCategory, deleteCategory, listCategories, updateCategory } from '@/db/categories';
+import { importBookFromJson } from '@/db/importExport';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
 import { useUserStore } from '@/stores/userStore';
@@ -120,6 +121,7 @@ export default function BookList() {
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showBookStartChoice, setShowBookStartChoice] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -139,6 +141,7 @@ export default function BookList() {
 
   const newTitleRef = useRef<HTMLInputElement>(null);
   const newCategoryRef = useRef<HTMLInputElement>(null);
+  const importBookRef = useRef<HTMLInputElement>(null);
   const renameBookRef = useRef<HTMLInputElement>(null);
   const renameCategoryRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +222,30 @@ export default function BookList() {
     setSpoilerChapters([]);
     setHighlightedChapters([]);
     clearGraphSelection();
+  }
+
+  async function handleImportBookFile(file: File) {
+    if (!activeUserId) return;
+    try {
+      const payload = JSON.parse(await file.text()) as unknown;
+      const newBookId = await importBookFromJson(payload, activeUserId);
+      const book = await getBook(newBookId);
+      setShowBookStartChoice(false);
+      setShowNewForm(false);
+      setShowCreateMenu(false);
+      await refresh();
+      setActiveBook(newBookId);
+      if (book) {
+        setCurrentChapter(book.currentChapter);
+        setTotalChapters(book.totalChapters);
+        setSpoilerShield(book.spoilerShield);
+        setSpoilerChapters(book.spoilerChapters);
+        setHighlightedChapters(book.highlightedChapters);
+      }
+      clearGraphSelection();
+    } catch {
+      alert(t('app.invalidImport'));
+    }
   }
 
   async function handleCreateCategory() {
@@ -382,6 +409,7 @@ export default function BookList() {
           aria-label={t('sidebar.newBookOrCategory')}
           onClick={() => {
             setShowCreateMenu((open) => !open);
+            setShowBookStartChoice(false);
             setShowNewForm(false);
             setShowNewCategoryForm(false);
           }}
@@ -402,7 +430,7 @@ export default function BookList() {
         </button>
       </div>
 
-      {showCreateMenu && !showNewForm && !showNewCategoryForm && (
+      {showCreateMenu && !showBookStartChoice && !showNewForm && !showNewCategoryForm && (
         <div
           style={{
             margin: '0 12px 8px',
@@ -415,7 +443,7 @@ export default function BookList() {
             background: 'var(--bg-canvas)',
           }}
         >
-          <button type="button" onClick={() => { setShowNewForm(true); setShowCreateMenu(false); }} style={menuActionStyle}>
+          <button type="button" onClick={() => { setShowBookStartChoice(true); setShowCreateMenu(false); }} style={menuActionStyle}>
             {t('sidebar.book')}
           </button>
           <button type="button" onClick={() => { setShowNewCategoryForm(true); setShowCreateMenu(false); }} style={menuActionStyle}>
@@ -427,6 +455,39 @@ export default function BookList() {
           <button type="button" onClick={() => void handleSeedTutorial('hida')} style={secondaryMenuActionStyle}>
             {t('sidebar.createTutorial')}
           </button>
+        </div>
+      )}
+
+      {showBookStartChoice && (
+        <div style={{ margin: '0 12px 8px', padding: 8, border: '1px solid var(--ink-200)', borderRadius: 5, background: 'var(--bg-canvas)', display: 'grid', gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowBookStartChoice(false);
+              setShowNewForm(true);
+            }}
+            style={choiceButtonStyle}
+          >
+            {t('sidebar.startFromScratch')}
+          </button>
+          <button type="button" onClick={() => importBookRef.current?.click()} style={choiceButtonStyle}>
+            <Upload size={12} />
+            {t('sidebar.importSingleBook')}
+          </button>
+          <button type="button" onClick={() => setShowBookStartChoice(false)} style={secondaryFormButtonStyle}>
+            {t('sidebar.cancel')}
+          </button>
+          <input
+            ref={importBookRef}
+            type="file"
+            accept="application/json,.json,.calabash.json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleImportBookFile(file);
+              e.target.value = '';
+            }}
+          />
         </div>
       )}
 
@@ -857,6 +918,21 @@ const secondaryMenuActionStyle: React.CSSProperties = {
   color: 'var(--ink-600)',
   cursor: 'pointer',
   opacity: 0.78,
+};
+
+const choiceButtonStyle: React.CSSProperties = {
+  minHeight: 32,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  padding: '6px 8px',
+  fontSize: 12.5,
+  background: 'var(--bg-panel)',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 4,
+  color: 'var(--ink-800)',
+  cursor: 'pointer',
 };
 
 const compactInputStyle: React.CSSProperties = {

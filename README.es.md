@@ -6,7 +6,7 @@
 
 > Un tablero de relaciones sin spoilers para lectores de misterio.
 
-[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.2.0`
+[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.2.1`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · **Español** · [Português (Brasil)](README.pt-BR.md)
 
@@ -33,10 +33,11 @@ Calabash es deliberadamente manual. No extrae personajes automáticamente, no re
 - **Certeza de relaciones**: marca conexiones como confirmadas, sospechadas o descartadas.
 - **Campos abiertos**: los roles y tipos de relación son sugerencias, no límites.
 - **Notas y grupos**: guarda pistas cerca del tablero y dibuja regiones de grupo detrás de los personajes.
+- **Importaciones iniciales**: empieza un libro desde un JSON de libro, con una plantilla amigable para LLM.
 - **Biblioteca local**: guarda libros en IndexedDB y respáldalos con Exportar/Importar.
 - **Tutoriales incluidos**: prueba *The Murder of Roger Ackroyd* o *Hida Trick House Murder Case*.
 - **Interfaz multilingüe**: inglés, chino simplificado, español y portugués de Brasil.
-- **Beta de escritorio**: `v0.2.0` publica binarios simples sin firma para Windows, macOS y Linux.
+- **Beta de escritorio**: `v0.2.1` publica binarios simples sin firma para Windows, macOS y Linux, con verificación de versiones en la app.
 
 ## Datos Y Privacidad
 
@@ -103,7 +104,7 @@ El roadmap del producto no se mantiene dentro del repositorio público. La plani
 
 ## Versión
 
-Calabash usa versionado beta `0.x`. `0.1.3` refuerza los avisos de almacenamiento beta, la cobertura con fixture de importación/exportación y la validación de release. `0.2.0` se centra en el shell de escritorio, la configuración de binarios multiplataforma, el selector de idioma inicial, notas/grupos visibles por capítulo, arreglos de renderizado de relaciones y anotaciones ajustables del tablero.
+Calabash usa versionado beta `0.x`. `0.1.3` refuerza los avisos de almacenamiento beta, la cobertura con fixture de importación/exportación y la validación de release. `0.2.0` se centra en el shell de escritorio, la configuración de binarios multiplataforma, el selector de idioma inicial, notas/grupos visibles por capítulo, arreglos de renderizado de relaciones y anotaciones ajustables del tablero. `0.2.1` agrega verificación de versiones en Settings e importación de JSON de un solo libro para iniciar casos más rápido.
 
 ## License
 

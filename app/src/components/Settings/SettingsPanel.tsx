@@ -16,6 +16,7 @@ import { useT } from '@/i18n';
 import CalabashLogo from '@/components/Brand/CalabashLogo';
 import type { TutorialKind } from '@/lib/demoData';
 import { APP_VERSION } from '@/version';
+import { checkForCalabashUpdate, type UpdateCheckResult } from '@/lib/updateCheck';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const STUDIO_URL = 'https://guesswhat.studio';
@@ -45,6 +46,13 @@ export default function SettingsPanel({
   const renameProfile = useUserStore((s) => s.renameProfile);
 
   const [renameValue, setRenameValue] = useState('');
+  const [updateState, setUpdateState] = useState<
+    | { status: 'idle' }
+    | { status: 'checking' }
+    | { status: 'current'; result: UpdateCheckResult }
+    | { status: 'available'; result: Extract<UpdateCheckResult, { status: 'available' }> }
+    | { status: 'error' }
+  >({ status: 'idle' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeUser = users.find((user) => user.id === activeUserId) ?? null;
 
@@ -70,6 +78,38 @@ export default function SettingsPanel({
     if (!activeUser || !renameValue.trim() || renameValue.trim() === activeUser.name) return;
     await renameProfile(activeUser.id, renameValue);
   }
+
+  async function handleUpdateAction() {
+    if (updateState.status === 'available') {
+      const url = updateState.result.assetUrl ?? updateState.result.releaseUrl;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setUpdateState({ status: 'checking' });
+    try {
+      const result = await checkForCalabashUpdate();
+      setUpdateState(result.status === 'available' ? { status: 'available', result } : { status: 'current', result });
+    } catch {
+      setUpdateState({ status: 'error' });
+    }
+  }
+
+  const updateButtonLabel = (() => {
+    if (updateState.status === 'checking') return t('settings.checkingUpdates');
+    if (updateState.status === 'available') return t('settings.downloadUpdate', { version: updateState.result.latestVersion });
+    if (updateState.status === 'current') return t('settings.updates');
+    return t('settings.checkForUpdates');
+  })();
+
+  const updateMessage = (() => {
+    if (updateState.status === 'available') {
+      return t('settings.updateAvailable', { version: updateState.result.latestVersion });
+    }
+    if (updateState.status === 'current') return t('settings.updateCurrent');
+    if (updateState.status === 'error') return t('settings.updateError');
+    return t('settings.updatesHint');
+  })();
 
   return (
     <div
@@ -215,10 +255,20 @@ export default function SettingsPanel({
                 <Github size={13} />
                 GitHub
               </a>
-              <button type="button" disabled title={t('settings.updatesHint')} style={{ ...actionButtonStyle(true), flex: 1 }}>
-                {t('settings.updates')}
+              <button
+                type="button"
+                disabled={updateState.status === 'checking'}
+                title={updateMessage}
+                onClick={() => void handleUpdateAction()}
+                style={{ ...actionButtonStyle(updateState.status === 'checking'), flex: 1 }}
+              >
+                {updateState.status === 'available' ? <Download size={13} /> : null}
+                {updateButtonLabel}
               </button>
             </div>
+            <p style={{ margin: '8px 0 0', color: updateState.status === 'error' ? 'var(--accent)' : 'var(--ink-500)', fontSize: 11.5, lineHeight: 1.45 }}>
+              {updateMessage}
+            </p>
           </section>
         </div>
       </div>

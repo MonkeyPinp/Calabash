@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 - 2026-05-15
+
+- Made the Settings update button active: desktop builds can check GitHub Releases, report whether the build is current, and open the matching platform asset or release page when a newer version exists.
+- Added a new-book choice between starting from scratch and importing a single-book JSON file.
+- Added an LLM-friendly single-book import template at `docs/examples/book-import-template.calabash.json`.
+- Added a tolerant single-book import adapter that accepts both Calabash book exports and simplified templates with characters, relationships, notes, and groups.
+
 ## 0.2.0 - 2026-05-14
 
 0.2 prepares Calabash for desktop distribution while keeping the board workflow focused on lightweight case-file annotation rather than heavier membership management.

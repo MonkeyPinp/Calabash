@@ -6,7 +6,7 @@
 
 > A spoiler-safe relationship board for detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.2.0`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.2.1`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -33,10 +33,11 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Relationship certainty**: mark connections as confirmed, suspected, or disproven.
 - **Open text fields**: roles and relationship types are suggestions, not hard limits.
 - **Sticky notes and groups**: keep clues near the board and draw colored group regions behind characters.
+- **Starter imports**: start a new book from a single-book JSON file, including an LLM-friendly template.
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Spanish, and Brazilian Portuguese.
-- **Desktop beta**: `v0.2.0` ships unsigned plain binaries for Windows, macOS, and Linux.
+- **Desktop beta**: `v0.2.1` ships unsigned plain binaries for Windows, macOS, and Linux, with an in-app release checker.
 
 ## Data And Privacy
 
@@ -138,6 +139,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.1.2`: inspector localization polish and simplified character details panel.
 - `0.1.3`: beta-readiness storage warnings, import/export fixture regression coverage, and release validation.
 - `0.2.0`: desktop shell, cross-platform binary release setup, onboarding language selection, chapter-aware notes/groups, relationship rendering fixes, and adjustable board annotations.
+- `0.2.1`: active update checks from Settings and single-book JSON imports for faster case setup.
 
 ## License
 

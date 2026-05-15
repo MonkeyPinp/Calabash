@@ -57,6 +57,62 @@ button.toolbar-btn:disabled {
   cursor: not-allowed !important;
 }
 
+@container (max-width: 1500px) {
+  .top-toolbar .toolbar-label,
+  .top-toolbar .toolbar-shortcut,
+  .top-toolbar .view-mode-label {
+    display: none !important;
+  }
+
+  .top-toolbar button.toolbar-btn,
+  .top-toolbar .view-mode-button {
+    width: 30px !important;
+    min-width: 30px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .top-toolbar .toolbar-primary-btn {
+    width: 34px !important;
+    min-width: 34px !important;
+  }
+
+  .top-toolbar .toolbar-cluster,
+  .top-toolbar .view-mode-cluster {
+    gap: 2px !important;
+  }
+
+  .top-toolbar .toolbar-book-title {
+    flex: 1 1 180px !important;
+    justify-content: flex-start !important;
+    min-width: 96px !important;
+    margin-left: 0 !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .top-toolbar .toolbar-book-name {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .top-toolbar .toolbar-book-author {
+    display: none !important;
+  }
+}
+
+@container (max-width: 720px) {
+  .top-toolbar .view-mode-cluster,
+  .top-toolbar .toolbar-history-cluster,
+  .top-toolbar .toolbar-divider {
+    display: none !important;
+  }
+
+  .top-toolbar .toolbar-book-title {
+    flex-basis: 120px !important;
+  }
+}
+
 @media (max-width: 1080px) {
   .toolbar-book-title {
     flex: 0 1 190px !important;
@@ -73,7 +129,8 @@ button.toolbar-btn:disabled {
 
 @media (max-width: 920px) {
   .toolbar-book-title {
-    display: none !important;
+    display: flex !important;
+    flex: 1 1 110px !important;
   }
 }
 

@@ -122,20 +122,21 @@ function BoardStyleSwitcher({
   ];
 
   return (
-    <div role="group" aria-label={t('app.viewMode')} style={viewModeClusterStyle}>
+    <div role="group" aria-label={t('app.viewMode')} className="view-mode-cluster" style={viewModeClusterStyle}>
       {options.map((option) => {
         const active = value === option.value;
         return (
           <button
             key={option.value}
             type="button"
+            className="view-mode-button"
             aria-pressed={active}
             title={option.label}
             onClick={() => onChange(option.value)}
             style={viewModeButtonStyle(active)}
           >
             {option.icon}
-            <span>{option.label}</span>
+            <span className="view-mode-label">{option.label}</span>
           </button>
         );
       })}
@@ -1046,6 +1047,7 @@ export default function App() {
       >
         {/* Top toolbar */}
         <div
+          className="top-toolbar"
           style={{
             height: 48,
             flexShrink: 0,
@@ -1056,6 +1058,7 @@ export default function App() {
             gap: 8,
             padding: '0 12px',
             zIndex: 1,
+            containerType: 'inline-size',
           }}
         >
           {/* Sidebar toggle */}
@@ -1075,17 +1078,18 @@ export default function App() {
             <PanelLeft size={15} />
           </button>
 
-          <div style={toolbarClusterStyle}>
+          <div className="toolbar-cluster" style={toolbarClusterStyle}>
             <button
-              className="toolbar-btn"
+              className="toolbar-btn toolbar-primary-btn"
               onClick={() => setNewCharacterRequestId((id) => id + 1)}
               disabled={!activeBookId}
               title={`${t('app.addCharacter')} (N)`}
               style={primaryToolbarBtnStyle}
             >
               <UserPlus size={13} />
-              {t('app.addCharacter')}
+              <span className="toolbar-label">{t('app.addCharacter')}</span>
               <span
+                className="toolbar-shortcut"
                 style={{
                   marginLeft: 2,
                   padding: '1px 5px',
@@ -1110,7 +1114,7 @@ export default function App() {
               style={{ ...toolbarBtnStyle, border: 'none' }}
             >
               <StickyNote size={13} />
-              {t('app.note')}
+              <span className="toolbar-label">{t('app.note')}</span>
             </button>
 
             <button
@@ -1121,7 +1125,7 @@ export default function App() {
               style={{ ...toolbarBtnStyle, border: 'none' }}
             >
               <CircleDashed size={13} />
-              {t('app.range')}
+              <span className="toolbar-label">{t('app.range')}</span>
             </button>
 
             <button
@@ -1132,7 +1136,7 @@ export default function App() {
               style={{ ...toolbarBtnStyle, border: 'none' }}
             >
               <ImageIcon size={13} />
-              {t('app.image')}
+              <span className="toolbar-label">{t('app.image')}</span>
             </button>
             <input
               ref={evidenceImageInputRef}
@@ -1147,7 +1151,7 @@ export default function App() {
             />
           </div>
 
-          <div style={historyClusterStyle}>
+          <div className="toolbar-history-cluster" style={historyClusterStyle}>
             {/* Undo */}
             <button
               className="toolbar-btn"
@@ -1189,9 +1193,11 @@ export default function App() {
               marginLeft: 8,
               padding: '0 20px',
               pointerEvents: 'none',
+              overflow: 'hidden',
             }}
           >
             <span
+              className="toolbar-book-name"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 15,
@@ -1232,10 +1238,11 @@ export default function App() {
             onClick={() => void layoutRef.current?.()}
             disabled={!activeBookId}
             title="Auto-layout — rearrange all visible nodes"
+            data-toolbar-action="layout"
             style={toolbarBtnStyle}
           >
             <LayoutGrid size={13} />
-            {t('app.layout')}
+            <span className="toolbar-label">{t('app.layout')}</span>
           </button>
 
           {/* Spoiler Shield */}
@@ -1260,10 +1267,10 @@ export default function App() {
             }}
           >
             {shieldButtonGuarding ? <ShieldOff size={13} /> : <Shield size={13} />}
-            {t('app.shield')}
+            <span className="toolbar-label">{t('app.shield')}</span>
           </button>
 
-          <div style={dividerStyle} />
+          <div className="toolbar-divider" style={dividerStyle} />
 
           {/* Inspector toggle */}
           <button

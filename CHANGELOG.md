@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2026-05-16
+
+- Fixed compact toolbar behavior so narrow boards keep the book title and inspector toggle visible.
+- Collapsed toolbar button labels into icon-only controls when horizontal space is tight.
+- Bumped web, desktop, import/export, and template metadata to `0.3.1`.
+
 ## 0.3.0 - 2026-05-15
 
 - Added chapter-aware illustrations for floor plans, screenshots, and other visual references, including upload, clipboard paste, drag/resize, preview, and background/board layering.

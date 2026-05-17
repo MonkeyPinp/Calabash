@@ -1,5 +1,6 @@
 import { db, type PortraitRow } from './schema';
 import { makeUniqueBookTitle } from './books';
+import { findOrCreateCategory } from './categories';
 import type {
   Alias,
   Book,
@@ -60,7 +61,18 @@ export interface CalabashExport {
 
 export interface CalabashBookImportTemplate {
   calabashVersion?: string;
+  calabashTemplateVersion?: number;
   importType?: 'book';
+  template?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    language?: string;
+    category?: string;
+    defaultViewMode?: 'text' | 'portrait';
+    tags?: string[];
+    exportedAt?: number;
+  };
   book: {
     id?: string;
     title: string;
@@ -106,6 +118,15 @@ export interface CalabashLibraryExport {
 export interface ImportLibraryResult {
   activeUserId?: string;
   activeBookId?: string;
+}
+
+export interface CalabashTemplateExport extends CalabashBookImportTemplate {
+  calabashTemplateVersion: 1;
+  template: NonNullable<CalabashBookImportTemplate['template']> & {
+    id: string;
+    title: string;
+    exportedAt: number;
+  };
 }
 
 function bufferToDataUrl(buffer: ArrayBuffer, mimeType: string): string {
@@ -342,7 +363,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     ...groupRanges.map((group) => group.chapterIntroduced),
     ...evidenceImages.map((image) => image.chapterIntroduced),
   );
-  const totalChapters = positiveInt(bookInput.totalChapters, maxMentionedChapter);
+  const totalChapters = Math.max(positiveInt(bookInput.totalChapters, maxMentionedChapter), maxMentionedChapter);
 
   return {
     calabashVersion: stringValue(payload.calabashVersion) ?? CALABASH_VERSION,
@@ -549,6 +570,101 @@ export async function exportBookAsJson(bookId: string): Promise<CalabashExport> 
   };
 }
 
+export async function exportBookTemplateAsJson(bookId: string): Promise<CalabashTemplateExport> {
+  const data = await exportBookAsJson(bookId);
+  const category = data.book.categoryId ? await db.categories.get(data.book.categoryId) : undefined;
+  const exportedAt = Date.now();
+  const templateId = slugify(data.book.title) ?? 'calabash-template';
+
+  return {
+    calabashVersion: CALABASH_VERSION,
+    calabashTemplateVersion: 1,
+    template: {
+      id: templateId,
+      title: data.book.title,
+      description: data.book.author,
+      category: category?.name,
+      exportedAt,
+    },
+    book: {
+      title: data.book.title,
+      author: data.book.author,
+      totalChapters: data.book.totalChapters,
+      currentChapter: data.book.currentChapter,
+      spoilerShield: data.book.spoilerShield,
+      spoilerChapters: data.book.spoilerChapters,
+      highlightedChapters: data.book.highlightedChapters,
+      openClues: (data.book.openClues ?? []).map((clue) => ({
+        text: clue.text,
+        status: clue.status,
+        chapterIntroduced: clue.chapterIntroduced,
+      })),
+    },
+    characters: data.characters.map((character) => ({
+      id: character.id,
+      name: character.name,
+      kind: character.kind,
+      aliases: character.aliases,
+      role: character.role,
+      roleReveals: character.roleReveals,
+      profession: character.profession,
+      socialPosition: character.socialPosition,
+      notes: character.notes,
+      chapterIntroduced: character.chapterIntroduced,
+      position: character.position,
+      locked: character.locked,
+    })),
+    relationships: data.relationships.map((relationship) => ({
+      id: relationship.id,
+      sourceId: relationship.sourceId,
+      targetId: relationship.targetId,
+      type: relationship.type,
+      directed: relationship.directed,
+      label: relationship.label,
+      notes: relationship.notes,
+      chapterRevealed: relationship.chapterRevealed,
+      certainty: relationship.certainty,
+    })),
+    notes: (data.annotations ?? []).map((note) => ({
+      id: note.id,
+      content: note.content,
+      position: note.position,
+      width: note.width,
+      height: note.height,
+      color: note.color,
+      fontSize: note.fontSize,
+      chapterIntroduced: note.chapterIntroduced,
+      locked: note.locked,
+    })),
+    groups: (data.groupRanges ?? []).map((group) => ({
+      id: group.id,
+      label: group.label,
+      position: group.position,
+      width: group.width,
+      height: group.height,
+      color: group.color,
+      labelFontSize: group.labelFontSize,
+      labelPosition: group.labelPosition,
+      chapterIntroduced: group.chapterIntroduced,
+      locked: group.locked,
+    })),
+    evidenceImages: (data.illustrations ?? []).map((image) => ({
+      id: image.id,
+      title: image.title,
+      notes: image.notes,
+      kind: image.kind,
+      layer: image.layer,
+      dataUrl: image.dataUrl,
+      mimeType: image.mimeType,
+      position: image.position,
+      width: image.width,
+      height: image.height,
+      chapterIntroduced: image.chapterIntroduced,
+      locked: image.locked,
+    })),
+  };
+}
+
 export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
   const [users, categories, books, characters, relationships, portraitRows, annotations, groupRanges, evidenceImages] = await Promise.all([
     db.users.toArray(),
@@ -587,6 +703,9 @@ export async function exportLibraryAsJson(): Promise<CalabashLibraryExport> {
 
 export async function importBookFromJson(payload: unknown, userId?: string): Promise<string> {
   const portablePayload = normalizeBookImportPayload(payload);
+  const templateCategory = isRecord(payload) && isRecord(payload.template)
+    ? stringValue(payload.template.category)
+    : undefined;
   const now = Date.now();
   const newBookId = crypto.randomUUID();
   const title = await makeUniqueBookTitle(portablePayload.book.title, userId);
@@ -667,6 +786,11 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
     if (newGroupRanges.length)   await db.groupRanges.bulkAdd(newGroupRanges);
     if (newEvidenceImages.length) await db.evidenceImages.bulkAdd(newEvidenceImages);
   });
+
+  if (templateCategory) {
+    const category = await findOrCreateCategory({ name: templateCategory, userId });
+    await db.books.update(newBookId, { categoryId: category.id, updatedAt: Date.now() });
+  }
 
   return newBookId;
 }

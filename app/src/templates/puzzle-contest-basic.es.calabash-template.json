@@ -1,0 +1,52 @@
+{
+  "calabashVersion": "0.5.2",
+  "calabashTemplateVersion": 1,
+  "template": {
+    "id": "puzzle-contest-basic",
+    "title": "Plantilla para acertijo / concurso de misterio",
+    "description": "Tablero en blanco de cinco zonas para concursos de misterio.",
+    "language": "es",
+    "category": "Plantillas",
+    "defaultViewMode": "text",
+    "tags": ["puzzle", "contest", "mystery"]
+  },
+  "book": {
+    "title": "Plantilla para acertijo / concurso de misterio",
+    "author": "Tablero de caso en blanco",
+    "totalChapters": 1,
+    "currentChapter": 1,
+    "spoilerShield": false,
+    "highlightedChapters": [1],
+    "openClues": [
+      "¿Quién tiene motivo, medios y oportunidad a la vez?",
+      "¿Qué afirmación de la cronología no puede ser cierta?",
+      "¿La respuesta final explica todos los detalles extraños?"
+    ]
+  },
+  "characters": [
+    { "id": "suspect-a", "name": "Sospechoso A", "kind": "character", "role": "suspect", "profession": "Renombra y añade motivo, oportunidad, coartada y contradicciones.", "chapterIntroduced": 1, "position": { "x": -1100, "y": -300 } },
+    { "id": "suspect-b", "name": "Sospechoso B", "kind": "character", "role": "suspect", "profession": "Renombra y añade motivo, oportunidad, coartada y contradicciones.", "chapterIntroduced": 1, "position": { "x": -1100, "y": -160 } },
+    { "id": "witness", "name": "Testigo / narrador", "kind": "testimony", "role": "witness", "profession": "Úsalo para testimonios, narración o fuentes cuya fiabilidad importe.", "chapterIntroduced": 1, "position": { "x": -1100, "y": -20 } },
+    { "id": "key-location", "name": "Lugar clave", "kind": "location", "role": "other", "profession": "Los nodos de lugar o habitación sirven para planos y rutas.", "chapterIntroduced": 1, "position": { "x": -440, "y": -300 } },
+    { "id": "key-evidence", "name": "Prueba clave", "kind": "item", "role": "other", "profession": "Los nodos de objeto sirven para pruebas físicas, documentos o piezas del acertijo.", "chapterIntroduced": 1, "position": { "x": -440, "y": -160 } }
+  ],
+  "relationships": [
+    { "id": "conflict", "sourceId": "suspect-a", "targetId": "suspect-b", "type": "hostile", "chapterRevealed": 1, "certainty": "suspected", "label": "conflicto?" },
+    { "id": "access", "sourceId": "suspect-a", "targetId": "key-evidence", "type": "suspicion", "chapterRevealed": 1, "certainty": "suspected", "label": "acceso?" },
+    { "id": "alibi", "sourceId": "witness", "targetId": "key-location", "type": "other", "chapterRevealed": 1, "certainty": "suspected", "label": "dice estar en" }
+  ],
+  "groups": [
+    { "id": "people", "label": "Personas", "color": "blue", "position": { "x": -1180, "y": -470 }, "width": 620, "height": 900, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.12 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "clues", "label": "Pistas", "color": "green", "position": { "x": -500, "y": -470 }, "width": 780, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "timeline", "label": "Cronología", "color": "violet", "position": { "x": -500, "y": 10 }, "width": 780, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "suspicions", "label": "Sospechas", "color": "red", "position": { "x": 340, "y": -470 }, "width": 760, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "final", "label": "Deducción final", "color": "ochre", "position": { "x": 340, "y": 10 }, "width": 760, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true }
+  ],
+  "notes": [
+    { "id": "people-note", "content": "Renombra estos marcadores como sospechosos y testigos. Usa la barra derecha para motivo, oportunidad, coartada, contradicciones y notas.", "position": { "x": -820, "y": -300 }, "width": 280, "height": 310, "color": "blue", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "clues-note", "content": "Pon lugares, habitaciones, pruebas y fichas de pista aquí.\n\nFicha de pista\nFuente / cita:\nHecho observado:\nFiabilidad:\nSeñala a:\nContradice:", "position": { "x": -185, "y": -345 }, "width": 420, "height": 285, "color": "green", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "timeline-note", "content": "Cronología\nHora:\nQuién estaba dónde:\nAfirmación / prueba:\nConflicto a verificar:", "position": { "x": -265, "y": 145 }, "width": 500, "height": 245, "color": "purple", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "suspicions-note", "content": "Hipótesis\nSi esto es cierto:\nPistas a favor:\nContraindicios:\nQué comprobar después:", "position": { "x": 565, "y": -335 }, "width": 430, "height": 245, "color": "pink", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "final-note", "content": "Borrador de respuesta\nCulpable / método / motivo:\nCadena lógica:\nCómo explica cada rareza:\nDudas restantes:", "position": { "x": 565, "y": 145 }, "width": 430, "height": 245, "color": "yellow", "fontSize": 16, "chapterIntroduced": 1, "locked": true }
+  ]
+}

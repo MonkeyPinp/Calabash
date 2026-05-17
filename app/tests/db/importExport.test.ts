@@ -39,7 +39,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.5.1');
+    expect(json.calabashVersion).toBe('0.5.2');
     expect(json.book.title).toBe('Empty');
     expect(json.book.openClues).toEqual([]);
     expect(json.characters).toEqual([]);
@@ -279,7 +279,7 @@ describe('importExport', () => {
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.5.1');
+    expect(exported.calabashVersion).toBe('0.5.2');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,
@@ -334,6 +334,31 @@ describe('importExport', () => {
     expect(await listAnnotationsByBook(newBookId)).toHaveLength(1);
     expect(await listGroupRangesByBook(newBookId)).toHaveLength(1);
     expect(await listEvidenceImagesByBook(newBookId)).toHaveLength(1);
+  });
+
+  it('raises template total chapters to cover chapter-based content', () => {
+    const normalized = normalizeBookImportPayload({
+      book: {
+        title: 'Short Count Case',
+        totalChapters: 1,
+      },
+      characters: [
+        { key: 'late-witness', name: 'Late Witness', chapterIntroduced: 7 },
+      ],
+      relationships: [],
+      notes: [
+        { content: 'Late note', chapterIntroduced: 9 },
+      ],
+      groups: [
+        { label: 'Late group', chapterIntroduced: 11 },
+      ],
+      clues: [
+        { text: 'Late clue', chapterIntroduced: 13 },
+      ],
+    });
+
+    expect(normalized.book.totalChapters).toBe(13);
+    expect(normalized.book.currentChapter).toBe(1);
   });
 
   it('imports legacy evidenceImages as illustrations', async () => {

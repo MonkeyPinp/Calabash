@@ -1,0 +1,221 @@
+{
+  "calabashVersion": "0.5.2",
+  "calabashTemplateVersion": 1,
+  "template": {
+    "id": "puzzle-contest-basic",
+    "title": "Mystery Puzzle / Contest Template",
+    "description": "A blank five-zone board for mystery puzzle contests.",
+    "language": "en",
+    "category": "Templates",
+    "defaultViewMode": "text",
+    "tags": ["puzzle", "contest", "mystery"]
+  },
+  "book": {
+    "title": "Mystery Puzzle / Contest Template",
+    "author": "Blank case board",
+    "totalChapters": 1,
+    "currentChapter": 1,
+    "spoilerShield": false,
+    "highlightedChapters": [1],
+    "openClues": [
+      "Who had motive, means, and opportunity at the same time?",
+      "Which timeline claim cannot be true with the other clues?",
+      "Does the final answer explain every strange detail?"
+    ]
+  },
+  "characters": [
+    {
+      "id": "suspect-a",
+      "name": "Suspect A",
+      "kind": "character",
+      "role": "suspect",
+      "profession": "Rename and add motive, opportunity, alibi, and contradictions.",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -300 }
+    },
+    {
+      "id": "suspect-b",
+      "name": "Suspect B",
+      "kind": "character",
+      "role": "suspect",
+      "profession": "Rename and add motive, opportunity, alibi, and contradictions.",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -160 }
+    },
+    {
+      "id": "witness",
+      "name": "Witness / narrator",
+      "kind": "testimony",
+      "role": "witness",
+      "profession": "Use for testimony, narration, or a source whose reliability matters.",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -20 }
+    },
+    {
+      "id": "key-location",
+      "name": "Key location",
+      "kind": "location",
+      "role": "other",
+      "profession": "Use location or room nodes for floor plans and movement paths.",
+      "chapterIntroduced": 1,
+      "position": { "x": -440, "y": -300 }
+    },
+    {
+      "id": "key-evidence",
+      "name": "Key evidence",
+      "kind": "item",
+      "role": "other",
+      "profession": "Use item nodes for physical evidence, documents, or puzzle props.",
+      "chapterIntroduced": 1,
+      "position": { "x": -440, "y": -160 }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "conflict",
+      "sourceId": "suspect-a",
+      "targetId": "suspect-b",
+      "type": "hostile",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "conflict?"
+    },
+    {
+      "id": "access",
+      "sourceId": "suspect-a",
+      "targetId": "key-evidence",
+      "type": "suspicion",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "access?"
+    },
+    {
+      "id": "alibi",
+      "sourceId": "witness",
+      "targetId": "key-location",
+      "type": "other",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "claims to be at"
+    }
+  ],
+  "groups": [
+    {
+      "id": "people",
+      "label": "People Table",
+      "color": "blue",
+      "position": { "x": -1180, "y": -470 },
+      "width": 620,
+      "height": 900,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.12 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "clues",
+      "label": "Clues",
+      "color": "green",
+      "position": { "x": -500, "y": -470 },
+      "width": 780,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "timeline",
+      "label": "Timeline",
+      "color": "violet",
+      "position": { "x": -500, "y": 10 },
+      "width": 780,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "suspicions",
+      "label": "Suspicions",
+      "color": "red",
+      "position": { "x": 340, "y": -470 },
+      "width": 760,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "final",
+      "label": "Final Deduction",
+      "color": "ochre",
+      "position": { "x": 340, "y": 10 },
+      "width": 760,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    }
+  ],
+  "notes": [
+    {
+      "id": "people-note",
+      "content": "Rename these placeholders as suspects and witnesses. Use the right sidebar for motive, opportunity, alibi, contradictions, and notes.",
+      "position": { "x": -820, "y": -300 },
+      "width": 280,
+      "height": 310,
+      "color": "blue",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "clues-note",
+      "content": "Put locations, rooms, evidence, and clue cards here.\n\nClue card\nSource / quote:\nObserved fact:\nReliability:\nPoints to:\nContradicts:",
+      "position": { "x": -185, "y": -345 },
+      "width": 420,
+      "height": 285,
+      "color": "green",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "timeline-note",
+      "content": "Timeline row\nTime:\nWho was where:\nClaim / evidence:\nConflict to verify:",
+      "position": { "x": -265, "y": 145 },
+      "width": 500,
+      "height": 245,
+      "color": "purple",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "suspicions-note",
+      "content": "Hypothesis\nIf this is true:\nSupporting clues:\nCounter-clues:\nWhat must be checked next:",
+      "position": { "x": 565, "y": -335 },
+      "width": 430,
+      "height": 245,
+      "color": "pink",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "final-note",
+      "content": "Answer draft\nCulprit / method / motive:\nCore logic chain:\nHow each odd clue is explained:\nRemaining uncertainty:",
+      "position": { "x": 565, "y": 145 },
+      "width": 430,
+      "height": 245,
+      "color": "yellow",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    }
+  ]
+}

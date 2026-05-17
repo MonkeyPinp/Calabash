@@ -1,0 +1,54 @@
+name: Template contribution
+description: Propose a reusable Calabash template for puzzles, contests, books, or cases.
+title: "[Template]: "
+labels: ["template"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping Calabash grow a useful template library.
+        Please attach a `.calabash-template.json` exported from Calabash, or open a PR adding it under `app/src/templates/`.
+  - type: input
+    id: use_case
+    attributes:
+      label: Use case
+      description: What scenario is this template for?
+      placeholder: "Mystery puzzle contest, long novel, drama notes, clue board..."
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Chinese Simplified
+        - Japanese
+        - Spanish
+        - Portuguese
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: structure
+    attributes:
+      label: Template structure
+      description: List the sections, placeholder nodes, and intended workflow.
+      placeholder: "Sections: People, Clues, Timeline..."
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: Template JSON or PR link
+      description: Paste a short snippet, attach the exported file, or link the PR.
+    validations:
+      required: true
+  - type: textarea
+    id: copyright
+    attributes:
+      label: Copyright and spoilers
+      description: Confirm the template contains no copyrighted story text, private data, or unmarked spoilers.
+      placeholder: "This is an original blank template and contains no story spoilers."
+    validations:
+      required: true

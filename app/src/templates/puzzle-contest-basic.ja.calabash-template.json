@@ -1,0 +1,52 @@
+{
+  "calabashVersion": "0.5.2",
+  "calabashTemplateVersion": 1,
+  "template": {
+    "id": "puzzle-contest-basic",
+    "title": "ミステリーパズル / コンテスト用テンプレート",
+    "description": "ミステリーパズルやコンテスト向けの五区画の空ボード。",
+    "language": "ja",
+    "category": "テンプレート",
+    "defaultViewMode": "text",
+    "tags": ["puzzle", "contest", "mystery"]
+  },
+  "book": {
+    "title": "ミステリーパズル / コンテスト用テンプレート",
+    "author": "空の事件ボード",
+    "totalChapters": 1,
+    "currentChapter": 1,
+    "spoilerShield": false,
+    "highlightedChapters": [1],
+    "openClues": [
+      "動機、手段、機会が同時にそろう人物は誰か？",
+      "タイムライン上で同時に成立しない主張はどれか？",
+      "最終解答はすべての奇妙な点を説明できるか？"
+    ]
+  },
+  "characters": [
+    { "id": "suspect-a", "name": "容疑者 A", "kind": "character", "role": "suspect", "profession": "名前を変えて、動機、機会、アリバイ、矛盾点を追加します。", "chapterIntroduced": 1, "position": { "x": -1100, "y": -300 } },
+    { "id": "suspect-b", "name": "容疑者 B", "kind": "character", "role": "suspect", "profession": "名前を変えて、動機、機会、アリバイ、矛盾点を追加します。", "chapterIntroduced": 1, "position": { "x": -1100, "y": -160 } },
+    { "id": "witness", "name": "証人 / 語り手", "kind": "testimony", "role": "witness", "profession": "証言、語り、信頼性が重要な情報源に使います。", "chapterIntroduced": 1, "position": { "x": -1100, "y": -20 } },
+    { "id": "key-location", "name": "重要な場所", "kind": "location", "role": "other", "profession": "場所や部屋ノードは見取り図、移動経路、時間整理に使えます。", "chapterIntroduced": 1, "position": { "x": -440, "y": -300 } },
+    { "id": "key-evidence", "name": "重要な証拠", "kind": "item", "role": "other", "profession": "物品ノードは凶器、書類、パズル道具、重要画像に使えます。", "chapterIntroduced": 1, "position": { "x": -440, "y": -160 } }
+  ],
+  "relationships": [
+    { "id": "conflict", "sourceId": "suspect-a", "targetId": "suspect-b", "type": "hostile", "chapterRevealed": 1, "certainty": "suspected", "label": "対立?" },
+    { "id": "access", "sourceId": "suspect-a", "targetId": "key-evidence", "type": "suspicion", "chapterRevealed": 1, "certainty": "suspected", "label": "接触?" },
+    { "id": "alibi", "sourceId": "witness", "targetId": "key-location", "type": "other", "chapterRevealed": 1, "certainty": "suspected", "label": "そこにいたと主張" }
+  ],
+  "groups": [
+    { "id": "people", "label": "人物表", "color": "blue", "position": { "x": -1180, "y": -470 }, "width": 620, "height": 900, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.12 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "clues", "label": "手がかり", "color": "green", "position": { "x": -500, "y": -470 }, "width": 780, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "timeline", "label": "タイムライン", "color": "violet", "position": { "x": -500, "y": 10 }, "width": 780, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "suspicions", "label": "疑い", "color": "red", "position": { "x": 340, "y": -470 }, "width": 760, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true },
+    { "id": "final", "label": "最終推理", "color": "ochre", "position": { "x": 340, "y": 10 }, "width": 760, "height": 420, "labelFontSize": 32, "labelPosition": { "x": 0.5, "y": 0.16 }, "chapterIntroduced": 1, "locked": true }
+  ],
+  "notes": [
+    { "id": "people-note", "content": "人物表には容疑者と証人を置きます。右サイドバーで動機、機会、アリバイ、矛盾点、メモを記録できます。", "position": { "x": -820, "y": -300 }, "width": 280, "height": 310, "color": "blue", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "clues-note", "content": "場所、部屋、証拠、手がかりカードをここに置きます。\n\n手がかりカード\n出典 / 引用:\n観察された事実:\n信頼性:\n指し示す相手:\n矛盾する点:", "position": { "x": -185, "y": -345 }, "width": 420, "height": 285, "color": "green", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "timeline-note", "content": "タイムライン\n時刻:\n誰がどこにいたか:\n主張 / 証拠:\n確認すべき矛盾:", "position": { "x": -265, "y": 145 }, "width": 500, "height": 245, "color": "purple", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "suspicions-note", "content": "仮説\nこれが正しいなら:\n支持する手がかり:\n反証:\n次に確認すること:", "position": { "x": 565, "y": -335 }, "width": 430, "height": 245, "color": "pink", "fontSize": 16, "chapterIntroduced": 1, "locked": true },
+    { "id": "final-note", "content": "解答草案\n犯人 / 手口 / 動機:\n中心の論理:\n奇妙な手がかりの説明:\n残る不確実性:", "position": { "x": 565, "y": 145 }, "width": 430, "height": 245, "color": "yellow", "fontSize": 16, "chapterIntroduced": 1, "locked": true }
+  ]
+}

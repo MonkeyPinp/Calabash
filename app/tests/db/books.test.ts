@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '@/db/schema';
 import {
+  ChapterTotalTooLowError,
   createBook,
   createOpenClue,
   deleteBook,
@@ -122,6 +123,80 @@ describe('books DAO', () => {
     expect(updated.spoilerChapters).toEqual([2, 5]);
     expect(updated.highlightedChapters).toEqual([3, 8]);
     expect(updated.updatedAt).toBeGreaterThan(book.updatedAt);
+  });
+
+  it('rejects reducing total chapters below the current reading chapter', async () => {
+    const book = await createBook({ title: 'X', totalChapters: 10 });
+    await updateBook(book.id, { currentChapter: 5 });
+
+    await expect(updateBook(book.id, { totalChapters: 1 })).rejects.toMatchObject({
+      name: 'ChapterTotalTooLowError',
+      minimumTotalChapters: 5,
+      requestedTotalChapters: 1,
+    });
+    await expect(updateBook(book.id, { totalChapters: 1 })).rejects.toBeInstanceOf(ChapterTotalTooLowError);
+
+    await expect(getBook(book.id)).resolves.toMatchObject({ currentChapter: 5, totalChapters: 10 });
+  });
+
+  it('rejects reducing total chapters below chapter-based board content', async () => {
+    const book = await createBook({ title: 'X', totalChapters: 20 });
+    const a = await createCharacter({
+      bookId: book.id,
+      name: 'A',
+      role: 'suspect',
+      aliases: [{ name: 'Alias A', chapterRevealed: 7 }],
+      roleReveals: [{ role: 'murderer', chapterRevealed: 8 }],
+      chapterIntroduced: 4,
+    });
+    const b = await createCharacter({
+      bookId: book.id,
+      name: 'B',
+      role: 'witness',
+      chapterIntroduced: 1,
+    });
+    await createRelationship({
+      bookId: book.id,
+      sourceId: a.id,
+      targetId: b.id,
+      type: 'suspicion',
+      chapterRevealed: 9,
+    });
+    await createAnnotation({ bookId: book.id, content: 'late note', chapterIntroduced: 10 });
+    await createGroupRange({ bookId: book.id, label: 'Late group', position: { x: 0, y: 0 }, chapterIntroduced: 11 });
+    await createEvidenceImage({
+      bookId: book.id,
+      title: 'Late floor plan',
+      dataUrl: 'data:image/png;base64,AAECAw==',
+      mimeType: 'image/png',
+      chapterIntroduced: 12,
+    });
+    await createOpenClue({ bookId: book.id, text: 'Late clue', chapterIntroduced: 13 });
+    await updateBook(book.id, { highlightedChapters: [14], spoilerChapters: [15] });
+
+    await expect(updateBook(book.id, { totalChapters: 14 })).rejects.toMatchObject({
+      name: 'ChapterTotalTooLowError',
+      minimumTotalChapters: 15,
+      requestedTotalChapters: 14,
+    });
+    await expect(updateBook(book.id, { totalChapters: 15 })).resolves.toMatchObject({ totalChapters: 15 });
+  });
+
+  it('normalizes legacy books whose current chapter is already above total chapters', async () => {
+    await db.books.put({
+      id: 'legacy',
+      title: 'Legacy',
+      totalChapters: 1,
+      currentChapter: 5,
+      spoilerShield: false,
+      spoilerChapters: [],
+      highlightedChapters: [],
+      openClues: [],
+      createdAt: 1,
+      updatedAt: 1,
+    });
+
+    await expect(getBook('legacy')).resolves.toMatchObject({ currentChapter: 5, totalChapters: 5 });
   });
 
   it('stores open clues on the book row as a pure list', async () => {

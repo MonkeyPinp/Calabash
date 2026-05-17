@@ -18,9 +18,9 @@ import { useBookStore } from './stores/bookStore';
 import { useGraphStore } from './stores/graphStore';
 import { useUiStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
-import { exportLibraryAsJson, importBookFromJson, importLibraryFromJson, isLibraryExport } from './db/importExport';
+import { exportBookTemplateAsJson, exportLibraryAsJson, importBookFromJson, importLibraryFromJson, isLibraryExport } from './db/importExport';
 import GlobalSearch from './components/CommandBar/GlobalSearch';
-import { createBook, getBook, updateBook } from './db/books';
+import { ChapterTotalTooLowError, createBook, getBook, updateBook } from './db/books';
 import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
 import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage } from './db/evidenceImages';
@@ -232,6 +232,15 @@ function titleFromFileName(fileName: string) {
   return fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Illustration';
 }
 
+function slugifyFilePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5ぁ-んァ-ン一-龯]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    || 'case';
+}
+
 function inferEvidenceImageKind(fileName: string): EvidenceImageKind {
   const normalized = fileName.toLowerCase();
   if (/floor|plan|map|layout|平面|地图|地圖/.test(normalized)) return 'floorPlan';
@@ -354,12 +363,22 @@ function EmptyInspectorGuide({
   );
 }
 
+type StarterCardTone = 'default' | 'green' | 'blue' | 'violet' | 'ochre';
+
+const starterCardAccent: Record<StarterCardTone, string> = {
+  default: 'var(--accent)',
+  green: '#4f7d4b',
+  blue: 'var(--role-detective)',
+  violet: '#6f5ca8',
+  ochre: 'var(--role-witness)',
+};
+
 function StarterActionCard({
   icon,
   title,
   body,
   action,
-  primary = false,
+  tone = 'default',
   disabled = false,
   onClick,
 }: {
@@ -367,33 +386,54 @@ function StarterActionCard({
   title: string;
   body: string;
   action: string;
-  primary?: boolean;
+  tone?: StarterCardTone;
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const accent = starterCardAccent[tone];
+  const defaultTone = tone === 'default';
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       style={{
-        minHeight: 156,
-        padding: 16,
+        position: 'relative',
+        minWidth: 0,
+        minHeight: 168,
+        padding: 14,
         display: 'flex',
         flexDirection: 'column',
-        gap: 10,
-        background: primary ? 'var(--ink-900)' : 'var(--bg-panel)',
-        border: primary
-          ? '1px solid var(--ink-900)'
-          : '1px solid var(--ink-200)',
+        gap: 9,
+        background: defaultTone
+          ? 'var(--bg-panel)'
+          : `linear-gradient(180deg, color-mix(in srgb, ${accent} 10%, var(--bg-panel)), var(--bg-panel) 78%)`,
+        border: defaultTone
+          ? '1px solid var(--ink-200)'
+          : `1px solid color-mix(in srgb, ${accent} 42%, var(--ink-200))`,
         borderRadius: 7,
-        boxShadow: primary ? '0 14px 34px rgba(32, 24, 14, 0.14)' : '0 1px 2px rgba(32, 24, 14, 0.04)',
-        color: primary ? 'var(--bg-panel)' : 'var(--ink-900)',
+        boxShadow: defaultTone
+          ? '0 1px 2px rgba(32, 24, 14, 0.04)'
+          : '0 8px 24px -18px rgba(32, 24, 14, 0.36)',
+        color: 'var(--ink-900)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.55 : 1,
         textAlign: 'left',
+        overflow: 'hidden',
       }}
     >
+      {!defaultTone && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: '0 0 auto',
+            height: 3,
+            background: accent,
+          }}
+        />
+      )}
       <span
         aria-hidden="true"
         style={{
@@ -402,23 +442,28 @@ function StarterActionCard({
           display: 'grid',
           placeItems: 'center',
           borderRadius: 5,
-          background: primary ? 'rgba(255,255,255,0.13)' : 'var(--bg-canvas)',
-          border: primary ? '1px solid rgba(255,255,255,0.18)' : '1px solid var(--ink-200)',
-          color: primary ? 'var(--bg-panel)' : 'var(--accent)',
+          background: defaultTone
+            ? 'var(--bg-canvas)'
+            : `color-mix(in srgb, ${accent} 12%, var(--bg-canvas))`,
+          border: defaultTone
+            ? '1px solid var(--ink-200)'
+            : `1px solid color-mix(in srgb, ${accent} 34%, var(--ink-200))`,
+          color: accent,
           flexShrink: 0,
         }}
       >
         {icon}
       </span>
-      <span style={{ fontFamily: 'var(--font-case-title)', fontSize: 18, lineHeight: 1.15 }}>
+      <span style={{ fontFamily: 'var(--font-case-title)', fontSize: 16.5, lineHeight: 1.15, overflowWrap: 'anywhere' }}>
         {title}
       </span>
       <span
         style={{
           flex: 1,
-          color: primary ? 'color-mix(in srgb, var(--bg-panel) 78%, transparent)' : 'var(--ink-500)',
-          fontSize: 12,
-          lineHeight: 1.55,
+          color: 'var(--ink-500)',
+          fontSize: 11.5,
+          lineHeight: 1.5,
+          overflowWrap: 'anywhere',
         }}
       >
         {body}
@@ -428,7 +473,7 @@ function StarterActionCard({
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
-          color: primary ? 'var(--bg-panel)' : 'var(--accent)',
+          color: accent,
           fontSize: 12,
           fontWeight: 600,
         }}
@@ -624,6 +669,36 @@ export default function App() {
     } catch (error) {
       console.error('Failed to export Calabash library', error);
       alert(t('app.exportFailed'));
+    }
+  }
+
+  async function handleExportTemplate() {
+    if (!activeBookId) return;
+    try {
+      const data = await exportBookTemplateAsJson(activeBookId);
+      const text = JSON.stringify(data, null, 2);
+      const fileName = `calabash-template-${slugifyFilePart(data.book.title)}-${new Date().toISOString().slice(0, 10)}.calabash-template.json`;
+
+      if (isDesktopRuntime()) {
+        const path = await saveDesktopTextFile({
+          title: t('app.exportTemplate'),
+          defaultPath: fileName,
+          text,
+        });
+        if (path) showToast(t('app.exportSaved', { path }));
+        return;
+      }
+
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export Calabash template', error);
+      alert(t('app.exportTemplateFailed'));
     }
   }
 
@@ -1089,6 +1164,21 @@ export default function App() {
             </button>
             <button
               type="button"
+              disabled={!activeBookId}
+              onClick={() => void handleExportTemplate()}
+              style={{
+                ...sidebarUtilityButtonStyle,
+                opacity: activeBookId ? 1 : 0.45,
+                cursor: activeBookId ? 'pointer' : 'not-allowed',
+              }}
+              title={t('app.exportTemplate')}
+              aria-label={t('app.exportTemplate')}
+            >
+              <FileText size={13} />
+              <span>{t('app.template')}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => void handleImport()}
               style={sidebarUtilityButtonStyle}
               title={t('app.importLibrary')}
@@ -1488,26 +1578,20 @@ export default function App() {
             }}>
               <div style={{ width: 'min(820px, 100%)' }}>
                 <div
-                  aria-hidden="true"
+                  aria-label={t('app.emptyStamp')}
                   style={{
                     width: 60,
                     height: 60,
                     margin: '0 auto 14px',
                     borderRadius: 999,
-                    background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                    border: '1.5px dashed color-mix(in srgb, var(--accent) 50%, transparent)',
+                    background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-panel))',
+                    border: '1.5px solid color-mix(in srgb, var(--accent) 32%, var(--ink-200))',
                     display: 'grid',
                     placeItems: 'center',
-                    color: 'var(--accent)',
-                    fontFamily: 'var(--font-case-title)',
-                    fontSize: 11,
-                    letterSpacing: '0.14em',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    lineHeight: 1.1,
+                    boxShadow: 'var(--shadow-soft)',
                   }}
                 >
-                  {t('app.emptyStamp')}
+                  <CalabashLogo size={42} title={t('app.emptyStamp')} />
                 </div>
                 <div
                   style={{
@@ -1526,21 +1610,12 @@ export default function App() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
                     gap: 12,
                     marginTop: 24,
                     alignItems: 'stretch',
                   }}
                 >
-                  <StarterActionCard
-                    primary
-                    icon={<LayoutGrid size={16} />}
-                    title={t('app.starterContestTitle')}
-                    body={t('app.starterContestBody')}
-                    action={t('app.starterContestAction')}
-                    onClick={() => void handleCreateTutorialBook('contest')}
-                    disabled={!activeUserId}
-                  />
                   <StarterActionCard
                     icon={<FilePlus2 size={16} />}
                     title={t('app.starterBlankTitle')}
@@ -1550,6 +1625,16 @@ export default function App() {
                     disabled={!activeUserId}
                   />
                   <StarterActionCard
+                    tone="green"
+                    icon={<LayoutGrid size={16} />}
+                    title={t('app.starterContestTitle')}
+                    body={t('app.starterContestBody')}
+                    action={t('app.starterContestAction')}
+                    onClick={() => void handleCreateTutorialBook('contest')}
+                    disabled={!activeUserId}
+                  />
+                  <StarterActionCard
+                    tone="blue"
                     icon={<BookOpen size={16} />}
                     title={t('app.starterAckroydTitle')}
                     body={t('app.starterAckroydBody')}
@@ -1558,19 +1643,21 @@ export default function App() {
                     disabled={!activeUserId}
                   />
                   <StarterActionCard
-                    icon={<Upload size={16} />}
-                    title={t('app.starterImportTitle')}
-                    body={t('app.starterImportBody')}
-                    action={t('app.importLibrary')}
-                    onClick={() => void handleImport()}
-                  />
-                  <StarterActionCard
+                    tone="violet"
                     icon={<UserPlus size={16} />}
                     title={t('app.starterHidaTitle')}
                     body={t('app.starterHidaBody')}
                     action={t('onboarding.createHidaTutorial')}
                     onClick={() => void handleCreateTutorialBook('hida')}
                     disabled={!activeUserId}
+                  />
+                  <StarterActionCard
+                    tone="ochre"
+                    icon={<Upload size={16} />}
+                    title={t('app.starterImportTitle')}
+                    body={t('app.starterImportBody')}
+                    action={t('app.importLibrary')}
+                    onClick={() => void handleImport()}
                   />
                 </div>
                 <div style={{ maxWidth: 640, margin: '18px auto 0', color: 'var(--ink-500)', fontSize: 12, lineHeight: 1.55 }}>
@@ -1698,8 +1785,17 @@ export default function App() {
             onCommit={(n) => void setCurrentChapterAndPersist(activeBookId, n)}
             onToggleCurrentChapterHighlight={() => void handleToggleCurrentChapterHighlight()}
             onTotalChaptersChange={async (n) => {
-              setTotalChapters(n);
-              await updateBook(activeBookId, { totalChapters: n });
+              try {
+                const updated = await updateBook(activeBookId, { totalChapters: n });
+                setTotalChapters(updated.totalChapters);
+              } catch (error) {
+                if (error instanceof ChapterTotalTooLowError) {
+                  showToast(t('chapterSlider.totalTooLow', { minimum: error.minimumTotalChapters }));
+                  return;
+                }
+                console.error('Failed to update total chapters', error);
+                showToast(t('chapterSlider.totalUpdateFailed'));
+              }
             }}
           />
         )}

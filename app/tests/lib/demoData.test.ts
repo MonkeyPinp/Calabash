@@ -7,8 +7,10 @@ import { listRelationshipsByBook } from '@/db/relationships';
 import { listAnnotationsByBook } from '@/db/annotations';
 import { listGroupRangesByBook } from '@/db/groupRanges';
 import { getPortrait } from '@/db/portraits';
+import { exportBookTemplateAsJson, importBookFromJson } from '@/db/importExport';
 import { getTutorialDefaultViewMode, seedRogerAckroyd, seedTutorialBook } from '@/lib/demoData';
 import { getMinimumLayoutNodeDistance, MIN_LAYOUT_NODE_DISTANCE } from '@/lib/layout';
+import { listBundledTemplates } from '@/templates';
 
 describe('Ackroyd demo data', () => {
   beforeEach(async () => {
@@ -139,6 +141,7 @@ describe('Ackroyd demo data', () => {
   it('creates a locked five-zone puzzle contest template', async () => {
     const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'zh-CN', kind: 'contest' });
     const book = await getBook(bookId);
+    const categories = await listCategories('reader-1');
     const characters = await listCharactersByBook(bookId);
     const relationships = await listRelationshipsByBook(bookId);
     const notes = await listAnnotationsByBook(bookId);
@@ -146,6 +149,7 @@ describe('Ackroyd demo data', () => {
 
     expect(book?.userId).toBe('reader-1');
     expect(book?.title).toBe('每谜 / 推理比赛模板');
+    expect(categories.find((category) => category.name === '模板')?.id).toBe(book?.categoryId);
     expect(book?.totalChapters).toBe(1);
     expect(book?.spoilerShield).toBe(false);
     expect(book?.openClues?.map((clue) => clue.text)).toEqual([
@@ -166,6 +170,21 @@ describe('Ackroyd demo data', () => {
       'location',
       'item',
     ]));
+    const peopleGroup = groups.find((group) => group.label === '人物表');
+    const cluesGroup = groups.find((group) => group.label === '线索区');
+    const suspectA = characters.find((character) => character.name === '嫌疑人 A');
+    const witness = characters.find((character) => character.name === '证人 / 叙述者');
+    const scene = characters.find((character) => character.name === '关键地点');
+    const evidence = characters.find((character) => character.name === '关键物证');
+
+    expect(peopleGroup).toBeDefined();
+    expect(cluesGroup).toBeDefined();
+    expect(suspectA?.position.x).toBeLessThan((peopleGroup?.position.x ?? 0) + (peopleGroup?.width ?? 0));
+    expect(witness?.position.x).toBeLessThan((peopleGroup?.position.x ?? 0) + (peopleGroup?.width ?? 0));
+    expect(scene?.position.x).toBeGreaterThanOrEqual(cluesGroup?.position.x ?? 0);
+    expect(evidence?.position.x).toBeGreaterThanOrEqual(cluesGroup?.position.x ?? 0);
+    expect(scene?.position.y).toBeLessThan((cluesGroup?.position.y ?? 0) + (cluesGroup?.height ?? 0));
+    expect(evidence?.position.y).toBeLessThan((cluesGroup?.position.y ?? 0) + (cluesGroup?.height ?? 0));
     expect(relationships.map((relationship) => relationship.label)).toEqual(expect.arrayContaining([
       '利益冲突？',
       '接触过？',
@@ -184,6 +203,35 @@ describe('Ackroyd demo data', () => {
     const noteText = notes.map((note) => note.content).join(' ');
     expect(noteText).toContain('线索卡');
     expect(noteText).toContain('答案草稿');
+  });
+
+  it('loads bundled templates from contribution-ready JSON and can export a reusable template', async () => {
+    expect(listBundledTemplates()).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'puzzle-contest-basic',
+        language: 'zh-CN',
+        category: '模板',
+        defaultViewMode: 'text',
+      }),
+    ]));
+    expect(listBundledTemplates().filter((template) => template.id === 'puzzle-contest-basic'))
+      .toHaveLength(5);
+
+    const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'zh-CN', kind: 'contest' });
+    const exported = await exportBookTemplateAsJson(bookId);
+
+    expect(exported.calabashTemplateVersion).toBe(1);
+    expect(exported.template.id).toBe('calabash-template');
+    expect(exported.template.category).toBe('模板');
+    expect(exported.book.title).toBe('每谜 / 推理比赛模板');
+    expect(exported.characters?.some((character) => character.name === '关键物证')).toBe(true);
+    expect(exported.groups?.some((group) => group.label === '线索区')).toBe(true);
+
+    const importedBookId = await importBookFromJson(exported, 'reader-2');
+    const importedCharacters = await listCharactersByBook(importedBookId);
+    const importedGroups = await listGroupRangesByBook(importedBookId);
+    expect(importedCharacters.map((character) => character.name)).toContain('关键物证');
+    expect(importedGroups.map((group) => group.label)).toContain('线索区');
   });
 
   it('creates a localized tutorial book for the current reader', async () => {

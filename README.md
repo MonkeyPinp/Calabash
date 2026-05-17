@@ -1,14 +1,16 @@
 # Calabash
 
 <p align="center">
-  <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
+  <img src="docs/assets/calabash-logo-detective-transparent.png" width="132" alt="Calabash detective pipe logo" />
 </p>
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.1`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.2`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
+
+![Calabash private case board for reading mysteries](docs/assets/calabash-github-repo-card-en.png)
 
 ![Calabash spoiler-safe mystery reading notes and relationship board screenshot](docs/assets/calabash-demo.png)
 
@@ -40,7 +42,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
-- **Puzzle template, iPad, and CNB patch**: `v0.5.1` adds a mystery puzzle starter template, keeps the bottom chapter slider clear of iPad Safari's safe area, and includes the CNB release deployment path.
+- **Templates and chapter safety**: `v0.5.2` adds reusable book templates, current-book template export, GitHub preview cards, and guards chapter totals from shrinking below existing chapter content.
 
 ## Data And Privacy
 
@@ -161,7 +163,8 @@ Calabash uses `0.x` beta versioning for now:
 - `0.3.1`: compact toolbar fix so narrow boards keep the title and inspector toggle visible.
 - `0.4.0`: desktop stability pass with native file dialogs, safety backups before full-library imports, and clearer import/export completion feedback.
 - `0.5.0`: tablet-oriented interaction polish, effective board locking, duplicate case-title disambiguation, and smaller production chunks.
-- `0.5.1`: mystery puzzle starter template, iPad Safari safe-area fix for the bottom chapter slider, and CNB release deployment coverage.
+- `0.5.1`: iPad Safari safe-area fix for the bottom chapter slider and CNB release deployment coverage.
+- `0.5.2`: reusable book templates, current-book template export, GitHub preview cards, and chapter-total guards for existing chapter content.
 
 ## License
 

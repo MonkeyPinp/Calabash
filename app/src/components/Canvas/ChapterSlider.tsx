@@ -19,7 +19,7 @@ export interface ChapterSliderProps {
   onChange: (n: number) => void;
   onCommit: (n: number) => void;
   onToggleCurrentChapterHighlight?: () => void;
-  onTotalChaptersChange?: (n: number) => void;
+  onTotalChaptersChange?: (n: number) => void | Promise<void>;
 }
 
 export default function ChapterSlider({
@@ -49,7 +49,7 @@ export default function ChapterSlider({
   function commitTotal() {
     const v = parseInt(totalDraft, 10);
     if (!isNaN(v) && v >= 1 && v !== totalChapters) {
-      onTotalChaptersChange?.(v);
+      void onTotalChaptersChange?.(v);
     }
     setEditingTotal(false);
   }

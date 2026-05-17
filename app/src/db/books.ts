@@ -3,13 +3,35 @@ import type { Book } from '@/types';
 import { createOpenClueDraft, normalizeOpenClues } from '@/lib/clues';
 
 function normalizeBook(book: Book): Book {
+  const currentChapter = normalizeChapterNumber(book.currentChapter, 1);
+  const totalChapters = Math.max(normalizeChapterNumber(book.totalChapters, 1), currentChapter);
   return {
     ...book,
+    currentChapter,
+    totalChapters,
     spoilerShield: book.spoilerShield ?? false,
     spoilerChapters: normalizeChapters(book.spoilerChapters),
     highlightedChapters: normalizeChapters(book.highlightedChapters),
     openClues: normalizeOpenClues(book.openClues),
   };
+}
+
+export class ChapterTotalTooLowError extends Error {
+  readonly requestedTotalChapters: number;
+  readonly minimumTotalChapters: number;
+
+  constructor(requestedTotalChapters: number, minimumTotalChapters: number) {
+    super(`Total chapters must be at least ${minimumTotalChapters}`);
+    this.name = 'ChapterTotalTooLowError';
+    this.requestedTotalChapters = requestedTotalChapters;
+    this.minimumTotalChapters = minimumTotalChapters;
+  }
+}
+
+function normalizeChapterNumber(value: unknown, fallback = 1): number {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numberValue)) return fallback;
+  return Math.max(1, Math.trunc(numberValue));
 }
 
 function normalizeBookTitleForDisplay(title: string): string {
@@ -50,17 +72,24 @@ export async function createBook(input: {
 }): Promise<Book> {
   const now = Date.now();
   const title = await makeUniqueBookTitle(input.title, input.userId);
+  const spoilerChapters = normalizeChapters(input.spoilerChapters);
+  const highlightedChapters = normalizeChapters(input.highlightedChapters);
+  const totalChapters = Math.max(
+    normalizeChapterNumber(input.totalChapters, 30),
+    ...spoilerChapters,
+    ...highlightedChapters,
+  );
   const book: Book = {
     id: crypto.randomUUID(),
     userId: input.userId,
     categoryId: input.categoryId,
     title,
     author: input.author,
-    totalChapters: input.totalChapters ?? 30,
+    totalChapters,
     currentChapter: 1,
     spoilerShield: input.spoilerShield ?? false,
-    spoilerChapters: normalizeChapters(input.spoilerChapters),
-    highlightedChapters: normalizeChapters(input.highlightedChapters),
+    spoilerChapters,
+    highlightedChapters,
     openClues: [],
     createdAt: now,
     updatedAt: now,
@@ -88,6 +117,12 @@ export async function updateBook(
   const existing = await db.books.get(id);
   if (!existing) throw new Error(`Book ${id} not found`);
   const normalizedExisting = normalizeBook(existing);
+  const nextTotalChapters = 'totalChapters' in patch
+    ? normalizeChapterNumber(patch.totalChapters, normalizedExisting.totalChapters)
+    : normalizedExisting.totalChapters;
+  const nextCurrentChapter = 'currentChapter' in patch
+    ? normalizeChapterNumber(patch.currentChapter, normalizedExisting.currentChapter)
+    : normalizedExisting.currentChapter;
   const title = typeof patch.title === 'string' || 'userId' in patch
     ? await makeUniqueBookTitle(patch.title ?? normalizedExisting.title, patch.userId ?? normalizedExisting.userId, id)
     : undefined;
@@ -95,13 +130,58 @@ export async function updateBook(
     ...normalizedExisting,
     ...patch,
     ...(title === undefined ? {} : { title }),
+    currentChapter: nextCurrentChapter,
+    totalChapters: nextTotalChapters,
     updatedAt: Date.now(),
   };
   if (patch.spoilerChapters) next.spoilerChapters = normalizeChapters(patch.spoilerChapters);
   if (patch.highlightedChapters) next.highlightedChapters = normalizeChapters(patch.highlightedChapters);
   if (patch.openClues) next.openClues = normalizeOpenClues(patch.openClues);
+  if (touchesChapterBoundary(patch)) {
+    const minimumTotalChapters = await getMinimumTotalChaptersForBook(next);
+    if (next.totalChapters < minimumTotalChapters) {
+      throw new ChapterTotalTooLowError(next.totalChapters, minimumTotalChapters);
+    }
+  }
   await db.books.put(next);
   return next;
+}
+
+function touchesChapterBoundary(patch: Partial<Omit<Book, 'id' | 'createdAt'>>): boolean {
+  return (
+    'totalChapters' in patch ||
+    'currentChapter' in patch ||
+    'spoilerChapters' in patch ||
+    'highlightedChapters' in patch ||
+    'openClues' in patch
+  );
+}
+
+async function getMinimumTotalChaptersForBook(book: Book): Promise<number> {
+  const [characters, relationships, annotations, groupRanges, evidenceImages] = await Promise.all([
+    db.characters.where('bookId').equals(book.id).toArray(),
+    db.relationships.where('bookId').equals(book.id).toArray(),
+    db.annotations.where('bookId').equals(book.id).toArray(),
+    db.groupRanges.where('bookId').equals(book.id).toArray(),
+    db.evidenceImages.where('bookId').equals(book.id).toArray(),
+  ]);
+
+  return Math.max(
+    1,
+    normalizeChapterNumber(book.currentChapter),
+    ...normalizeChapters(book.spoilerChapters),
+    ...normalizeChapters(book.highlightedChapters),
+    ...normalizeOpenClues(book.openClues).map((clue) => normalizeChapterNumber(clue.chapterIntroduced)),
+    ...characters.flatMap((character) => [
+      normalizeChapterNumber(character.chapterIntroduced),
+      ...(character.aliases ?? []).map((alias) => normalizeChapterNumber(alias.chapterRevealed)),
+      ...(character.roleReveals ?? []).map((reveal) => normalizeChapterNumber(reveal.chapterRevealed)),
+    ]),
+    ...relationships.map((relationship) => normalizeChapterNumber(relationship.chapterRevealed)),
+    ...annotations.map((annotation) => normalizeChapterNumber(annotation.chapterIntroduced)),
+    ...groupRanges.map((range) => normalizeChapterNumber(range.chapterIntroduced)),
+    ...evidenceImages.map((image) => normalizeChapterNumber(image.chapterIntroduced)),
+  );
 }
 
 function normalizeChapters(chapters: number[] = []): number[] {

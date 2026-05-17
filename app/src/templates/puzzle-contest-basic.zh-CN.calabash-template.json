@@ -1,0 +1,221 @@
+{
+  "calabashVersion": "0.5.2",
+  "calabashTemplateVersion": 1,
+  "template": {
+    "id": "puzzle-contest-basic",
+    "title": "每谜 / 推理比赛模板",
+    "description": "适合每谜、推理比赛和短篇谜题的五区空白案板。",
+    "language": "zh-CN",
+    "category": "模板",
+    "defaultViewMode": "text",
+    "tags": ["puzzle", "contest", "tuilixy"]
+  },
+  "book": {
+    "title": "每谜 / 推理比赛模板",
+    "author": "空白案件看板",
+    "totalChapters": 1,
+    "currentChapter": 1,
+    "spoilerShield": false,
+    "highlightedChapters": [1],
+    "openClues": [
+      "谁同时具备动机、手段和机会？",
+      "时间线里哪一句说法无法同时成立？",
+      "最终答案能否解释所有异常线索？"
+    ]
+  },
+  "characters": [
+    {
+      "id": "suspect-a",
+      "name": "嫌疑人 A",
+      "kind": "character",
+      "role": "suspect",
+      "profession": "改名后记录动机、机会、不在场证明和矛盾点。",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -300 }
+    },
+    {
+      "id": "suspect-b",
+      "name": "嫌疑人 B",
+      "kind": "character",
+      "role": "suspect",
+      "profession": "改名后记录动机、机会、不在场证明和矛盾点。",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -160 }
+    },
+    {
+      "id": "witness",
+      "name": "证人 / 叙述者",
+      "kind": "testimony",
+      "role": "witness",
+      "profession": "适合记录证词、叙述视角，或可靠性需要判断的信息来源。",
+      "chapterIntroduced": 1,
+      "position": { "x": -1100, "y": -20 }
+    },
+    {
+      "id": "key-location",
+      "name": "关键地点",
+      "kind": "location",
+      "role": "other",
+      "profession": "地点/房间节点适合配合平面图、行动路线和时间线使用。",
+      "chapterIntroduced": 1,
+      "position": { "x": -440, "y": -300 }
+    },
+    {
+      "id": "key-evidence",
+      "name": "关键物证",
+      "kind": "item",
+      "role": "other",
+      "profession": "物品节点适合记录凶器、文件、谜题道具或关键图片。",
+      "chapterIntroduced": 1,
+      "position": { "x": -440, "y": -160 }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "conflict",
+      "sourceId": "suspect-a",
+      "targetId": "suspect-b",
+      "type": "hostile",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "利益冲突？"
+    },
+    {
+      "id": "access",
+      "sourceId": "suspect-a",
+      "targetId": "key-evidence",
+      "type": "suspicion",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "接触过？"
+    },
+    {
+      "id": "alibi",
+      "sourceId": "witness",
+      "targetId": "key-location",
+      "type": "other",
+      "chapterRevealed": 1,
+      "certainty": "suspected",
+      "label": "声称在"
+    }
+  ],
+  "groups": [
+    {
+      "id": "people",
+      "label": "人物表",
+      "color": "blue",
+      "position": { "x": -1180, "y": -470 },
+      "width": 620,
+      "height": 900,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.12 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "clues",
+      "label": "线索区",
+      "color": "green",
+      "position": { "x": -500, "y": -470 },
+      "width": 780,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "timeline",
+      "label": "时间线",
+      "color": "violet",
+      "position": { "x": -500, "y": 10 },
+      "width": 780,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "suspicions",
+      "label": "怀疑点",
+      "color": "red",
+      "position": { "x": 340, "y": -470 },
+      "width": 760,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "final",
+      "label": "最终推理区",
+      "color": "ochre",
+      "position": { "x": 340, "y": 10 },
+      "width": 760,
+      "height": 420,
+      "labelFontSize": 32,
+      "labelPosition": { "x": 0.5, "y": 0.16 },
+      "chapterIntroduced": 1,
+      "locked": true
+    }
+  ],
+  "notes": [
+    {
+      "id": "people-note",
+      "content": "人物表先放嫌疑人和证人。右侧边栏可以记录动机、机会、不在场证明、矛盾点和备注。",
+      "position": { "x": -820, "y": -300 },
+      "width": 280,
+      "height": 310,
+      "color": "blue",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "clues-note",
+      "content": "地点、房间、物证和线索卡放在这里。\n\n线索卡\n来源 / 原文：\n观察到的事实：\n可靠性：\n指向谁：\n和什么矛盾：",
+      "position": { "x": -185, "y": -345 },
+      "width": 420,
+      "height": 285,
+      "color": "green",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "timeline-note",
+      "content": "时间线\n时间点：\n谁在哪里：\n说法 / 证据：\n需要验证的矛盾：",
+      "position": { "x": -265, "y": 145 },
+      "width": 500,
+      "height": 245,
+      "color": "purple",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "suspicions-note",
+      "content": "假设\n如果这个猜想成立：\n支持线索：\n反证：\n下一步要验证：",
+      "position": { "x": 565, "y": -335 },
+      "width": 430,
+      "height": 245,
+      "color": "pink",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    },
+    {
+      "id": "final-note",
+      "content": "答案草稿\n凶手 / 手法 / 动机：\n核心逻辑链：\n每个异常线索如何解释：\n仍不确定的地方：",
+      "position": { "x": 565, "y": 145 },
+      "width": 430,
+      "height": 245,
+      "color": "yellow",
+      "fontSize": 16,
+      "chapterIntroduced": 1,
+      "locked": true
+    }
+  ]
+}

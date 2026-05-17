@@ -1,14 +1,16 @@
 # Calabash
 
 <p align="center">
-  <img src="app/public/calabash-logo-light.png" width="96" alt="Calabash logo" />
+  <img src="docs/assets/calabash-logo-detective-transparent.png" width="132" alt="Logotipo do Calabash com detetive e cachimbo" />
 </p>
 
 > Um quadro de casos, grafo de relações e rastreador de pistas sem spoilers para leitores de mistério.
 
-[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.5.1`
+[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.5.2`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · **Português (Brasil)**
+
+![Calabash para ler sem perder o fio dos suspeitos e pistas](docs/assets/calabash-github-repo-card-pt-BR.png)
 
 ![Captura do Calabash como quadro de casos, notas de mistério e grafo de relações sem spoilers](docs/assets/calabash-demo.png)
 
@@ -40,7 +42,7 @@ Calabash é deliberadamente manual. Ele não extrai personagens automaticamente,
 - **Biblioteca local**: salve livros no IndexedDB e faça backup com Exportar/Importar.
 - **Tutoriais incluídos**: teste *The Murder of Roger Ackroyd* ou *Hida Trick House Murder Case*.
 - **Interface multilíngue**: inglês, chinês simplificado, japonês, espanhol e português do Brasil.
-- **Modelo de enigma, iPad e CNB**: `v0.5.1` adiciona um modelo inicial para concursos de mistério, mantém o controle de capítulos fora da área segura do iPad Safari e inclui o fluxo de release no CNB.
+- **Modelos e segurança de capítulos**: `v0.5.2` adiciona modelos reutilizáveis, exportação do modelo do livro atual, cards de prévia para GitHub e proteção contra reduzir capítulos abaixo do conteúdo existente.
 
 ## Dados E Privacidade
 
@@ -110,7 +112,7 @@ O roadmap do produto não fica no repositório público. O planejamento público
 
 ## Versão
 
-Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi. `0.3.0` adiciona ilustrações por capítulo, colar da área de transferência, camadas de fundo e o redesign de Settings como pasta de caso. `0.3.1` corrige a barra superior compacta para manter visíveis o título e o botão do inspetor. `0.4.0` é uma rodada de estabilidade desktop com diálogos nativos de arquivo, backups antes de importar bibliotecas completas e feedback mais claro de importação/exportação. `0.5.0` refina a interação em tablets, torna o bloqueio do quadro efetivo, diferencia títulos de casos duplicados e reduz os chunks de produção. `0.5.1` adiciona um modelo inicial de enigma, corrige a área segura do controle inferior no iPad Safari e cobre o deploy de releases no CNB.
+Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi. `0.3.0` adiciona ilustrações por capítulo, colar da área de transferência, camadas de fundo e o redesign de Settings como pasta de caso. `0.3.1` corrige a barra superior compacta para manter visíveis o título e o botão do inspetor. `0.4.0` é uma rodada de estabilidade desktop com diálogos nativos de arquivo, backups antes de importar bibliotecas completas e feedback mais claro de importação/exportação. `0.5.0` refina a interação em tablets, torna o bloqueio do quadro efetivo, diferencia títulos de casos duplicados e reduz os chunks de produção. `0.5.1` corrige a área segura do controle inferior no iPad Safari e cobre o deploy de releases no CNB. `0.5.2` adiciona modelos reutilizáveis, exportação do modelo do livro atual, cards de prévia para GitHub e proteção do total de capítulos contra conteúdo existente.
 
 ## License
 

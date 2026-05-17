@@ -6,7 +6,7 @@
 
 > Um quadro de casos, grafo de relações e rastreador de pistas sem spoilers para leitores de mistério.
 
-[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.3.1`
+[Demo ao vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versão `0.4.0`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · **Português (Brasil)**
 
@@ -40,7 +40,7 @@ Calabash é deliberadamente manual. Ele não extrai personagens automaticamente,
 - **Biblioteca local**: salve livros no IndexedDB e faça backup com Exportar/Importar.
 - **Tutoriais incluídos**: teste *The Murder of Roger Ackroyd* ou *Hida Trick House Murder Case*.
 - **Interface multilíngue**: inglês, chinês simplificado, japonês, espanhol e português do Brasil.
-- **Beta desktop**: `v0.3.1` publica binários sem assinatura para Windows/Linux e imagens DMG para macOS, com verificação de versões no app.
+- **Beta desktop estável**: `v0.4.0` publica binários sem assinatura para Windows/Linux e imagens DMG para macOS, com importação/exportação JSON nativa, backup automático antes de importar a biblioteca completa e verificação de versões no app.
 
 ## Dados E Privacidade
 
@@ -51,6 +51,7 @@ Calabash é local-first:
 - Outros visitantes da demo não podem alterar seu quadro, e você não altera o deles.
 - Durante a beta, limpar os dados do site no navegador pode apagar sua biblioteca local.
 - Use **Export Library** como backup e **Import Library** para mover os dados.
+- No desktop, importações de biblioteca completa criam primeiro um backup local na pasta de dados do app.
 
 ## Começo Rápido
 
@@ -108,7 +109,7 @@ O roadmap do produto não fica no repositório público. O planejamento público
 
 ## Versão
 
-Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi. `0.3.0` adiciona ilustrações por capítulo, colar da área de transferência, camadas de fundo e o redesign de Settings como pasta de caso. `0.3.1` corrige a barra superior compacta para manter visíveis o título e o botão do inspetor.
+Calabash usa versionamento beta `0.x`. `0.1.3` reforça avisos de armazenamento beta, cobertura de fixture para importação/exportação e validação de release. `0.2.0` foca no shell desktop, configuração de binários multiplataforma, seleção de idioma no onboarding, notas/grupos por capítulo, correções de renderização de relações e anotações ajustáveis no quadro. `0.2.1` adiciona verificação de versões em Settings e importação de JSON de livro único para iniciar casos mais rápido. `0.2.2` adiciona interface japonesa, README/SEO em japonês e tutoriais localizados, especialmente o caso Kindaichi. `0.3.0` adiciona ilustrações por capítulo, colar da área de transferência, camadas de fundo e o redesign de Settings como pasta de caso. `0.3.1` corrige a barra superior compacta para manter visíveis o título e o botão do inspetor. `0.4.0` é uma rodada de estabilidade desktop com diálogos nativos de arquivo, backups antes de importar bibliotecas completas e feedback mais claro de importação/exportação.
 
 ## License
 

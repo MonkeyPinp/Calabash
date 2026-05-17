@@ -27,6 +27,7 @@ import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage } from '
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
+import { isDesktopRuntime, openDesktopJsonFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
 import { useT } from './i18n';
 import type { Book, EvidenceImageKind } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
@@ -105,6 +106,24 @@ const sidebarUtilityButtonStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 500,
   padding: '0 8px',
+};
+
+const toastStyle: React.CSSProperties = {
+  position: 'fixed',
+  left: '50%',
+  bottom: 86,
+  transform: 'translateX(-50%)',
+  zIndex: 900,
+  maxWidth: 'min(680px, calc(100vw - 32px))',
+  padding: '9px 13px',
+  background: 'var(--ink-900)',
+  border: '1px solid var(--ink-700)',
+  borderRadius: 6,
+  color: 'var(--bg-panel)',
+  boxShadow: 'var(--shadow-modal)',
+  fontSize: 12,
+  lineHeight: 1.45,
+  overflowWrap: 'anywhere',
 };
 
 function BoardStyleSwitcher({
@@ -415,8 +434,10 @@ export default function App() {
   const [revealedSpoilerKey, setRevealedSpoilerKey] = useState<string | null>(null);
   const [spoilerConfirmOpen, setSpoilerConfirmOpen] = useState(false);
   const [activeBookSummary, setActiveBookSummary] = useState<Book | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const libraryImportInputRef = useRef<HTMLInputElement>(null);
   const evidenceImageInputRef = useRef<HTMLInputElement>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setActiveBook = useBookStore((s) => s.setActiveBook);
@@ -462,6 +483,16 @@ export default function App() {
   const activeUserId = useUserStore((s) => s.activeUserId);
   const setActiveUser = useUserStore((s) => s.setActiveUser);
   const refreshUsers = useUserStore((s) => s.refreshUsers);
+
+  const showToast = useCallback((message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(message);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), 4200);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -522,29 +553,79 @@ export default function App() {
   }, []);
 
   async function handleExport() {
-    const data = await exportLibraryAsJson();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `calabash-library-${new Date().toISOString().slice(0, 10)}.calabash.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const data = await exportLibraryAsJson();
+      const text = JSON.stringify(data, null, 2);
+      const fileName = `calabash-library-${new Date().toISOString().slice(0, 10)}.calabash.json`;
+
+      if (isDesktopRuntime()) {
+        const path = await saveDesktopTextFile({
+          title: t('app.exportLibrary'),
+          defaultPath: fileName,
+          text,
+        });
+        if (path) showToast(t('app.exportSaved', { path }));
+        return;
+      }
+
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export Calabash library', error);
+      alert(t('app.exportFailed'));
+    }
+  }
+
+  async function handleImport() {
+    if (isDesktopRuntime()) {
+      try {
+        const selected = await openDesktopJsonFile(t('app.importLibrary'));
+        if (selected) await handleImportText(selected.text);
+      } catch (error) {
+        console.error('Failed to import Calabash JSON from desktop file dialog', error);
+        alert(t('app.invalidImport'));
+      }
+      return;
+    }
+
+    libraryImportInputRef.current?.click();
   }
 
   async function handleImportFile(file: File) {
-    const text = await file.text();
+    await handleImportText(await file.text());
+  }
+
+  async function handleImportText(text: string) {
     try {
       const payload = JSON.parse(text);
       if (isLibraryExport(payload)) {
+        let backupPath: string | null = null;
+        if (isDesktopRuntime()) {
+          try {
+            const currentLibrary = await exportLibraryAsJson();
+            backupPath = await saveDesktopLibraryBackup(JSON.stringify(currentLibrary, null, 2));
+          } catch (error) {
+            console.error('Failed to create Calabash import backup', error);
+            alert(t('app.importBackupFailed'));
+            return;
+          }
+        }
+
         const result = await importLibraryFromJson(payload);
         await refreshUsers();
         if (result.activeUserId) setActiveUser(result.activeUserId);
         if (result.activeBookId) setActiveBook(result.activeBookId);
+        showToast(backupPath ? t('app.importCompleteWithBackup', { path: backupPath }) : t('app.importComplete'));
         return;
       }
       const newBookId = await importBookFromJson(payload, activeUserId ?? undefined);
       setActiveBook(newBookId);
+      showToast(t('app.importComplete'));
     } catch {
       alert(t('app.invalidImport'));
     }
@@ -933,7 +1014,7 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => libraryImportInputRef.current?.click()}
+              onClick={() => void handleImport()}
               style={sidebarUtilityButtonStyle}
               title={t('app.importLibrary')}
               aria-label={t('app.importLibrary')}
@@ -1390,7 +1471,7 @@ export default function App() {
                     title={t('app.starterImportTitle')}
                     body={t('app.starterImportBody')}
                     action={t('app.importLibrary')}
-                    onClick={() => libraryImportInputRef.current?.click()}
+                    onClick={() => void handleImport()}
                   />
                   <StarterActionCard
                     icon={<UserPlus size={16} />}
@@ -1608,7 +1689,7 @@ export default function App() {
         <SettingsPanel
           onClose={() => setSettingsOpen(false)}
           onExportLibrary={() => void handleExport()}
-          onImportLibrary={(file) => void handleImportFile(file)}
+          onImportLibrary={() => void handleImport()}
           onOpenOnboarding={() => setOnboardingOpen(true)}
           onCreateTutorial={(kind) => void handleCreateTutorialBook(kind)}
         />
@@ -1622,6 +1703,12 @@ export default function App() {
             closeOnboarding();
           }}
         />
+      )}
+
+      {toastMessage && (
+        <div role="status" aria-live="polite" style={toastStyle}>
+          {toastMessage}
+        </div>
       )}
 
       {spoilerConfirmOpen && (

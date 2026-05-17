@@ -1,6 +1,6 @@
 {
   "name": "calabash",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,9 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@playwright/test": "^1.60.0",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "@xyflow/react": "^12.3.5",
     "clsx": "^2.1.1",
     "dexie": "^4.0.10",

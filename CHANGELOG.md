@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - 2026-05-17
+
+- Added native desktop JSON open/save dialogs for full-library import/export and single-book imports.
+- Added automatic desktop safety backups before full-library imports, saved under the app data folder.
+- Added import/export completion feedback so users can see when a desktop file was written or a backup was created.
+- Bumped web, desktop, import/export, and template metadata to `0.4.0`.
+
 ## 0.3.1 - 2026-05-16
 
 - Fixed compact toolbar behavior so narrow boards keep the book title and inspector toggle visible.

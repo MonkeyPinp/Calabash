@@ -6,7 +6,7 @@
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.3.1`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.4.0`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -40,7 +40,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
-- **Desktop beta**: `v0.3.1` ships unsigned Windows/Linux binaries and macOS DMG images, with an in-app release checker.
+- **Desktop stable beta**: `v0.4.0` ships unsigned Windows/Linux binaries and macOS DMG images, with native JSON import/export, automatic safety backups before full-library desktop imports, and an in-app release checker.
 
 ## Data And Privacy
 
@@ -51,6 +51,7 @@ Calabash is local-first:
 - Other demo visitors cannot change your board, and you cannot change theirs.
 - Clearing browser site data can delete your local library during beta.
 - Use **Export Library** as your backup path and **Import Library** to move data to another browser.
+- On desktop, full-library imports first create a local safety backup in the app data folder.
 
 See [Privacy Policy](PRIVACY.md) for the full local-data and network-access statement.
 
@@ -157,6 +158,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.2.2`: Japanese UI support, Japanese README/SEO metadata, and localized tutorial demo copy, especially the Kindaichi case.
 - `0.3.0`: chapter-aware illustrations for floor plans/screenshots, clipboard paste, background layering, and the case-folder Settings redesign.
 - `0.3.1`: compact toolbar fix so narrow boards keep the title and inspector toggle visible.
+- `0.4.0`: desktop stability pass with native file dialogs, safety backups before full-library imports, and clearer import/export completion feedback.
 
 ## License
 

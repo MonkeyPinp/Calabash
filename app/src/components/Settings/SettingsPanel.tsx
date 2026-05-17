@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   BookOpen,
   Check,
@@ -38,7 +38,7 @@ interface InventoryCounts {
 export interface SettingsPanelProps {
   onClose: () => void;
   onExportLibrary: () => void;
-  onImportLibrary: (file: File) => void;
+  onImportLibrary: () => void;
   onOpenOnboarding: () => void;
   onCreateTutorial: (kind: TutorialKind) => void;
 }
@@ -70,7 +70,6 @@ export default function SettingsPanel({
     | { status: 'available'; result: Extract<UpdateCheckResult, { status: 'available' }> }
     | { status: 'error' }
   >({ status: 'idle' });
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeUser = users.find((user) => user.id === activeUserId) ?? null;
 
   useEffect(() => {
@@ -244,18 +243,7 @@ export default function SettingsPanel({
                   <ActionButton onClick={onExportLibrary} icon={<Download size={13} />}>{t('settings.exportLibrary')}</ActionButton>
                 </FolderRow>
                 <FolderRow label={t('settings.importLibrary')} hint={t('settings.importLibraryHint')}>
-                  <ActionButton onClick={() => fileInputRef.current?.click()} icon={<Upload size={13} />}>{t('settings.importLibrary')}</ActionButton>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/json,.json"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) onImportLibrary(file);
-                      e.target.value = '';
-                    }}
-                  />
+                  <ActionButton onClick={onImportLibrary} icon={<Upload size={13} />}>{t('settings.importLibrary')}</ActionButton>
                 </FolderRow>
                 <SectionTab color="var(--rel-hostile)" number="03" tilt={0.6}>{t('settings.betaNotice')}</SectionTab>
                 <div style={warningNoteStyle}>{t('settings.betaStorageNote')}</div>

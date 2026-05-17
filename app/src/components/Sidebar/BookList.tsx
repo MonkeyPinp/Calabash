@@ -10,6 +10,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useT } from '@/i18n';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from '@/lib/demoData';
+import { isDesktopRuntime, openDesktopJsonFile } from '@/lib/desktopFiles';
 
 function relativeTime(ms: number, t: ReturnType<typeof useT>): string {
   const seconds = Math.floor((Date.now() - ms) / 1000);
@@ -226,10 +227,29 @@ export default function BookList() {
     clearGraphSelection();
   }
 
+  async function handleImportBook() {
+    if (isDesktopRuntime()) {
+      try {
+        const selected = await openDesktopJsonFile(t('sidebar.importSingleBook'));
+        if (selected) await handleImportBookText(selected.text);
+      } catch (error) {
+        console.error('Failed to import Calabash book JSON from desktop file dialog', error);
+        alert(t('app.invalidImport'));
+      }
+      return;
+    }
+
+    importBookRef.current?.click();
+  }
+
   async function handleImportBookFile(file: File) {
+    await handleImportBookText(await file.text());
+  }
+
+  async function handleImportBookText(text: string) {
     if (!activeUserId) return;
     try {
-      const payload = JSON.parse(await file.text()) as unknown;
+      const payload = JSON.parse(text) as unknown;
       const newBookId = await importBookFromJson(payload, activeUserId);
       const book = await getBook(newBookId);
       setShowBookStartChoice(false);
@@ -472,7 +492,7 @@ export default function BookList() {
           >
             {t('sidebar.startFromScratch')}
           </button>
-          <button type="button" onClick={() => importBookRef.current?.click()} style={choiceButtonStyle}>
+          <button type="button" onClick={() => void handleImportBook()} style={choiceButtonStyle}>
             <Upload size={12} />
             {t('sidebar.importSingleBook')}
           </button>

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-05-17
+
+- Improved tablet-oriented touch interaction polish across the public web beta.
+- Added a real board lock so accidental drags and edits are blocked while reviewing a case.
+- Prevented confusing duplicate case names in the library.
+- Split production builds into smaller cached chunks.
+- Bumped web, desktop, import/export, and template metadata to `0.5.0`.
+
 ## 0.4.0 - 2026-05-17
 
 - Added native desktop JSON open/save dialogs for full-library import/export and single-book imports.

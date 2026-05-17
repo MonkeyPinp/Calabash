@@ -67,6 +67,7 @@ export default function ChapterSlider({
 
   return (
     <div
+      className="chapter-slider"
       style={{
         height: 88,
         padding: '13px 20px 16px',
@@ -302,7 +303,7 @@ export default function ChapterSlider({
       </div>
 
       {normalizedMarks.length > 0 && (
-        <div style={legendStyle}>
+        <div className="chapter-slider-legend" style={legendStyle}>
           <LegendDot color="#c58a1a" label={t('app.legendHighlight')} />
           <LegendDot color="var(--ink-700)" label={t('app.legendReveal')} hollow />
           <LegendDot color="var(--accent)" label={t('app.legendShield')} />

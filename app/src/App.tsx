@@ -245,6 +245,26 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
   return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 }
 
+function useMediaQuery(query: string): boolean {
+  const read = () => (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(query).matches
+  );
+  const [matches, setMatches] = useState(read);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia(query);
+    const onChange = () => setMatches(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [query]);
+
+  return matches;
+}
+
 function EmptyInspectorGuide({
   t,
   bookId,
@@ -428,6 +448,9 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const tabletShell = useMediaQuery('(max-width: 1180px)');
+  const coarsePointer = useMediaQuery('(pointer: coarse)');
+  const touchOptimized = tabletShell || coarsePointer;
   const [newCharacterRequestId, setNewCharacterRequestId] = useState(0);
   const [startEdgeRequestId, setStartEdgeRequestId] = useState(0);
   const [startEdgeSourceId, setStartEdgeSourceId] = useState<string | null>(null);
@@ -512,6 +535,19 @@ export default function App() {
     } catch { /* test env */ }
   }, []);
 
+  const previousTabletShellRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (tabletShell && previousTabletShellRef.current !== true) {
+      setSidebarOpen(false);
+      setInspectorOpen(false);
+    }
+    if (!tabletShell && previousTabletShellRef.current === true) {
+      setSidebarOpen(true);
+      setInspectorOpen(true);
+    }
+    previousTabletShellRef.current = tabletShell;
+  }, [tabletShell]);
+
   // Inspector selection state
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [selectedRelId, setSelectedRelId] = useState<string | null>(null);
@@ -537,8 +573,18 @@ export default function App() {
 
   // Auto-open inspector panel when a node or edge is selected
   useEffect(() => {
-    if (selectedCharId || selectedRelId || selectedStickyNoteId || selectedGroupRangeId || selectedEvidenceImageId) setInspectorOpen(true);
-  }, [selectedCharId, selectedRelId, selectedStickyNoteId, selectedGroupRangeId, selectedEvidenceImageId]);
+    if (selectedCharId || selectedRelId || selectedStickyNoteId || selectedGroupRangeId || selectedEvidenceImageId) {
+      if (tabletShell) {
+        setSidebarOpen(false);
+        return;
+      }
+      setInspectorOpen(true);
+    }
+  }, [selectedCharId, selectedRelId, selectedStickyNoteId, selectedGroupRangeId, selectedEvidenceImageId, tabletShell]);
+
+  useEffect(() => {
+    if (tabletShell && activeBookId) setSidebarOpen(false);
+  }, [activeBookId, tabletShell]);
 
   // fitView ref — populated by CalabashCanvas on mount
   const fitViewRef = useRef<((opts?: { padding?: number }) => void) | undefined>(undefined);
@@ -890,8 +936,35 @@ export default function App() {
     openSearch: () => setSearchOpen(true),
   });
 
+  function toggleSidebarPanel() {
+    setSidebarOpen((open) => {
+      const next = !open;
+      if (tabletShell && next) setInspectorOpen(false);
+      return next;
+    });
+  }
+
+  function toggleInspectorPanel() {
+    setInspectorOpen((open) => {
+      const next = !open;
+      if (tabletShell && next) setSidebarOpen(false);
+      return next;
+    });
+  }
+
+  function closeTabletPanels() {
+    setSidebarOpen(false);
+    setInspectorOpen(false);
+  }
+
   return (
     <div
+      className={[
+        'app-shell',
+        tabletShell ? 'app-shell--tablet' : '',
+        touchOptimized ? 'app-shell--touch' : '',
+        tabletShell && (sidebarOpen || inspectorOpen) ? 'app-shell--panel-open' : '',
+      ].filter(Boolean).join(' ')}
       style={{
         display: 'flex',
         width: '100vw',
@@ -900,10 +973,12 @@ export default function App() {
         background: 'var(--bg-canvas)',
         color: 'var(--ink-900)',
         fontFamily: 'var(--font-ui)',
+        position: 'relative',
       }}
     >
       {/* Left sidebar */}
       <aside
+        className={`app-sidebar ${sidebarOpen ? 'app-sidebar--open' : ''}`}
         style={{
           width: sidebarOpen ? 264 : 0,
           minWidth: 0,
@@ -1116,8 +1191,16 @@ export default function App() {
         </div>
       </aside>
 
+      <button
+        type="button"
+        className="app-panel-scrim"
+        aria-label="Close panels"
+        onClick={closeTabletPanels}
+      />
+
       {/* Centre canvas area — flex-grow */}
       <main
+        className="app-main"
         style={{
           flex: 1,
           display: 'flex',
@@ -1145,7 +1228,7 @@ export default function App() {
           {/* Sidebar toggle */}
           <button
             className="toolbar-btn"
-            onClick={() => setSidebarOpen((v) => !v)}
+            onClick={toggleSidebarPanel}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
             style={{
               ...toolbarBtnStyle,
@@ -1356,7 +1439,7 @@ export default function App() {
           {/* Inspector toggle */}
           <button
             className="toolbar-btn"
-            onClick={() => setInspectorOpen((v) => !v)}
+            onClick={toggleInspectorPanel}
             title={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
             style={{
               ...toolbarBtnStyle,
@@ -1511,6 +1594,11 @@ export default function App() {
                   newCharacterRequestId={newCharacterRequestId}
                   startEdgeRequestId={startEdgeRequestId}
                   startEdgeSourceId={startEdgeSourceId}
+                  touchMode={touchOptimized}
+                  onRequestInspector={() => {
+                    setSidebarOpen(false);
+                    setInspectorOpen(true);
+                  }}
                   onNodeSelect={(id) => {
                     setSelectedCharId(id);
                     if (id) {
@@ -1611,6 +1699,7 @@ export default function App() {
 
       {/* Right inspector panel */}
       <aside
+        className={`app-inspector ${inspectorOpen ? 'app-inspector--open' : ''}`}
         style={{
           width: inspectorOpen ? 340 : 0,
           minWidth: 0,

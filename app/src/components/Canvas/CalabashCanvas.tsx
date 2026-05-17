@@ -17,6 +17,7 @@ import {
   type NodeMouseHandler,
   type EdgeMouseHandler,
 } from '@xyflow/react';
+import { Link2, PanelRight, Trash2 } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
 import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
@@ -161,6 +162,8 @@ export interface CalabashCanvasProps {
   onStickyNoteSelect?: (id: string | null) => void;
   onGroupRangeSelect?: (id: string | null) => void;
   onEvidenceImageSelect?: (id: string | null) => void;
+  touchMode?: boolean;
+  onRequestInspector?: () => void;
   onFitViewReady?: (fn: () => void) => void;
   onLayoutReady?: (fn: () => Promise<void>) => void;
 }
@@ -182,6 +185,8 @@ function CalabashCanvasInner({
   onStickyNoteSelect,
   onGroupRangeSelect,
   onEvidenceImageSelect,
+  touchMode = false,
+  onRequestInspector,
   onFitViewReady,
   onLayoutReady,
 }: CalabashCanvasProps) {
@@ -584,16 +589,27 @@ function CalabashCanvasInner({
     [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
-  // ── Delete key ─────────────────────────────────────────────────────────────
+  const selectedCharacterIds = useMemo(
+    () => [...selectedNodeIds].filter((id) => characters.some((character) => character.id === id)),
+    [characters, selectedNodeIds],
+  );
 
-  const handleKeyDown = useCallback(
-    async (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === 'Escape') {
-        setEdgeStartId(null);
-        return;
-      }
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+  // ── Selection tools + Delete key ──────────────────────────────────────────
+
+  const clearSelection = useCallback(() => {
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeIds(new Set());
+    onNodeSelect?.(null);
+    onEdgeSelect?.(null);
+    onStickyNoteSelect?.(null);
+    onGroupRangeSelect?.(null);
+    onEvidenceImageSelect?.(null);
+  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect]);
+
+  const deleteSelection = useCallback(
+    async () => {
+      if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0) return;
+      const deletedRelationshipIds = new Set<string>();
 
       if (selectedNodeIds.size > 0) {
         const charsToDelete = characters.filter((c) => selectedNodeIds.has(c.id));
@@ -603,14 +619,23 @@ function CalabashCanvasInner({
         const relsToDelete = relationships.filter(
           (r) => selectedNodeIds.has(r.sourceId) || selectedNodeIds.has(r.targetId),
         );
-        for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+        for (const rel of relsToDelete) {
+          deletedRelationshipIds.add(rel.id);
+          await deleteRelationship(rel.id);
+          removeRelationship(rel.id);
+        }
         for (const char of charsToDelete) { await deleteCharacter(char.id); removeCharacter(char.id); }
         for (const note of stickiesToDelete) { await deleteAnnotation(note.id); removeStickyNote(note.id); }
         for (const range of rangesToDelete) { await deleteGroupRange(range.id); removeGroupRange(range.id); }
         for (const image of evidenceImagesToDelete) { await deleteEvidenceImage(image.id); removeEvidenceImage(image.id); }
-        if (stickiesToDelete.length > 0) onStickyNoteSelect?.(null);
-        if (rangesToDelete.length > 0) onGroupRangeSelect?.(null);
-        if (evidenceImagesToDelete.length > 0) onEvidenceImageSelect?.(null);
+        if (
+          charsToDelete.length > 0 ||
+          stickiesToDelete.length > 0 ||
+          rangesToDelete.length > 0 ||
+          evidenceImagesToDelete.length > 0
+        ) {
+          clearSelection();
+        }
         pushUndo(
           async () => {
             for (const char of charsToDelete) { await restoreCharacter(char); addCharacter(char); }
@@ -630,8 +655,9 @@ function CalabashCanvasInner({
       }
 
       if (selectedEdgeIds.size > 0) {
-        const relsToDelete = relationships.filter((r) => selectedEdgeIds.has(r.id));
+        const relsToDelete = relationships.filter((r) => selectedEdgeIds.has(r.id) && !deletedRelationshipIds.has(r.id));
         for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); }
+        if (relsToDelete.length > 0) clearSelection();
         pushUndo(
           async () => { for (const rel of relsToDelete) { await restoreRelationship(rel); addRelationship(rel); } },
           async () => { for (const rel of relsToDelete) { await deleteRelationship(rel.id); removeRelationship(rel.id); } },
@@ -641,7 +667,22 @@ function CalabashCanvasInner({
     [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes, groupRanges, evidenceImages,
      addCharacter, removeCharacter, addRelationship, removeRelationship,
      addStickyNote, removeStickyNote, addGroupRange, removeGroupRange, addEvidenceImage, removeEvidenceImage,
-     pushUndo, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
+     pushUndo, clearSelection],
+  );
+
+  const handleKeyDown = useCallback(
+    async (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Escape') {
+        setEdgeStartId(null);
+        return;
+      }
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const target = e.target as HTMLElement;
+      if (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      e.preventDefault();
+      await deleteSelection();
+    },
+    [deleteSelection],
   );
 
   // ── Node add + drag ────────────────────────────────────────────────────────
@@ -765,14 +806,18 @@ function CalabashCanvasInner({
       style={{ width: '100%', height: '100%', outline: 'none', position: 'relative' }}
     >
       <ReactFlow
+        className={touchMode ? 'react-flow--touch-mode' : undefined}
         nodes={rfNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         panOnDrag
-        selectionOnDrag
+        selectionOnDrag={!touchMode}
         selectionKeyCode="Shift"
-        nodeDragThreshold={1}
+        nodeDragThreshold={touchMode ? 6 : 1}
+        paneClickDistance={touchMode ? 8 : 0}
+        nodeClickDistance={touchMode ? 8 : 0}
+        connectionDragThreshold={touchMode ? 8 : 1}
         fitView
         fitViewOptions={{ padding: 0.15, maxZoom: 1.1 }}
         onNodesChange={handleNodesChange}
@@ -939,6 +984,45 @@ function CalabashCanvasInner({
           }}
         >
           {t('shortcut.edgeModeHint')}
+        </div>
+      )}
+
+      {touchMode && (selectedNodeIds.size > 0 || selectedEdgeIds.size > 0) && (
+        <div
+          className="canvas-action-dock"
+          data-testid="canvas-action-dock"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="canvas-action-button"
+            onClick={onRequestInspector}
+            title={t('app.editSelection')}
+          >
+            <PanelRight size={15} />
+            <span>{t('app.editSelection')}</span>
+          </button>
+          {selectedCharacterIds.length === 1 && (
+            <button
+              type="button"
+              className="canvas-action-button"
+              onClick={() => handleStartEdgeFromSelection(selectedCharacterIds[0])}
+              title={t('shortcut.connectEdge')}
+            >
+              <Link2 size={15} />
+              <span>{t('shortcut.connectEdge')}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="canvas-action-button canvas-action-button--danger"
+            onClick={() => void deleteSelection()}
+            title={t('shortcut.deleteSelection')}
+          >
+            <Trash2 size={15} />
+            <span>{t('shortcut.deleteSelection')}</span>
+          </button>
         </div>
       )}
 

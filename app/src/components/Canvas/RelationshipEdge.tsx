@@ -106,7 +106,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
         path={pathD}
         markerStart={props.markerStart}
         markerEnd={props.markerEnd}
-        interactionWidth={40}
+        interactionWidth={56}
         style={{ stroke, strokeDasharray, opacity, strokeWidth: 2 }}
       />
       <EdgeLabelRenderer>

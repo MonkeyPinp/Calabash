@@ -84,6 +84,7 @@ export const messages: Record<ResolvedLanguage, Messages> = {
     'app.inspectGroupRangeBody': 'Factions, locations, or social circles drawn behind the case board.',
     'app.inspectEvidenceImage': 'Illustration',
     'app.inspectEvidenceImageBody': 'Visual references such as floor plans, clue photos, page screenshots, and puzzle images pinned to the board.',
+    'app.editSelection': 'Edit',
 
     'sidebar.library': 'Library',
     'sidebar.newBookOrCategory': 'New book or category',
@@ -411,6 +412,7 @@ export const messages: Record<ResolvedLanguage, Messages> = {
     'app.inspectGroupRangeBody': '画在底层的分组、地点或阵营区域。',
     'app.inspectEvidenceImage': '插图',
     'app.inspectEvidenceImageBody': '贴在案板上的视觉参考，例如平面图、线索照片、页面截图和谜题图片。',
+    'app.editSelection': '编辑',
 
     'sidebar.library': '书库',
     'sidebar.newBookOrCategory': '新建书籍或分类',
@@ -738,6 +740,7 @@ export const messages: Record<ResolvedLanguage, Messages> = {
     'app.inspectGroupRangeBody': 'Facciones, lugares o círculos sociales dibujados detrás del tablero.',
     'app.inspectEvidenceImage': 'Ilustración',
     'app.inspectEvidenceImageBody': 'Referencias visuales como planos, fotos de pistas, capturas de páginas e imágenes de acertijos fijadas al tablero.',
+    'app.editSelection': 'Editar',
 
     'sidebar.library': 'Biblioteca',
     'sidebar.newBookOrCategory': 'Nuevo libro o categoría',
@@ -1065,6 +1068,7 @@ export const messages: Record<ResolvedLanguage, Messages> = {
     'app.inspectGroupRangeBody': 'Facções, lugares ou círculos sociais desenhados atrás do quadro.',
     'app.inspectEvidenceImage': 'Ilustração',
     'app.inspectEvidenceImageBody': 'Referências visuais, como plantas, fotos de pistas, capturas de página e imagens de enigmas fixadas ao quadro.',
+    'app.editSelection': 'Editar',
 
     'sidebar.library': 'Biblioteca',
     'sidebar.newBookOrCategory': 'Novo livro ou categoria',
@@ -1392,6 +1396,7 @@ export const messages: Record<ResolvedLanguage, Messages> = {
     'app.inspectGroupRangeBody': '事件ボードの背面に描く派閥、場所、または人物圏。',
     'app.inspectEvidenceImage': '図版',
     'app.inspectEvidenceImageBody': '間取り図、手がかり写真、ページのスクリーンショット、パズル画像など、ボードに貼る視覚資料。',
+    'app.editSelection': '編集',
 
     'sidebar.library': 'ライブラリ',
     'sidebar.newBookOrCategory': '本またはカテゴリを新規作成',

@@ -96,6 +96,10 @@ jobs:
             echo "Assets:"
             echo "- Web bundle: static browser build for self-hosting or archive validation."
             echo "- Desktop builds: Windows and Linux plain binaries, plus macOS DMG images for Apple Silicon and Intel Macs."
+            echo
+            echo "Code signing policy:"
+            echo "- Free code signing provided by SignPath.io, certificate by SignPath Foundation, for release artifacts signed under the Calabash code signing policy after program acceptance."
+            echo "- Policy: https://github.com/Guesswhat-Studio/Calabash/blob/main/docs/CODE_SIGNING.md"
           } > release-notes.md
 
       - name: Create or update GitHub Release

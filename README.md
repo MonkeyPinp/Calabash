@@ -52,6 +52,8 @@ Calabash is local-first:
 - Clearing browser site data can delete your local library during beta.
 - Use **Export Library** as your backup path and **Import Library** to move data to another browser.
 
+See [Privacy Policy](PRIVACY.md) for the full local-data and network-access statement.
+
 ## Quick Start
 
 1. Open the [live demo](https://guesswhat-studio.github.io/Calabash/).
@@ -120,6 +122,14 @@ Release builds:
 - Every public version should have an annotated `vX.Y.Z` tag and a GitHub Release.
 - Pushing a `v*` tag runs the release workflow and uploads the web bundle.
 - Starting with the `0.2` desktop shell, the same workflow also uploads unsigned plain Windows, Linux, and macOS desktop binaries.
+
+## Code Signing Policy
+
+Calabash is preparing Windows desktop signing through the SignPath Foundation
+open-source program. Free code signing provided by [SignPath.io](https://signpath.io),
+certificate by [SignPath Foundation](https://signpath.org), for release artifacts
+signed under the [Code Signing Policy](docs/CODE_SIGNING.md) after the project is
+accepted into the program.
 
 Optional local tutorial portraits:
 

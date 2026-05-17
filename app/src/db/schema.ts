@@ -1,8 +1,10 @@
 import Dexie, { type Table } from 'dexie';
 import type { Book, Category, Character, EvidenceImage, GroupRange, Relationship, StickyNote, User } from '@/types';
+import { isDesktopRuntime } from '@/lib/desktopFiles';
 import { normalizeStickyNote } from '@/lib/stickyNotes';
 import { normalizeGroupRange } from '@/lib/groupRanges';
 import { normalizeEvidenceImage } from '@/lib/evidenceImages';
+import { SqliteCalabashDB } from './sqlite';
 
 // Internal DB row: stores blobBuffer (ArrayBuffer) instead of Blob
 // so fake-indexeddb can serialize it in tests. The DAO converts at the boundary.
@@ -139,4 +141,8 @@ export class CalabashDB extends Dexie {
   }
 }
 
-export const db = new CalabashDB();
+export const db = (
+  isDesktopRuntime()
+    ? new SqliteCalabashDB(() => new CalabashDB())
+    : new CalabashDB()
+) as unknown as CalabashDB;

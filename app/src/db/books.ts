@@ -78,14 +78,12 @@ export async function deleteBook(id: string): Promise<void> {
     'rw',
     [db.books, db.characters, db.relationships, db.portraits, db.annotations, db.groupRanges, db.evidenceImages],
     async () => {
-      await Promise.all([
-        db.characters.where('bookId').equals(id).delete(),
-        db.relationships.where('bookId').equals(id).delete(),
-        db.portraits.where('bookId').equals(id).delete(),
-        db.annotations.where('bookId').equals(id).delete(),
-        db.groupRanges.where('bookId').equals(id).delete(),
-        db.evidenceImages.where('bookId').equals(id).delete(),
-      ]);
+      await db.characters.where('bookId').equals(id).delete();
+      await db.relationships.where('bookId').equals(id).delete();
+      await db.portraits.where('bookId').equals(id).delete();
+      await db.annotations.where('bookId').equals(id).delete();
+      await db.groupRanges.where('bookId').equals(id).delete();
+      await db.evidenceImages.where('bookId').equals(id).delete();
       await db.books.delete(id);
     },
   );

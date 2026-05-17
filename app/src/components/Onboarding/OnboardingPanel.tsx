@@ -110,6 +110,9 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
           <button type="button" onClick={() => onCreateTutorial('hida')} style={secondaryButtonStyle}>
             {t('onboarding.createHidaTutorial')}
           </button>
+          <button type="button" onClick={() => onCreateTutorial('contest')} style={secondaryButtonStyle}>
+            {t('onboarding.createContestTemplate')}
+          </button>
           <button type="button" onClick={() => onCreateTutorial('ackroyd')} style={primaryButtonStyle}>
             {t('onboarding.createAckroydTutorial')}
           </button>

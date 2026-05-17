@@ -39,7 +39,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.5.0');
+    expect(json.calabashVersion).toBe('0.5.1');
     expect(json.book.title).toBe('Empty');
     expect(json.book.openClues).toEqual([]);
     expect(json.characters).toEqual([]);
@@ -279,7 +279,7 @@ describe('importExport', () => {
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.5.0');
+    expect(exported.calabashVersion).toBe('0.5.1');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,

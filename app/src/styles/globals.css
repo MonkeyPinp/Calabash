@@ -6,6 +6,17 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --app-viewport-height: 100vh;
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -341,8 +352,8 @@ button.toolbar-btn:disabled {
 
 @media (max-width: 1180px) {
   .chapter-slider {
-    height: 78px !important;
-    padding: 10px 14px 13px !important;
+    height: calc(78px + var(--app-safe-bottom, 0px)) !important;
+    padding: 10px 14px calc(13px + var(--app-safe-bottom, 0px)) !important;
     gap: 10px !important;
   }
 
@@ -431,9 +442,10 @@ button.toolbar-btn:disabled {
 
 @media (max-width: 760px) {
   .chapter-slider {
-    height: 72px !important;
+    height: calc(72px + var(--app-safe-bottom, 0px)) !important;
     padding-left: 10px !important;
     padding-right: 10px !important;
+    padding-bottom: calc(13px + var(--app-safe-bottom, 0px)) !important;
     gap: 8px !important;
   }
 }

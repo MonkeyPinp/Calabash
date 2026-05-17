@@ -6,7 +6,7 @@
 
 > Un tablero de casos, grafo de relaciones y rastreador de pistas sin spoilers para lectores de misterio.
 
-[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.5.0`
+[Demo en vivo](https://guesswhat-studio.github.io/Calabash/) · [Reportar un problema](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Versión `0.5.1`
 
 Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **Español** · [Português (Brasil)](README.pt-BR.md)
 
@@ -40,7 +40,7 @@ Calabash es deliberadamente manual. No extrae personajes automáticamente, no re
 - **Biblioteca local**: guarda libros en IndexedDB y respáldalos con Exportar/Importar.
 - **Tutoriales incluidos**: prueba *The Murder of Roger Ackroyd* o *Hida Trick House Murder Case*.
 - **Interfaz multilingüe**: inglés, chino simplificado, japonés, español y portugués de Brasil.
-- **Beta web lista para tablet**: `v0.5.0` mejora la interacción táctil, añade un bloqueo real del tablero, evita nombres de casos duplicados confusos y divide los builds de release en chunks cacheados más pequeños.
+- **Plantilla de acertijo, iPad y CNB**: `v0.5.1` añade una plantilla inicial para concursos de misterio, mantiene el control de capítulos fuera del área segura de iPad Safari e incluye la ruta de release en CNB.
 
 ## Datos Y Privacidad
 
@@ -109,7 +109,7 @@ El roadmap del producto no se mantiene dentro del repositorio público. La plani
 
 ## Versión
 
-Calabash usa versionado beta `0.x`. `0.1.3` refuerza los avisos de almacenamiento beta, la cobertura con fixture de importación/exportación y la validación de release. `0.2.0` se centra en el shell de escritorio, la configuración de binarios multiplataforma, el selector de idioma inicial, notas/grupos visibles por capítulo, arreglos de renderizado de relaciones y anotaciones ajustables del tablero. `0.2.1` agrega verificación de versiones en Settings e importación de JSON de un solo libro para iniciar casos más rápido. `0.2.2` agrega interfaz japonesa, README/SEO en japonés y tutoriales localizados, especialmente el caso de Kindaichi. `0.3.0` agrega ilustraciones por capítulo, pegado desde portapapeles, capas de fondo y el rediseño de Settings como carpeta de caso. `0.3.1` corrige la barra superior compacta para mantener visibles el título y el botón del inspector. `0.4.0` es una pasada de estabilidad de escritorio con diálogos nativos de archivo, copias de seguridad antes de importar bibliotecas completas y mensajes más claros de importación/exportación. `0.5.0` pule la interacción en tablets, activa un bloqueo real del tablero, distingue títulos de casos duplicados y reduce los chunks de producción.
+Calabash usa versionado beta `0.x`. `0.1.3` refuerza los avisos de almacenamiento beta, la cobertura con fixture de importación/exportación y la validación de release. `0.2.0` se centra en el shell de escritorio, la configuración de binarios multiplataforma, el selector de idioma inicial, notas/grupos visibles por capítulo, arreglos de renderizado de relaciones y anotaciones ajustables del tablero. `0.2.1` agrega verificación de versiones en Settings e importación de JSON de un solo libro para iniciar casos más rápido. `0.2.2` agrega interfaz japonesa, README/SEO en japonés y tutoriales localizados, especialmente el caso de Kindaichi. `0.3.0` agrega ilustraciones por capítulo, pegado desde portapapeles, capas de fondo y el rediseño de Settings como carpeta de caso. `0.3.1` corrige la barra superior compacta para mantener visibles el título y el botón del inspector. `0.4.0` es una pasada de estabilidad de escritorio con diálogos nativos de archivo, copias de seguridad antes de importar bibliotecas completas y mensajes más claros de importación/exportación. `0.5.0` pule la interacción en tablets, activa un bloqueo real del tablero, distingue títulos de casos duplicados y reduce los chunks de producción. `0.5.1` añade una plantilla inicial de acertijo, corrige el área segura del control inferior en iPad Safari y cubre el despliegue de releases en CNB.
 
 ## License
 

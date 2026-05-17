@@ -133,6 +133,57 @@ describe('Ackroyd demo data', () => {
   it('recommends contrasting default board styles for the two tutorials', () => {
     expect(getTutorialDefaultViewMode('ackroyd')).toBe('portrait');
     expect(getTutorialDefaultViewMode('hida')).toBe('text');
+    expect(getTutorialDefaultViewMode('contest')).toBe('text');
+  });
+
+  it('creates a locked five-zone puzzle contest template', async () => {
+    const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'zh-CN', kind: 'contest' });
+    const book = await getBook(bookId);
+    const characters = await listCharactersByBook(bookId);
+    const relationships = await listRelationshipsByBook(bookId);
+    const notes = await listAnnotationsByBook(bookId);
+    const groups = await listGroupRangesByBook(bookId);
+
+    expect(book?.userId).toBe('reader-1');
+    expect(book?.title).toBe('每谜 / 推理比赛模板');
+    expect(book?.totalChapters).toBe(1);
+    expect(book?.spoilerShield).toBe(false);
+    expect(book?.openClues?.map((clue) => clue.text)).toEqual([
+      '谁同时具备动机、手段和机会？',
+      '时间线里哪一句说法无法同时成立？',
+      '最终答案能否解释所有异常线索？',
+    ]);
+    expect(characters.map((character) => character.name)).toEqual(expect.arrayContaining([
+      '嫌疑人 A',
+      '嫌疑人 B',
+      '证人 / 叙述者',
+      '关键地点',
+      '关键物证',
+    ]));
+    expect(characters.map((character) => character.kind)).toEqual(expect.arrayContaining([
+      'character',
+      'testimony',
+      'location',
+      'item',
+    ]));
+    expect(relationships.map((relationship) => relationship.label)).toEqual(expect.arrayContaining([
+      '利益冲突？',
+      '接触过？',
+      '声称在',
+    ]));
+    expect(groups.map((group) => group.label)).toEqual(expect.arrayContaining([
+      '人物表',
+      '线索区',
+      '时间线',
+      '怀疑点',
+      '最终推理区',
+    ]));
+    expect(groups.every((group) => group.locked)).toBe(true);
+    expect(notes).toHaveLength(5);
+    expect(notes.every((note) => note.locked)).toBe(true);
+    const noteText = notes.map((note) => note.content).join(' ');
+    expect(noteText).toContain('线索卡');
+    expect(noteText).toContain('答案草稿');
   });
 
   it('creates a localized tutorial book for the current reader', async () => {
@@ -252,7 +303,7 @@ describe('Ackroyd demo data', () => {
     expect(notes.map((note) => note.fontSize)).toEqual([20, 20, 20, 20]);
     const noteText = notes.map((note) => note.content).join(' ');
     expect(noteText).toContain('文字版/大图版');
-    expect(noteText).toContain('自动保存在这个浏览器');
+    expect(noteText).toContain('自动保存到本机书库');
     expect(noteText).toContain('章节滑杆');
     expect(noteText).toContain('按 E');
     expect(noteText).toContain('分组位于角色和关系线下方');

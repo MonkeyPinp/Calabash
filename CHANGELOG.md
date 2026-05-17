@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 - 2026-05-17
+
+- Added a mystery puzzle/contest starter template for quick blank case setup.
+- Fixed iPad Safari viewport and safe-area handling so the bottom chapter slider remains fully visible.
+- Included the CNB release deployment path in the tagged release flow.
+- Bumped web, desktop, import/export, and template metadata to `0.5.1`.
+
 ## 0.5.0 - 2026-05-17
 
 - Improved tablet-oriented touch interaction polish across the public web beta.

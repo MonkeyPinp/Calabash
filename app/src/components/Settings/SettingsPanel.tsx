@@ -255,10 +255,16 @@ export default function SettingsPanel({
                 <SectionTab color={activeColor} number="01">{t('settings.tutorials')}</SectionTab>
                 <div style={tutorialGridStyle}>
                   <TutorialCard
+                    eyebrow="PUZZLE"
+                    title={t('onboarding.createContestTemplate')}
+                    author="Blank board · 5 zones"
+                    accent
+                    onClick={() => onCreateTutorial('contest')}
+                  />
+                  <TutorialCard
                     eyebrow="ACKROYD"
                     title={t('onboarding.createAckroydTutorial')}
                     author="Agatha Christie · 27 ch."
-                    accent
                     onClick={() => onCreateTutorial('ackroyd')}
                   />
                   <TutorialCard

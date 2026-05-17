@@ -69,8 +69,8 @@ export default function ChapterSlider({
     <div
       className="chapter-slider"
       style={{
-        height: 88,
-        padding: '13px 20px 16px',
+        height: 'calc(88px + var(--app-safe-bottom, 0px))',
+        padding: '13px 20px calc(16px + var(--app-safe-bottom, 0px))',
         borderTop: '1px solid var(--ink-200)',
         background: 'var(--bg-panel)',
         display: 'flex',

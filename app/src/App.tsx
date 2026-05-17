@@ -111,7 +111,7 @@ const sidebarUtilityButtonStyle: React.CSSProperties = {
 const toastStyle: React.CSSProperties = {
   position: 'fixed',
   left: '50%',
-  bottom: 86,
+  bottom: 'calc(86px + var(--app-safe-bottom, 0px))',
   transform: 'translateX(-50%)',
   zIndex: 900,
   maxWidth: 'min(680px, calc(100vw - 32px))',
@@ -968,7 +968,7 @@ export default function App() {
       style={{
         display: 'flex',
         width: '100vw',
-        height: '100vh',
+        height: 'var(--app-viewport-height)',
         overflow: 'hidden',
         background: 'var(--bg-canvas)',
         color: 'var(--ink-900)',
@@ -1534,11 +1534,11 @@ export default function App() {
                 >
                   <StarterActionCard
                     primary
-                    icon={<BookOpen size={16} />}
-                    title={t('app.starterAckroydTitle')}
-                    body={t('app.starterAckroydBody')}
-                    action={t('onboarding.createAckroydTutorial')}
-                    onClick={() => void handleCreateTutorialBook('ackroyd')}
+                    icon={<LayoutGrid size={16} />}
+                    title={t('app.starterContestTitle')}
+                    body={t('app.starterContestBody')}
+                    action={t('app.starterContestAction')}
+                    onClick={() => void handleCreateTutorialBook('contest')}
                     disabled={!activeUserId}
                   />
                   <StarterActionCard
@@ -1547,6 +1547,14 @@ export default function App() {
                     body={t('app.starterBlankBody')}
                     action={t('app.starterBlankAction')}
                     onClick={() => void handleCreateStarterBook()}
+                    disabled={!activeUserId}
+                  />
+                  <StarterActionCard
+                    icon={<BookOpen size={16} />}
+                    title={t('app.starterAckroydTitle')}
+                    body={t('app.starterAckroydBody')}
+                    action={t('onboarding.createAckroydTutorial')}
+                    onClick={() => void handleCreateTutorialBook('ackroyd')}
                     disabled={!activeUserId}
                   />
                   <StarterActionCard

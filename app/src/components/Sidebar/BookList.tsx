@@ -477,6 +477,9 @@ export default function BookList() {
           <button type="button" onClick={() => void handleSeedTutorial('hida')} style={secondaryMenuActionStyle}>
             {t('sidebar.createTutorial')}
           </button>
+          <button type="button" onClick={() => void handleSeedTutorial('contest')} style={secondaryMenuActionStyle}>
+            {t('sidebar.createContestTemplate')}
+          </button>
         </div>
       )}
 
@@ -495,6 +498,9 @@ export default function BookList() {
           <button type="button" onClick={() => void handleImportBook()} style={choiceButtonStyle}>
             <Upload size={12} />
             {t('sidebar.importSingleBook')}
+          </button>
+          <button type="button" onClick={() => void handleSeedTutorial('contest')} style={choiceButtonStyle}>
+            {t('sidebar.createContestTemplate')}
           </button>
           <button type="button" onClick={() => setShowBookStartChoice(false)} style={secondaryFormButtonStyle}>
             {t('sidebar.cancel')}

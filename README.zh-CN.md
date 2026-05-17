@@ -102,6 +102,7 @@ npm run desktop:build
 - 每个公开版本都应该有一个 `vX.Y.Z` annotated tag 和 GitHub Release。
 - 推送 `v*` tag 会运行 release workflow，并上传 web bundle。
 - 从 `0.2` 桌面壳开始，同一个 workflow 也会上传 Windows、Linux 和 macOS 的未签名纯 desktop binary。
+- GitHub Release 的全部附件就绪后，workflow 会把最新版附件镜像到 CNB 供国内下载；GitHub 仍保留完整历史归档。
 
 ## 路线图
 

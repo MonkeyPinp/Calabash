@@ -123,6 +123,7 @@ Release builds:
 - Every public version should have an annotated `vX.Y.Z` tag and a GitHub Release.
 - Pushing a `v*` tag runs the release workflow and uploads the web bundle.
 - Starting with the `0.2` desktop shell, the same workflow also uploads unsigned plain Windows, Linux, and macOS desktop binaries.
+- After all GitHub Release assets are ready, the workflow mirrors the latest release assets to CNB for domestic downloads while GitHub remains the full archive.
 
 ## Code Signing Policy
 

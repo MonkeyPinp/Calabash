@@ -28,9 +28,11 @@ $:
               echo
               echo "Assets:"
               echo "- Web bundle: static browser build for self-hosting or archive validation."
+              echo "- Desktop assets are mirrored from GitHub Release after all platform builds finish."
               echo
               echo "Desktop builds:"
-              echo "- GitHub Release remains the canonical location for Windows, Linux, and macOS desktop artifacts."
+              echo "- GitHub Release remains the canonical archive for Windows, Linux, and macOS desktop artifacts."
+              echo "- CNB keeps the latest release assets for faster domestic downloads."
               echo "- GitHub Release: https://github.com/Guesswhat-Studio/Calabash/releases/tag/${CNB_BRANCH}"
             } > release-notes.md
 

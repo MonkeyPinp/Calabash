@@ -102,6 +102,7 @@ Builds de release:
 - Cada version publica debe tener un tag anotado `vX.Y.Z` y una GitHub Release.
 - Al subir un tag `v*`, se ejecuta el release workflow y se carga el web bundle.
 - A partir del shell de escritorio `0.2`, el mismo workflow tambien carga binarios desktop simples y sin firma para Windows, Linux y macOS.
+- Cuando todos los assets de GitHub Release estan listos, el workflow espeja los assets de la ultima release a CNB para descargas domesticas; GitHub sigue siendo el archivo historico completo.
 
 ## Roadmap
 

@@ -97,6 +97,8 @@ npm run desktop:build
 
 デスクトップビルドには Rust が必要で、`src-tauri/` の Tauri 2 shell を使います。React app は web と desktop の共通フロントエンドです。
 
+リリースビルドでは、`vX.Y.Z` tag で GitHub Release を作成し、web bundle と Windows/Linux/macOS の desktop asset をアップロードします。すべての GitHub Release asset が揃った後、workflow は最新版 asset を CNB にミラーし、GitHub は完全な履歴アーカイブとして残します。
+
 ## バージョン
 
 Calabash は現在 `0.x` beta バージョニングです。`0.2.0` はデスクトップ shell、章ごとの付箋/グループ、関係線の修正、調整可能なボード注釈を追加しました。`0.2.1` は Settings の更新チェックと単体本 JSON インポートを追加しました。`0.2.2` は日本語 UI、日本語 README/SEO、そして特に金田一 case の日本語チュートリアル demo を追加しました。`0.3.0` は章ごとの挿絵、クリップボード貼り付け、背景レイヤー、事件フォルダ風 Settings を追加しました。`0.3.1` は狭いボードでもタイトルとインスペクター切り替えを表示する toolbar 修正です。`0.4.0` はデスクトップ安定性のため、ネイティブファイルダイアログ、ライブラリ全体インポート前の安全バックアップ、より明確なインポート/エクスポート完了表示を追加しました。`0.5.0` はタブレットでの操作性、有効なボードロック、重複 case タイトルの区別、より小さな production chunk を追加しました。`0.5.1` はミステリーパズル用スターターテンプレート、iPad Safari の下部章スライダー安全領域修正、CNB release デプロイ確認を追加しました。

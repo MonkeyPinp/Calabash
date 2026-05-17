@@ -144,6 +144,5 @@ function assetNameCandidates(platform: PlatformInfo): string[] {
   if (platform.os === 'windows') return ['windows_x64.exe', 'windows_x64'];
   if (platform.os === 'linux') return ['linux_x64'];
   if (platform.os === 'macos' && platform.arch === 'arm64') return ['darwin_aarch64', 'darwin_arm64'];
-  if (platform.os === 'macos' && platform.arch === 'x64') return ['darwin_x64'];
   return [];
 }

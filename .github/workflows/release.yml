@@ -95,7 +95,7 @@ jobs:
             echo
             echo "Assets:"
             echo "- Web bundle: static browser build for self-hosting or archive validation."
-            echo "- Desktop builds: Windows and Linux plain binaries, plus macOS DMG images for Apple Silicon and Intel Macs."
+            echo "- Desktop builds: Windows and Linux plain binaries, plus a macOS DMG image for Apple Silicon."
             echo
             echo "Code signing policy:"
             echo "- Free code signing provided by SignPath.io, certificate by SignPath Foundation, for release artifacts signed under the Calabash code signing policy after program acceptance."
@@ -165,11 +165,6 @@ jobs:
           - platform: macos-15
             label: macos-arm64
             asset_suffix: darwin_aarch64
-            args: --bundles dmg
-            upload_plain_binary: false
-          - platform: macos-15-intel
-            label: macos-x64
-            asset_suffix: darwin_x64
             args: --bundles dmg
             upload_plain_binary: false
           - platform: ubuntu-22.04

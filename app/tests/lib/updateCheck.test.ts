@@ -37,7 +37,7 @@ describe('updateCheck', () => {
     expect(pickReleaseAsset(release, { os: 'windows', arch: 'x64' })?.browser_download_url).toBe('https://example.com/windows.exe');
     expect(pickReleaseAsset(release, { os: 'linux', arch: 'x64' })?.browser_download_url).toBe('https://example.com/linux');
     expect(pickReleaseAsset(release, { os: 'macos', arch: 'arm64' })?.browser_download_url).toBe('https://example.com/mac-arm');
-    expect(pickReleaseAsset(release, { os: 'macos', arch: 'x64' })?.browser_download_url).toBe('https://example.com/mac-x64');
+    expect(pickReleaseAsset(release, { os: 'macos', arch: 'x64' })).toBeUndefined();
   });
 
   it('returns an available update when GitHub has a newer prerelease', async () => {

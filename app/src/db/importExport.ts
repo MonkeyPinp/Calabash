@@ -1,4 +1,5 @@
 import { db, type PortraitRow } from './schema';
+import { makeUniqueBookTitle } from './books';
 import type {
   Alias,
   Book,
@@ -237,6 +238,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       notes: stringValue(raw.notes),
       chapterIntroduced,
       position: normalizePoint(raw.position, defaultCharacterPosition(index)),
+      locked: booleanValue(raw.locked),
       createdAt: 0,
       updatedAt: 0,
     };
@@ -277,6 +279,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     color: normalizeStickyNoteColor(raw.color),
     fontSize: positiveInt(raw.fontSize, STICKY_NOTE_DEFAULT_FONT_SIZE),
     chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    locked: booleanValue(raw.locked),
     createdAt: 0,
     updatedAt: 0,
   })).map(normalizeStickyNote);
@@ -296,6 +299,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     labelFontSize: positiveInt(raw.labelFontSize ?? raw.fontSize, GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE),
     labelPosition: normalizePoint(raw.labelPosition, GROUP_RANGE_DEFAULT_LABEL_POSITION),
     chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    locked: booleanValue(raw.locked),
     createdAt: 0,
     updatedAt: 0,
   })).map(normalizeGroupRange);
@@ -323,6 +327,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       width: positiveNumber(raw.width, EVIDENCE_IMAGE_DEFAULT_WIDTH),
       height: positiveNumber(raw.height, EVIDENCE_IMAGE_DEFAULT_HEIGHT),
       chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+      locked: booleanValue(raw.locked),
       createdAt: 0,
       updatedAt: 0,
     })];
@@ -385,6 +390,10 @@ function numberArray(value: unknown): number[] {
     const parsed = typeof item === 'number' ? item : Number.parseInt(String(item ?? ''), 10);
     return Number.isFinite(parsed) && parsed > 0 ? [Math.trunc(parsed)] : [];
   });
+}
+
+function booleanValue(value: unknown): boolean {
+  return value === true || value === 'true';
 }
 
 function arrayOfRecords(value: unknown): Array<Record<string, unknown>> {
@@ -580,6 +589,7 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
   const portablePayload = normalizeBookImportPayload(payload);
   const now = Date.now();
   const newBookId = crypto.randomUUID();
+  const title = await makeUniqueBookTitle(portablePayload.book.title, userId);
   const charIdMap = new Map<string, string>();
   const portraitIdMap = new Map<string, string>();
 
@@ -643,6 +653,7 @@ export async function importBookFromJson(payload: unknown, userId?: string): Pro
       id: newBookId,
       userId,
       categoryId: undefined,
+      title,
       spoilerShield: portablePayload.book.spoilerShield ?? false,
       spoilerChapters: portablePayload.book.spoilerChapters ?? [],
       highlightedChapters: portablePayload.book.highlightedChapters ?? [],

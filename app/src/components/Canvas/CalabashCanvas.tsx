@@ -4,6 +4,7 @@ import {
   ReactFlowProvider,
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   MiniMap,
   MarkerType,
@@ -17,7 +18,7 @@ import {
   type NodeMouseHandler,
   type EdgeMouseHandler,
 } from '@xyflow/react';
-import { Link2, PanelRight, Trash2 } from 'lucide-react';
+import { Link2, Lock, PanelRight, Trash2, Unlock } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
 import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
@@ -52,7 +53,7 @@ const EMPTY_EVIDENCE_IMAGES: EvidenceImage[] = [];
 
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
-const CHARACTER_NODE_MIN_HEIGHT = 76;
+const CHARACTER_NODE_MIN_HEIGHT = 82;
 const CHARACTER_NODE_TEXT_INSET = 78;
 const PORTRAIT_CHARACTER_NODE_WIDTH = 176;
 const PORTRAIT_CHARACTER_NODE_HEIGHT = 252;
@@ -84,22 +85,22 @@ function estimateCharacterNodeSize(name: string, roleLabel: string, subtitle?: s
   );
   const textWidth = Math.max(120, width - CHARACTER_NODE_TEXT_INSET);
   const metaText = [roleLabel, subtitle].filter(Boolean).join(' · ');
-  const nameLines = estimateWrappedLines(name, textWidth, 7.3);
-  const metaLines = estimateWrappedLines(metaText, textWidth, 5.8);
+  const nameLines = estimateWrappedLines(name, textWidth, 8.1);
+  const metaLines = estimateWrappedLines(metaText, textWidth, 6.5);
   const height = Math.max(
     CHARACTER_NODE_MIN_HEIGHT,
-    32 + nameLines * 17 + (metaLines > 0 ? 4 + metaLines * 14 : 0) + 18,
+    34 + nameLines * 19 + (metaLines > 0 ? 5 + metaLines * 16 : 0) + 18,
   );
   return { width, height };
 }
 
 function estimatePortraitCharacterNodeSize(name: string, subtitle?: string) {
   const textWidth = PORTRAIT_CHARACTER_NODE_WIDTH - PORTRAIT_CHARACTER_NODE_TEXT_INSET;
-  const nameLines = estimateWrappedLines(name, textWidth, 7.6);
-  const subtitleLines = estimateWrappedLines(subtitle, textWidth, 5.8);
+  const nameLines = estimateWrappedLines(name, textWidth, 8.1);
+  const subtitleLines = estimateWrappedLines(subtitle, textWidth, 6.5);
   const height = Math.max(
     PORTRAIT_CHARACTER_NODE_HEIGHT,
-    211 + nameLines * 18 + (subtitleLines > 0 ? 3 + subtitleLines * 13 : 0),
+    213 + nameLines * 19 + (subtitleLines > 0 ? 4 + subtitleLines * 15 : 0),
   );
   return { width: PORTRAIT_CHARACTER_NODE_WIDTH, height };
 }
@@ -196,6 +197,7 @@ function CalabashCanvasInner({
   const [edgeStartId, setEdgeStartId] = useState<string | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
+  const [boardLocked, setBoardLocked] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const handledNewCharacterRequestId = useRef(0);
@@ -257,6 +259,7 @@ function CalabashCanvasInner({
             position: c.position,
             width,
             height,
+            draggable: !boardLocked && c.locked !== true,
             style: { width, minHeight: height },
             data: {
               name,
@@ -268,10 +271,11 @@ function CalabashCanvasInner({
               profession: c.profession,
               portraitId: c.portraitId,
               chapterIntroduced: c.chapterIntroduced,
+              locked: c.locked === true,
             },
           };
         }),
-    [characters, currentChapter, characterNodeViewMode, t],
+    [characters, currentChapter, characterNodeViewMode, t, boardLocked],
   );
 
   // Sticky note nodes
@@ -285,10 +289,11 @@ function CalabashCanvasInner({
           position: s.position,
           width: s.width,
           height: s.height,
+          draggable: !boardLocked && s.locked !== true,
           style: { width: s.width, height: s.height },
           data: { note: s },
         })),
-    [stickyNotes, currentChapter],
+    [stickyNotes, currentChapter, boardLocked],
   );
 
   // Group range nodes stay visually behind characters, notes, and relationship edges.
@@ -302,11 +307,12 @@ function CalabashCanvasInner({
           position: r.position,
           width: r.width,
           height: r.height,
+          draggable: !boardLocked && r.locked !== true,
           zIndex: -20,
           style: { width: r.width, height: r.height, zIndex: -20 },
           data: { range: r },
         })),
-    [groupRanges, currentChapter],
+    [groupRanges, currentChapter, boardLocked],
   );
 
   const evidenceImageNodes: Node[] = useMemo(
@@ -321,17 +327,29 @@ function CalabashCanvasInner({
             position: image.position,
             width: image.width,
             height: image.height,
+            draggable: !boardLocked && image.locked !== true,
             zIndex,
             style: { width: image.width, height: image.height, zIndex },
             data: { image },
           };
         }),
-    [evidenceImages, currentChapter],
+    [evidenceImages, currentChapter, boardLocked],
   );
 
   const allComputedNodes: Node[] = useMemo(
     () => [...groupRangeNodes, ...evidenceImageNodes, ...characterNodes, ...stickyNoteNodes],
     [groupRangeNodes, evidenceImageNodes, characterNodes, stickyNoteNodes],
+  );
+
+  const lockedNodeIds = useMemo(
+    () =>
+      new Set([
+        ...characters.filter((character) => character.locked === true).map((character) => character.id),
+        ...stickyNotes.filter((note) => note.locked === true).map((note) => note.id),
+        ...groupRanges.filter((range) => range.locked === true).map((range) => range.id),
+        ...evidenceImages.filter((image) => image.locked === true).map((image) => image.id),
+      ]),
+    [characters, stickyNotes, groupRanges, evidenceImages],
   );
 
   const visibleCharIds = useMemo(() => new Set(characterNodes.map((n) => n.id)), [characterNodes]);
@@ -357,8 +375,14 @@ function CalabashCanvasInner({
   }, [allComputedNodes]);
 
   const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
-    setRfNodes((nds) => applyNodeChanges(changes, nds));
-  }, []);
+    const allowedChanges = changes.filter((change) => {
+      if (boardLocked && 'id' in change && change.type === 'position') return false;
+      if (!('id' in change) || !lockedNodeIds.has(change.id)) return true;
+      return change.type !== 'position' && change.type !== 'dimensions';
+    });
+    if (allowedChanges.length === 0) return;
+    setRfNodes((nds) => applyNodeChanges(allowedChanges, nds));
+  }, [boardLocked, lockedNodeIds]);
 
   const edges: Edge[] = useMemo(() => {
     const visible = relationships.filter(
@@ -414,7 +438,7 @@ function CalabashCanvasInner({
   // ── Auto-layout (lives here so it has direct access to setRfNodes + fitView) ──
 
   const runLayout = useCallback(async () => {
-    if (!bookId) return;
+    if (!bookId || boardLocked) return;
     const visible = characters.filter((c) => c.chapterIntroduced <= currentChapter);
     const visibleIds = new Set(visible.map((c) => c.id));
     const nodeSizes = new Map(
@@ -442,7 +466,7 @@ function CalabashCanvasInner({
 
     // Write to DB + Zustand
     await Promise.all(
-      visible.map(async (c) => {
+      visible.filter((c) => c.locked !== true).map(async (c) => {
         const pos = positions.get(c.id);
         if (!pos) return;
         await updateCharacter(c.id, { position: pos });
@@ -454,6 +478,7 @@ function CalabashCanvasInner({
     setRfNodes((nds) =>
       nds.map((n) => {
         if (n.type !== 'character') return n;
+        if (lockedNodeIds.has(n.id)) return n;
         const pos = positions.get(n.id);
         return pos ? { ...n, position: pos } : n;
       }),
@@ -461,7 +486,7 @@ function CalabashCanvasInner({
 
     // fitView after React Flow renders the new rfNodes (double rAF ensures post-paint)
     requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15, maxZoom: 1.1 })));
-  }, [bookId, characters, relationships, currentChapter, characterNodeViewMode, t, updateCharacterInStore, fitView]);
+  }, [bookId, boardLocked, characters, relationships, currentChapter, characterNodeViewMode, t, updateCharacterInStore, fitView, lockedNodeIds]);
 
   useEffect(() => {
     onLayoutReady?.(runLayout);
@@ -471,6 +496,7 @@ function CalabashCanvasInner({
 
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (_event, node) => {
+      if (boardLocked) return;
       if (node.type === 'stickyNote') {
         setSelectedNodeIds(new Set([node.id]));
         setSelectedEdgeIds(new Set());
@@ -520,11 +546,12 @@ function CalabashCanvasInner({
       onGroupRangeSelect?.(null);
       onEvidenceImageSelect?.(null);
     },
-    [edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
+    [boardLocked, edgeStartId, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
     (_event, edge) => {
+      if (boardLocked) return;
       setSelectedEdgeIds(new Set([edge.id]));
       setSelectedNodeIds(new Set());
       onEdgeSelect?.(edge.id);
@@ -533,10 +560,11 @@ function CalabashCanvasInner({
       onGroupRangeSelect?.(null);
       onEvidenceImageSelect?.(null);
     },
-    [onEdgeSelect, onNodeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
+    [boardLocked, onEdgeSelect, onNodeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   const handlePaneClick = useCallback(() => {
+    if (boardLocked) return;
     setEdgeStartId(null);
     setSelectedNodeIds(new Set());
     setSelectedEdgeIds(new Set());
@@ -545,10 +573,11 @@ function CalabashCanvasInner({
     onStickyNoteSelect?.(null);
     onGroupRangeSelect?.(null);
     onEvidenceImageSelect?.(null);
-  }, [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect]);
+  }, [boardLocked, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect]);
 
   const handleSelectionChange = useCallback(
     ({ nodes: selNodes, edges: selEdges }: OnSelectionChangeParams) => {
+      if (boardLocked) return;
       if (selNodes.length + selEdges.length === 0) return;
       const nodeIds = new Set(selNodes.map((n) => n.id));
       const edgeIds = new Set(selEdges.map((e) => e.id));
@@ -586,7 +615,7 @@ function CalabashCanvasInner({
         onEvidenceImageSelect?.(null);
       }
     },
-    [onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
+    [boardLocked, onNodeSelect, onEdgeSelect, onStickyNoteSelect, onGroupRangeSelect, onEvidenceImageSelect],
   );
 
   const selectedCharacterIds = useMemo(
@@ -608,6 +637,7 @@ function CalabashCanvasInner({
 
   const deleteSelection = useCallback(
     async () => {
+      if (boardLocked) return;
       if (selectedNodeIds.size === 0 && selectedEdgeIds.size === 0) return;
       const deletedRelationshipIds = new Set<string>();
 
@@ -667,7 +697,7 @@ function CalabashCanvasInner({
     [selectedNodeIds, selectedEdgeIds, characters, relationships, stickyNotes, groupRanges, evidenceImages,
      addCharacter, removeCharacter, addRelationship, removeRelationship,
      addStickyNote, removeStickyNote, addGroupRange, removeGroupRange, addEvidenceImage, removeEvidenceImage,
-     pushUndo, clearSelection],
+     pushUndo, clearSelection, boardLocked],
   );
 
   const handleKeyDown = useCallback(
@@ -702,6 +732,7 @@ function CalabashCanvasInner({
   }, [bookId, screenToFlowPosition, getViewport, characters.length]);
 
   const handleStartEdgeFromSelection = useCallback((requestedSourceId?: string | null) => {
+    if (boardLocked) return;
     if (requestedSourceId && characters.some((character) => character.id === requestedSourceId)) {
       setSelectedNodeIds(new Set([requestedSourceId]));
       setSelectedEdgeIds(new Set());
@@ -714,7 +745,7 @@ function CalabashCanvasInner({
     );
     if (selectedCharacterIds.length !== 1) return;
     setEdgeStartId(selectedCharacterIds[0]);
-  }, [characters, selectedNodeIds]);
+  }, [boardLocked, characters, selectedNodeIds]);
 
   useEffect(() => {
     if (
@@ -737,15 +768,19 @@ function CalabashCanvasInner({
   }, [startEdgeRequestId, startEdgeSourceId, handleStartEdgeFromSelection]);
 
   const handleNodeDragStart = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (boardLocked) return;
+    if (lockedNodeIds.has(node.id)) return;
     isDraggingRef.current = true;
     // Record starting position for undo
     dragStartPositions.current.set(node.id, { x: node.position.x, y: node.position.y });
-  }, []);
+  }, [boardLocked, lockedNodeIds]);
 
   const handleNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       isDraggingRef.current = false;
       if (!bookId) return;
+      if (boardLocked) return;
+      if (lockedNodeIds.has(node.id)) return;
 
       const oldPos = dragStartPositions.current.get(node.id);
       const newPos = node.position;
@@ -793,8 +828,16 @@ function CalabashCanvasInner({
         }
       }
     },
-    [bookId, characters, stickyNotes, groupRanges, evidenceImages, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, updateEvidenceImageInStore, pushUndo],
+    [bookId, boardLocked, lockedNodeIds, characters, stickyNotes, groupRanges, evidenceImages, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, updateEvidenceImageInStore, pushUndo],
   );
+
+  const toggleBoardLocked = useCallback(() => {
+    setBoardLocked((locked) => {
+      const next = !locked;
+      if (next) setEdgeStartId(null);
+      return next;
+    });
+  }, []);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -806,13 +849,22 @@ function CalabashCanvasInner({
       style={{ width: '100%', height: '100%', outline: 'none', position: 'relative' }}
     >
       <ReactFlow
-        className={touchMode ? 'react-flow--touch-mode' : undefined}
+        className={[
+          touchMode ? 'react-flow--touch-mode' : '',
+          boardLocked ? 'react-flow--board-locked' : '',
+        ].filter(Boolean).join(' ') || undefined}
         nodes={rfNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        panOnDrag
-        selectionOnDrag={!touchMode}
+        nodesDraggable={!boardLocked}
+        nodesConnectable={!boardLocked}
+        elementsSelectable={!boardLocked}
+        panOnDrag={!boardLocked}
+        zoomOnScroll={!boardLocked}
+        zoomOnPinch={!boardLocked}
+        zoomOnDoubleClick={!boardLocked}
+        selectionOnDrag={!boardLocked && !touchMode}
         selectionKeyCode="Shift"
         nodeDragThreshold={touchMode ? 6 : 1}
         paneClickDistance={touchMode ? 8 : 0}
@@ -830,13 +882,24 @@ function CalabashCanvasInner({
         connectionLineStyle={{ stroke: 'var(--accent)', strokeDasharray: '6 3', strokeWidth: 1.5, opacity: 0.7 }}
         proOptions={{ hideAttribution: true }}
         onConnect={(connection) => {
+          if (boardLocked) return;
           if (!bookId || !connection.source || !connection.target) return;
           if (!visibleCharIds.has(connection.source) || !visibleCharIds.has(connection.target)) return;
           setPendingConnection({ sourceId: connection.source, targetId: connection.target });
         }}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--ink-200)" />
-        <Controls position="bottom-left" />
+        <Controls position="bottom-left" showInteractive={false}>
+          <ControlButton
+            className={`react-flow__controls-interactive ${boardLocked ? 'is-locked' : ''}`}
+            onClick={toggleBoardLocked}
+            title={boardLocked ? t('canvas.unlockBoard') : t('canvas.lockBoard')}
+            aria-label={boardLocked ? t('canvas.unlockBoard') : t('canvas.lockBoard')}
+            aria-pressed={boardLocked}
+          >
+            {boardLocked ? <Lock size={13} /> : <Unlock size={13} />}
+          </ControlButton>
+        </Controls>
         <MiniMap
           position="bottom-right"
           nodeColor={(node) => {
@@ -867,6 +930,13 @@ function CalabashCanvasInner({
           pannable
         />
       </ReactFlow>
+
+      {boardLocked && (
+        <div className="board-lock-indicator" data-testid="board-lock-indicator">
+          <Lock size={13} />
+          <span>{t('canvas.boardLocked')}</span>
+        </div>
+      )}
 
       <div
         aria-label="Keyboard shortcuts"
@@ -987,7 +1057,7 @@ function CalabashCanvasInner({
         </div>
       )}
 
-      {touchMode && (selectedNodeIds.size > 0 || selectedEdgeIds.size > 0) && (
+      {touchMode && !boardLocked && (selectedNodeIds.size > 0 || selectedEdgeIds.size > 0) && (
         <div
           className="canvas-action-dock"
           data-testid="canvas-action-dock"

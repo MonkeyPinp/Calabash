@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Lock, Trash2, Unlock } from 'lucide-react';
 import type { StickyNoteColor } from '@/types';
 import { deleteAnnotation, restoreAnnotation, updateAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
@@ -151,6 +151,22 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     );
   }
 
+  async function handleLockedToggle() {
+    const before = note!.locked === true;
+    const after = !before;
+    await persist({ locked: after });
+    pushUndo(
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { locked: before });
+        updateStickyNoteInStore(updated);
+      },
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { locked: after });
+        updateStickyNoteInStore(updated);
+      },
+    );
+  }
+
   async function handleDelete() {
     const snapshot = note!;
     await deleteAnnotation(stickyNoteId);
@@ -172,8 +188,29 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 16px 12px', borderBottom: '1px solid var(--ink-200)' }}>
         <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 500, color: 'var(--ink-900)' }}>
-          {t('stickyNote.title')}
+          {t('stickyNote.title')}{note.locked ? ` · ${t('boardItem.locked')}` : ''}
         </div>
+        <button
+          onClick={() => void handleLockedToggle()}
+          title={note.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+          aria-label={note.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+          aria-pressed={note.locked === true}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            background: note.locked ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+            border: note.locked ? '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' : '1px solid transparent',
+            borderRadius: 4,
+            cursor: 'pointer',
+            color: note.locked ? 'var(--accent)' : 'var(--ink-600)',
+            flexShrink: 0,
+          }}
+        >
+          {note.locked ? <Lock size={13} /> : <Unlock size={13} />}
+        </button>
         <button
           onClick={() => void handleDelete()}
           title={t('stickyNote.delete')}

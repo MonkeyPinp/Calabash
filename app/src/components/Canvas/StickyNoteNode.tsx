@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
-import { Trash2 } from 'lucide-react';
+import { Lock, Trash2 } from 'lucide-react';
 import type { StickyNote, StickyNoteColor } from '@/types';
 import { updateAnnotation, deleteAnnotation, restoreAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
@@ -83,6 +83,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
   }
 
   async function handleResizeEnd(_: unknown, params: { width: number; height: number }) {
+    if (note.locked) return;
     const oldWidth = note.width;
     const oldHeight = note.height;
     const newWidth = params.width;
@@ -100,13 +101,14 @@ function StickyNoteNodeImpl(props: NodeProps) {
       <NodeResizer
         minWidth={120}
         minHeight={80}
-        isVisible={sel}
+        isVisible={sel && !note.locked}
         lineStyle={{ borderColor: colors.border, borderWidth: 1.5 }}
         handleStyle={{ width: 8, height: 8, background: colors.border, borderRadius: 2 }}
         onResizeEnd={handleResizeEnd}
       />
       <div
         data-testid="sticky-note-node"
+        className={note.locked ? 'nopan' : undefined}
         style={{
           width: '100%',
           height: '100%',
@@ -168,6 +170,23 @@ function StickyNoteNodeImpl(props: NodeProps) {
             ))}
             {/* Spacer */}
             <div style={{ flex: 1 }} />
+            {note.locked && (
+              <div
+                aria-hidden="true"
+                title="Locked"
+                style={{
+                  display: 'grid',
+                  placeItems: 'center',
+                  width: 18,
+                  height: 18,
+                  color: colors.text,
+                  opacity: 0.65,
+                  flexShrink: 0,
+                }}
+              >
+                <Lock size={11} />
+              </div>
+            )}
             {/* Delete button */}
             <button
               onClick={(e) => void handleDelete(e)}
@@ -204,7 +223,7 @@ function StickyNoteNodeImpl(props: NodeProps) {
             background: 'rgba(255,255,255,0.42)',
             color: colors.text,
             fontFamily: 'var(--font-mono)',
-            fontSize: 9,
+            fontSize: 9.5,
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.25,
@@ -216,6 +235,29 @@ function StickyNoteNodeImpl(props: NodeProps) {
         >
           {displayTag}
         </div>
+
+        {note.locked && !sel && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 8,
+              top: 7,
+              zIndex: 1,
+              display: 'grid',
+              placeItems: 'center',
+              width: 17,
+              height: 17,
+              borderRadius: 2,
+              border: `1px solid ${colors.border}`,
+              background: 'rgba(255,255,255,0.42)',
+              color: colors.text,
+              pointerEvents: 'none',
+            }}
+          >
+            <Lock size={10} />
+          </div>
+        )}
 
         {/* Textarea */}
         <textarea

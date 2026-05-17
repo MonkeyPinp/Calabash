@@ -12,6 +12,32 @@ function normalizeBook(book: Book): Book {
   };
 }
 
+function normalizeBookTitleForDisplay(title: string): string {
+  const normalized = title.trim().replace(/\s+/g, ' ');
+  return normalized || 'Untitled Case';
+}
+
+function normalizeBookTitleForCompare(title: string): string {
+  return normalizeBookTitleForDisplay(title).toLocaleLowerCase();
+}
+
+export async function makeUniqueBookTitle(title: string, userId?: string, ignoreBookId?: string): Promise<string> {
+  const baseTitle = normalizeBookTitleForDisplay(title);
+  const books = await db.books.toArray();
+  const existingTitles = new Set(
+    books
+      .filter((book) => book.id !== ignoreBookId)
+      .filter((book) => (userId ? book.userId === userId : book.userId === undefined))
+      .map((book) => normalizeBookTitleForCompare(book.title)),
+  );
+
+  let candidate = baseTitle;
+  for (let suffix = 2; existingTitles.has(normalizeBookTitleForCompare(candidate)); suffix += 1) {
+    candidate = `${baseTitle} (${suffix})`;
+  }
+  return candidate;
+}
+
 export async function createBook(input: {
   title: string;
   userId?: string;
@@ -23,11 +49,12 @@ export async function createBook(input: {
   categoryId?: string;
 }): Promise<Book> {
   const now = Date.now();
+  const title = await makeUniqueBookTitle(input.title, input.userId);
   const book: Book = {
     id: crypto.randomUUID(),
     userId: input.userId,
     categoryId: input.categoryId,
-    title: input.title,
+    title,
     author: input.author,
     totalChapters: input.totalChapters ?? 30,
     currentChapter: 1,
@@ -60,7 +87,16 @@ export async function updateBook(
 ): Promise<Book> {
   const existing = await db.books.get(id);
   if (!existing) throw new Error(`Book ${id} not found`);
-  const next: Book = { ...normalizeBook(existing), ...patch, updatedAt: Date.now() };
+  const normalizedExisting = normalizeBook(existing);
+  const title = typeof patch.title === 'string' || 'userId' in patch
+    ? await makeUniqueBookTitle(patch.title ?? normalizedExisting.title, patch.userId ?? normalizedExisting.userId, id)
+    : undefined;
+  const next: Book = {
+    ...normalizedExisting,
+    ...patch,
+    ...(title === undefined ? {} : { title }),
+    updatedAt: Date.now(),
+  };
   if (patch.spoilerChapters) next.spoilerChapters = normalizeChapters(patch.spoilerChapters);
   if (patch.highlightedChapters) next.highlightedChapters = normalizeChapters(patch.highlightedChapters);
   if (patch.openClues) next.openClues = normalizeOpenClues(patch.openClues);

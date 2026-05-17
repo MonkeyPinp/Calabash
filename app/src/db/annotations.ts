@@ -16,6 +16,7 @@ export interface CreateAnnotationInput {
   color?: StickyNoteColor;
   fontSize?: number;
   chapterIntroduced?: number;
+  locked?: boolean;
 }
 
 export async function createAnnotation(input: CreateAnnotationInput): Promise<StickyNote> {
@@ -33,6 +34,7 @@ export async function createAnnotation(input: CreateAnnotationInput): Promise<St
       input.chapterIntroduced,
       inferStickyNoteChapter(input.content) ?? 1,
     ),
+    locked: input.locked === true,
     createdAt: now,
     updatedAt: now,
   };

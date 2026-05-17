@@ -66,6 +66,7 @@ export interface Character {
   portraitId?: string;
   chapterIntroduced: number;
   position: { x: number; y: number };
+  locked?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -120,6 +121,7 @@ export interface StickyNote {
   color: StickyNoteColor;
   fontSize: number;
   chapterIntroduced: number;
+  locked?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -135,6 +137,7 @@ export interface GroupRange {
   labelFontSize: number;
   labelPosition: { x: number; y: number };
   chapterIntroduced: number;
+  locked?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -152,6 +155,7 @@ export interface EvidenceImage {
   width: number;
   height: number;
   chapterIntroduced: number;
+  locked?: boolean;
   createdAt: number;
   updatedAt: number;
 }

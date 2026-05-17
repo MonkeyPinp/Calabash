@@ -1,6 +1,6 @@
 import type { StickyNote } from '@/types';
 
-export const STICKY_NOTE_DEFAULT_FONT_SIZE = 13;
+export const STICKY_NOTE_DEFAULT_FONT_SIZE = 14;
 export const STICKY_NOTE_MIN_FONT_SIZE = 11;
 export const STICKY_NOTE_MAX_FONT_SIZE = 28;
 
@@ -40,6 +40,7 @@ export function normalizeStickyNote(note: StickyNote): StickyNote {
       note.chapterIntroduced,
       inferStickyNoteChapter(note.content) ?? 1,
     ),
+    locked: note.locked === true,
   };
 }
 

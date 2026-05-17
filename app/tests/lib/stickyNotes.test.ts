@@ -4,6 +4,7 @@ import {
   inferStickyNoteChapter,
   isStickyNoteVisibleAtChapter,
   normalizeStickyNote,
+  STICKY_NOTE_DEFAULT_FONT_SIZE,
 } from '@/lib/stickyNotes';
 import type { StickyNote } from '@/types';
 
@@ -48,6 +49,6 @@ describe('sticky note chapter tags', () => {
   it('clamps note font sizes for old or malformed records', () => {
     expect(normalizeStickyNote({ ...baseNote, fontSize: 8 }).fontSize).toBe(11);
     expect(normalizeStickyNote({ ...baseNote, fontSize: 40 }).fontSize).toBe(28);
-    expect(normalizeStickyNote({ ...baseNote, fontSize: undefined } as unknown as StickyNote).fontSize).toBe(13);
+    expect(normalizeStickyNote({ ...baseNote, fontSize: undefined } as unknown as StickyNote).fontSize).toBe(STICKY_NOTE_DEFAULT_FONT_SIZE);
   });
 });

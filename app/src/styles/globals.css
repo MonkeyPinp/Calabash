@@ -98,6 +98,38 @@ select:focus-visible {
   touch-action: manipulation;
 }
 
+.board-lock-indicator {
+  position: absolute;
+  left: 56px;
+  bottom: 14px;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--ink-200));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-panel) 94%, transparent);
+  color: var(--accent);
+  box-shadow: var(--shadow-soft);
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.react-flow__controls-interactive.is-locked {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-panel)) !important;
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+}
+
+.react-flow--board-locked .react-flow__pane,
+.react-flow--board-locked .react-flow__node,
+.react-flow--board-locked .react-flow__edge {
+  cursor: default !important;
+}
+
 @media (max-width: 1180px) {
   .app-shell {
     isolation: isolate;
@@ -382,6 +414,12 @@ button.toolbar-btn:disabled {
 
   .app-shell--touch .canvas-action-dock {
     bottom: 16px;
+  }
+
+  .app-shell--touch .board-lock-indicator {
+    left: 62px;
+    bottom: 16px;
+    min-height: 36px;
   }
 }
 

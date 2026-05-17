@@ -49,7 +49,7 @@ describe('SettingsPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /About/i }));
-    expect(screen.getByText('0.4.0')).toBeInTheDocument();
+    expect(screen.getByText('0.5.0')).toBeInTheDocument();
     expect(screen.queryByText('Built on')).not.toBeInTheDocument();
   });
 
@@ -61,11 +61,11 @@ describe('SettingsPanel', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{
-        tag_name: 'v0.4.1',
-        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.4.1',
+        tag_name: 'v0.5.1',
+        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.5.1',
         draft: false,
         assets: [
-          { name: 'Calabash_0.4.1_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
+          { name: 'Calabash_0.5.1_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
         ],
       }],
     }));
@@ -83,9 +83,9 @@ describe('SettingsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /About/i }));
     fireEvent.click(screen.getByRole('button', { name: /Check for updates/i }));
-    await waitFor(() => expect(screen.getByText('Download 0.4.1')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Download 0.5.1')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Download 0.4.1'));
+    fireEvent.click(screen.getByText('Download 0.5.1'));
     expect(open).toHaveBeenCalledWith('https://example.com/calabash.exe', '_blank', 'noopener,noreferrer');
   });
 

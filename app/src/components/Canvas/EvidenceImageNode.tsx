@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { NodeResizer, type NodeProps, type ResizeParams } from '@xyflow/react';
-import { Copy, Maximize2, Trash2 } from 'lucide-react';
+import { Copy, Lock, Maximize2, Trash2 } from 'lucide-react';
 import type { EvidenceImage } from '@/types';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from '@/db/evidenceImages';
 import {
@@ -32,6 +32,7 @@ function EvidenceImageNodeImpl(props: NodeProps) {
   const pushUndo = useGraphStore((s) => s.pushUndo);
 
   async function handleResizeEnd(_: unknown, params: ResizeParams) {
+    if (image.locked) return;
     const oldPosition = image.position;
     const oldWidth = image.width;
     const oldHeight = image.height;
@@ -101,13 +102,14 @@ function EvidenceImageNodeImpl(props: NodeProps) {
       <NodeResizer
         minWidth={EVIDENCE_IMAGE_MIN_WIDTH}
         minHeight={EVIDENCE_IMAGE_MIN_HEIGHT}
-        isVisible={selected}
+        isVisible={selected && !image.locked}
         lineStyle={{ borderColor: 'var(--accent)', borderWidth: 1.5 }}
         handleStyle={{ width: 9, height: 9, background: 'var(--accent)', borderRadius: 2 }}
         onResizeEnd={handleResizeEnd}
       />
       <div
         data-testid="evidence-image-node"
+        className={image.locked ? 'nopan' : undefined}
         onDoubleClick={handleOpen}
         style={{
           width: '100%',
@@ -132,7 +134,7 @@ function EvidenceImageNodeImpl(props: NodeProps) {
           gridTemplateRows: isBackground ? '1fr' : '24px 1fr',
           opacity: isBackground && !selected ? 0.72 : 1,
           position: 'relative',
-          cursor: 'grab',
+          cursor: image.locked ? 'default' : 'grab',
         }}
       >
         {!isBackground && (
@@ -148,7 +150,7 @@ function EvidenceImageNodeImpl(props: NodeProps) {
               color: 'var(--ink-700)',
             }}
           >
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: 0, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: 0, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>
               {displayTag}
             </span>
             <span
@@ -158,7 +160,7 @@ function EvidenceImageNodeImpl(props: NodeProps) {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 fontFamily: 'var(--font-case-title)',
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 600,
               }}
               title={image.title}
@@ -200,8 +202,8 @@ function EvidenceImageNodeImpl(props: NodeProps) {
                 boxShadow: '0 1px 3px rgba(40,28,12,.10)',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>{displayTag}</span>
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11, fontWeight: 600 }}>{image.title}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>{displayTag}</span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600 }}>{image.title}</span>
             </div>
           )}
         </div>
@@ -222,6 +224,20 @@ function EvidenceImageNodeImpl(props: NodeProps) {
               boxShadow: '0 1px 4px rgba(40,28,12,.14)',
             }}
           >
+            {image.locked && (
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 20,
+                  height: 20,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--accent)',
+                }}
+              >
+                <Lock size={11} />
+              </div>
+            )}
             <button type="button" onClick={handleOpen} title={t('evidenceImage.openFullSize')} style={iconButtonStyle}>
               <Maximize2 size={11} />
             </button>

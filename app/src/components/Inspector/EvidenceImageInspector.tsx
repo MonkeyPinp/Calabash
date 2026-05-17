@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Maximize2, Trash2 } from 'lucide-react';
+import { Copy, Lock, Maximize2, Trash2, Unlock } from 'lucide-react';
 import type { EvidenceImageLayer } from '@/types';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from '@/db/evidenceImages';
 import {
@@ -188,6 +188,22 @@ export default function EvidenceImageInspector({
     );
   }
 
+  async function handleLockedToggle() {
+    const before = image!.locked === true;
+    const after = !before;
+    await persist({ locked: after });
+    pushUndo(
+      async () => {
+        const updated = await updateEvidenceImage(evidenceImageId, { locked: before });
+        updateEvidenceImageInStore(updated);
+      },
+      async () => {
+        const updated = await updateEvidenceImage(evidenceImageId, { locked: after });
+        updateEvidenceImageInStore(updated);
+      },
+    );
+  }
+
   async function handleDuplicate() {
     const current = image!;
     const copy = await createEvidenceImage({
@@ -249,9 +265,24 @@ export default function EvidenceImageInspector({
               {image.title}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
-              {t('evidenceImage.chapterIntroducedShort', { chapter: visibleFromChapter })} · {image.width} x {image.height}
+              {t('evidenceImage.chapterIntroducedShort', { chapter: visibleFromChapter })} · {image.width} x {image.height}{image.locked ? ` · ${t('boardItem.locked')}` : ''}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => void handleLockedToggle()}
+            title={image.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+            aria-label={image.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+            aria-pressed={image.locked === true}
+            style={{
+              ...headerButtonStyle,
+              background: image.locked ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              border: image.locked ? '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' : '1px solid transparent',
+              color: image.locked ? 'var(--accent)' : 'var(--ink-600)',
+            }}
+          >
+            {image.locked ? <Lock size={13} /> : <Unlock size={13} />}
+          </button>
           <button type="button" onClick={openFullSize} title={t('evidenceImage.openFullSize')} style={headerButtonStyle}>
             <Maximize2 size={13} />
           </button>

@@ -21,6 +21,7 @@ export interface CreateEvidenceImageInput {
   width?: number;
   height?: number;
   chapterIntroduced?: number;
+  locked?: boolean;
 }
 
 export async function createEvidenceImage(input: CreateEvidenceImageInput): Promise<EvidenceImage> {
@@ -38,6 +39,7 @@ export async function createEvidenceImage(input: CreateEvidenceImageInput): Prom
     width: input.width ?? EVIDENCE_IMAGE_DEFAULT_WIDTH,
     height: input.height ?? EVIDENCE_IMAGE_DEFAULT_HEIGHT,
     chapterIntroduced: normalizeEvidenceImageChapter(input.chapterIntroduced),
+    locked: input.locked === true,
     createdAt: now,
     updatedAt: now,
   });

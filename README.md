@@ -6,7 +6,7 @@
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.4.0`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.0`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -40,7 +40,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
-- **Desktop stable beta**: `v0.4.0` ships unsigned Windows/Linux binaries and macOS DMG images, with native JSON import/export, automatic safety backups before full-library desktop imports, and an in-app release checker.
+- **Tablet-ready web beta**: `v0.5.0` improves touch interaction polish, adds a real board lock, prevents confusing duplicate case names, and keeps release builds split into smaller cached chunks.
 
 ## Data And Privacy
 
@@ -159,6 +159,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.3.0`: chapter-aware illustrations for floor plans/screenshots, clipboard paste, background layering, and the case-folder Settings redesign.
 - `0.3.1`: compact toolbar fix so narrow boards keep the title and inspector toggle visible.
 - `0.4.0`: desktop stability pass with native file dialogs, safety backups before full-library imports, and clearer import/export completion feedback.
+- `0.5.0`: tablet-oriented interaction polish, effective board locking, duplicate case-title disambiguation, and smaller production chunks.
 
 ## License
 

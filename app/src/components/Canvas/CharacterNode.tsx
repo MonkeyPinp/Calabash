@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Lock } from 'lucide-react';
 import type { CharacterKind, CharacterRole } from '@/types';
 import { usePortraitUrl } from '@/hooks/usePortraitUrl';
 import { useT } from '@/i18n';
@@ -17,6 +18,7 @@ export interface CharacterNodeData {
   portraitId?: string;
   chapterIntroduced?: number;
   viewMode?: CharacterNodeViewMode;
+  locked?: boolean;
 }
 
 function CharacterNodeImpl(props: NodeProps) {
@@ -74,7 +76,7 @@ function CharacterNodeImpl(props: NodeProps) {
       <div
         data-testid="character-node"
         data-view-mode="portrait"
-        className="group"
+        className={data.locked ? 'group nopan' : 'group'}
         style={{
           position: 'relative',
           width,
@@ -91,6 +93,29 @@ function CharacterNodeImpl(props: NodeProps) {
           filter: isVictim ? 'grayscale(1) saturate(0.12) contrast(0.96)' : undefined,
         } as React.CSSProperties}
       >
+        {data.locked && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              zIndex: 2,
+              width: 21,
+              height: 21,
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: 3,
+              border: '1px solid color-mix(in srgb, var(--accent) 36%, transparent)',
+              background: 'color-mix(in srgb, var(--bg-panel) 88%, transparent)',
+              color: 'var(--accent)',
+              boxShadow: '0 1px 3px rgba(40,28,12,.12)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Lock size={11} />
+          </div>
+        )}
         <div style={{ height: 5, background: roleVar, position: 'relative' }}>
           <div
             style={{
@@ -114,7 +139,7 @@ function CharacterNodeImpl(props: NodeProps) {
             background: 'color-mix(in srgb, var(--ink-200) 30%, var(--bg-panel))',
             borderBottom: '1px solid var(--ink-200)',
             fontFamily: 'var(--font-mono)',
-            fontSize: 8.5,
+            fontSize: 9.5,
             letterSpacing: '0.08em',
             color: 'var(--ink-500)',
             textTransform: 'uppercase',
@@ -218,7 +243,7 @@ function CharacterNodeImpl(props: NodeProps) {
             data-testid="portrait-character-name"
             style={{
               fontFamily: 'var(--font-case-title)',
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 500,
               color: 'var(--ink-900)',
               lineHeight: 1.15,
@@ -238,7 +263,7 @@ function CharacterNodeImpl(props: NodeProps) {
                 bottom: 8,
                 padding: '2px 6px',
                 fontFamily: 'var(--font-mono)',
-                fontSize: 9,
+                fontSize: 9.5,
                 fontWeight: 700,
                 letterSpacing: 0,
                 color: 'var(--accent)',
@@ -255,10 +280,9 @@ function CharacterNodeImpl(props: NodeProps) {
             <div
               style={{
                 marginTop: 2,
-                fontSize: 10.5,
+                fontSize: 12,
                 color: 'var(--ink-500)',
-                lineHeight: 1.2,
-                fontStyle: 'italic',
+                lineHeight: 1.25,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -279,7 +303,7 @@ function CharacterNodeImpl(props: NodeProps) {
     <div
       data-testid="character-node"
       data-view-mode="text"
-      className="group"
+      className={data.locked ? 'group nopan' : 'group'}
       style={{
         position: 'relative',
         background: 'var(--bg-panel)',
@@ -296,6 +320,29 @@ function CharacterNodeImpl(props: NodeProps) {
         filter: isVictim ? 'grayscale(1) saturate(0.12) contrast(0.96)' : undefined,
       } as React.CSSProperties}
     >
+      {data.locked && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            zIndex: 2,
+            width: 20,
+            height: 20,
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: 3,
+            border: '1px solid color-mix(in srgb, var(--accent) 36%, transparent)',
+            background: 'color-mix(in srgb, var(--bg-panel) 88%, transparent)',
+            color: 'var(--accent)',
+            boxShadow: '0 1px 3px rgba(40,28,12,.12)',
+            pointerEvents: 'none',
+          }}
+        >
+          <Lock size={11} />
+        </div>
+      )}
       {/* Role-colour left ribbon */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: roleVar }} />
       <div style={{ position: 'absolute', left: 0, top: 6, width: 4, height: 1, background: 'color-mix(in srgb, var(--bg-panel) 62%, transparent)' }} />
@@ -333,11 +380,11 @@ function CharacterNodeImpl(props: NodeProps) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: 'var(--font-case-title)',
-            fontSize: 14.5, fontWeight: 500,
+            fontSize: 16, fontWeight: 500,
             color: 'var(--ink-900)', lineHeight: 1.15,
             whiteSpace: 'normal',
             overflowWrap: 'anywhere',
-            paddingRight: 2,
+            paddingRight: data.locked ? 24 : 2,
           }}>
             {data.name}
           </div>
@@ -355,7 +402,7 @@ function CharacterNodeImpl(props: NodeProps) {
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   color: 'var(--ink-500)',
                   textTransform: 'uppercase',
                   minWidth: 0,
@@ -372,8 +419,7 @@ function CharacterNodeImpl(props: NodeProps) {
               <span
                 style={{
                   fontFamily: 'var(--font-case-title)',
-                  fontSize: 10.5,
-                  fontStyle: 'italic',
+                  fontSize: 12,
                   color: roleVar,
                   minWidth: 0,
                   overflowWrap: 'anywhere',
@@ -388,7 +434,7 @@ function CharacterNodeImpl(props: NodeProps) {
             {data.profession && (
               <>
                 <span style={{
-                  fontSize: 10.5,
+                  fontSize: 12,
                   color: 'var(--ink-500)',
                   minWidth: 0,
                   overflowWrap: 'anywhere',
@@ -409,7 +455,7 @@ function CharacterNodeImpl(props: NodeProps) {
             right: 8,
             bottom: 6,
             fontFamily: 'var(--font-mono)',
-            fontSize: 8.5,
+            fontSize: 9.5,
             color: 'var(--ink-400)',
             letterSpacing: '0.05em',
             opacity: 0.72,

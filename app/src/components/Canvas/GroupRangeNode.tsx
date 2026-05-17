@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { NodeResizer, type NodeProps, type ResizeParams } from '@xyflow/react';
+import { Lock } from 'lucide-react';
 import type { GroupRange } from '@/types';
 import { updateGroupRange } from '@/db/groupRanges';
 import {
@@ -59,6 +60,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
   }
 
   function handleLabelPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (range.locked) return;
     if (e.button !== 0) return;
     e.stopPropagation();
     labelDragStartRef.current = normalizedLabelPosition;
@@ -110,6 +112,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
   }
 
   async function handleResizeEnd(_: unknown, params: ResizeParams) {
+    if (range.locked) return;
     const oldPosition = range.position;
     const oldWidth = range.width;
     const oldHeight = range.height;
@@ -142,7 +145,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
       <NodeResizer
         minWidth={160}
         minHeight={120}
-        isVisible={selected}
+        isVisible={selected && !range.locked}
         lineStyle={{ borderColor: colors.border, borderWidth: 1.5, borderStyle: 'dashed' }}
         handleStyle={{ width: 9, height: 9, background: colors.border, borderRadius: 999 }}
         onResizeEnd={handleResizeEnd}
@@ -150,6 +153,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
       <div
         ref={nodeRef}
         data-testid="group-range-node"
+        className={range.locked ? 'nopan' : undefined}
         style={{
           width: '100%',
           height: '100%',
@@ -162,9 +166,31 @@ function GroupRangeNodeImpl(props: NodeProps) {
           boxSizing: 'border-box',
           position: 'relative',
           overflow: 'visible',
-          cursor: 'grab',
+          cursor: range.locked ? 'default' : 'grab',
         }}
       >
+        {range.locked && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 28,
+              bottom: 18,
+              width: 22,
+              height: 22,
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: 999,
+              border: `1px solid color-mix(in srgb, ${colors.border} 58%, transparent)`,
+              background: 'color-mix(in srgb, var(--bg-panel) 82%, transparent)',
+              color: colors.text,
+              boxShadow: '0 1px 2px rgba(40, 28, 12, 0.10)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Lock size={11} />
+          </div>
+        )}
         <div
           className="nodrag nopan"
           data-testid="group-range-label"
@@ -190,7 +216,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            cursor: 'move',
+            cursor: range.locked ? 'default' : 'move',
             pointerEvents: 'auto',
             userSelect: 'none',
             touchAction: 'none',
@@ -212,7 +238,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
             background: 'color-mix(in srgb, var(--bg-panel) 78%, transparent)',
             color: colors.text,
             fontFamily: 'var(--font-mono)',
-            fontSize: 9,
+            fontSize: 9.5,
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.25,

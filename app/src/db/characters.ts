@@ -16,6 +16,7 @@ export interface CreateCharacterInput {
   notes?: string;
   portraitId?: string;
   position?: { x: number; y: number };
+  locked?: boolean;
 }
 
 export async function createCharacter(input: CreateCharacterInput): Promise<Character> {
@@ -34,6 +35,7 @@ export async function createCharacter(input: CreateCharacterInput): Promise<Char
     portraitId: input.portraitId,
     chapterIntroduced: input.chapterIntroduced,
     position: input.position ?? { x: 0, y: 0 },
+    locked: input.locked === true,
     createdAt: now,
     updatedAt: now,
   };

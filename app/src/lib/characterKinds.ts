@@ -19,6 +19,7 @@ export function normalizeCharacter<T extends Character>(character: T): T & { kin
   return {
     ...character,
     kind: normalizeCharacterKind(character.kind),
+    locked: character.locked === true,
   };
 }
 

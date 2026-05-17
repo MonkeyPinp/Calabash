@@ -1,4 +1,4 @@
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Lock, Trash2, Unlock } from 'lucide-react';
 import type { GroupRangeColor } from '@/types';
 import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
 import {
@@ -160,6 +160,22 @@ export default function GroupRangeInspector({
     );
   }
 
+  async function handleLockedToggle() {
+    const before = range!.locked === true;
+    const after = !before;
+    await persist({ locked: after });
+    pushUndo(
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { locked: before });
+        updateGroupRangeInStore(updated);
+      },
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { locked: after });
+        updateGroupRangeInStore(updated);
+      },
+    );
+  }
+
   async function handleDuplicate() {
     const current = range!;
     const copy = await createGroupRange({
@@ -215,9 +231,25 @@ export default function GroupRangeInspector({
               {range.label}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 3 }}>
-              {t('groupRange.chapterIntroducedShort', { chapter: range.chapterIntroduced })} · {range.width} x {range.height}
+              {t('groupRange.chapterIntroducedShort', { chapter: range.chapterIntroduced })} · {range.width} x {range.height}{range.locked ? ` · ${t('boardItem.locked')}` : ''}
             </div>
           </div>
+          <button
+            onClick={() => void handleLockedToggle()}
+            title={range.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+            aria-label={range.locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition')}
+            aria-pressed={range.locked === true}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28,
+              background: range.locked ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              border: range.locked ? '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' : '1px solid transparent',
+              borderRadius: 5, cursor: 'pointer', color: range.locked ? 'var(--accent)' : 'var(--ink-600)',
+              flexShrink: 0,
+            }}
+          >
+            {range.locked ? <Lock size={13} /> : <Unlock size={13} />}
+          </button>
           <button
             onClick={() => void handleDuplicate()}
             title={t('groupRange.duplicate')}

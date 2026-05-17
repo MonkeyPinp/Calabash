@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2, Copy } from 'lucide-react';
+import { Trash2, Copy, Lock, Unlock } from 'lucide-react';
 import type { Alias, CharacterKind } from '@/types';
 import { updateCharacter, deleteCharacter, restoreCharacter, createCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
@@ -154,6 +154,22 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
     onDuplicated?.(copy.id);
   }
 
+  async function handleLockedToggle() {
+    const before = character!.locked === true;
+    const after = !before;
+    await persist({ locked: after });
+    pushUndo(
+      async () => {
+        const updated = await updateCharacter(characterId, { locked: before });
+        updateCharacterInStore(updated);
+      },
+      async () => {
+        const updated = await updateCharacter(characterId, { locked: after });
+        updateCharacterInStore(updated);
+      },
+    );
+  }
+
   // ── Field handlers ──────────────────────────────────────────────────────────
 
   function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
@@ -244,6 +260,8 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
     label: formatCharacterKind(kind, t),
   }));
   const kindLabel = formatCharacterKind(character.kind, t);
+  const locked = character.locked === true;
+  const lockTitle = locked ? t('boardItem.unlockPosition') : t('boardItem.lockPosition');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -307,9 +325,25 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
             {character.name}
           </div>
           <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {[kindLabel, character.profession, t('character.introducedChapterShort', { chapter: character.chapterIntroduced })].filter(Boolean).join(' · ')}
+            {[kindLabel, character.profession, t('character.introducedChapterShort', { chapter: character.chapterIntroduced }), locked ? t('boardItem.locked') : null].filter(Boolean).join(' · ')}
           </div>
         </div>
+        <button
+          onClick={() => void handleLockedToggle()}
+          title={lockTitle}
+          aria-label={lockTitle}
+          aria-pressed={locked}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 28, height: 28,
+            background: locked ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+            border: locked ? '1px solid color-mix(in srgb, var(--accent) 35%, transparent)' : '1px solid transparent',
+            borderRadius: 5, cursor: 'pointer', color: locked ? 'var(--accent)' : 'var(--ink-600)',
+            flexShrink: 0,
+          }}
+        >
+          {locked ? <Lock size={13} /> : <Unlock size={13} />}
+        </button>
         <button
           onClick={() => void handleDuplicate()}
           title={t('character.duplicate')}

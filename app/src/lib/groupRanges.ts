@@ -72,5 +72,6 @@ export function normalizeGroupRange(range: GroupRange): GroupRange {
     labelFontSize: normalizeGroupRangeLabelFontSize(range.labelFontSize),
     labelPosition: normalizeGroupRangeLabelPosition(range.labelPosition),
     chapterIntroduced: normalizeGroupRangeChapter(range.chapterIntroduced),
+    locked: range.locked === true,
   };
 }

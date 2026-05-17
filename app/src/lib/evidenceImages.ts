@@ -70,6 +70,7 @@ export function normalizeEvidenceImage(image: EvidenceImage): EvidenceImage {
       EVIDENCE_IMAGE_MAX_HEIGHT,
     ),
     chapterIntroduced: normalizeEvidenceImageChapter(image.chapterIntroduced),
+    locked: image.locked === true,
   };
 }
 

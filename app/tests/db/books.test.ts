@@ -79,6 +79,33 @@ describe('books DAO', () => {
     expect((await listBooks('reader-b')).map((book) => book.id)).toEqual([b.id]);
   });
 
+  it('keeps new book titles unique within a reader profile', async () => {
+    const first = await createBook({ title: 'Demo Case', userId: 'reader-a' });
+    const second = await createBook({ title: ' Demo   Case ', userId: 'reader-a' });
+    const third = await createBook({ title: 'Demo Case', userId: 'reader-a' });
+    const otherReader = await createBook({ title: 'Demo Case', userId: 'reader-b' });
+
+    expect(first.title).toBe('Demo Case');
+    expect(second.title).toBe('Demo Case (2)');
+    expect(third.title).toBe('Demo Case (3)');
+    expect(otherReader.title).toBe('Demo Case');
+  });
+
+  it('keeps renamed book titles unique without changing the current book', async () => {
+    const first = await createBook({ title: 'Demo Case', userId: 'reader-a' });
+    const second = await createBook({ title: 'Another Case', userId: 'reader-a' });
+
+    await expect(updateBook(first.id, { title: 'Demo Case' })).resolves.toMatchObject({ title: 'Demo Case' });
+    await expect(updateBook(second.id, { title: 'Demo Case' })).resolves.toMatchObject({ title: 'Demo Case (2)' });
+  });
+
+  it('keeps titles unique when a book moves into another reader profile', async () => {
+    await createBook({ title: 'Demo Case', userId: 'reader-a' });
+    const incoming = await createBook({ title: 'Demo Case', userId: 'reader-b' });
+
+    await expect(updateBook(incoming.id, { userId: 'reader-a' })).resolves.toMatchObject({ title: 'Demo Case (2)' });
+  });
+
   it('updateBook merges fields and bumps updatedAt', async () => {
     const book = await createBook({ title: 'X' });
     await new Promise((r) => setTimeout(r, 2));

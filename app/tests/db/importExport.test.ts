@@ -39,7 +39,7 @@ describe('importExport', () => {
   it('exports an empty book with no characters or portraits', async () => {
     const book = await createBook({ title: 'Empty' });
     const json = await exportBookAsJson(book.id);
-    expect(json.calabashVersion).toBe('0.4.0');
+    expect(json.calabashVersion).toBe('0.5.0');
     expect(json.book.title).toBe('Empty');
     expect(json.book.openClues).toEqual([]);
     expect(json.characters).toEqual([]);
@@ -151,6 +151,17 @@ describe('importExport', () => {
     expect(reImages).toHaveLength(1);
     expect(reImages[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', width: 420, height: 280, chapterIntroduced: 6 });
     expect(reImages[0].id).not.toBe(exported.illustrations?.[0].id);
+  });
+
+  it('keeps imported single-book titles unique within the target reader profile', async () => {
+    const book = await createBook({ title: 'Demo Case', userId: 'reader-1' });
+    const exported = await exportBookAsJson(book.id);
+
+    const duplicateId = await importBookFromJson(exported, 'reader-1');
+    const otherReaderId = await importBookFromJson(exported, 'reader-2');
+
+    await expect(db.books.get(duplicateId)).resolves.toMatchObject({ title: 'Demo Case (2)' });
+    await expect(db.books.get(otherReaderId)).resolves.toMatchObject({ title: 'Demo Case' });
   });
 
   it('exports and imports the whole local library as collection JSON', async () => {
@@ -268,7 +279,7 @@ describe('importExport', () => {
     expect(reNotes[0].chapterIntroduced).toBe(1);
 
     const exported = await exportLibraryAsJson();
-    expect(exported.calabashVersion).toBe('0.4.0');
+    expect(exported.calabashVersion).toBe('0.5.0');
     expect(exported.books[0]).toMatchObject({
       id: 'book-beta-case',
       spoilerShield: true,

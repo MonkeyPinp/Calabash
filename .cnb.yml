@@ -1,0 +1,49 @@
+$:
+  tag_push:
+    - stages:
+        - name: build web release asset
+          image: node:24-alpine
+          script: |
+            apk add --no-cache zip
+
+            cd app
+            npm ci
+            npm test
+            npm run typecheck
+            VITE_BASE_PATH=./ npm run build
+            cd ..
+
+            mkdir -p release-assets
+            (cd app/dist && zip -r "../../release-assets/calabash-web-${CNB_BRANCH}.zip" .)
+
+            version="${CNB_BRANCH#v}"
+            {
+              echo "Calabash ${CNB_BRANCH}"
+              echo
+              awk -v version="$version" '
+                $0 ~ "^## " version "([ -]|$)" { capture = 1; next }
+                capture && /^## / { exit }
+                capture { print }
+              ' CHANGELOG.md
+              echo
+              echo "Assets:"
+              echo "- Web bundle: static browser build for self-hosting or archive validation."
+              echo
+              echo "Desktop builds:"
+              echo "- GitHub Release remains the canonical location for Windows, Linux, and macOS desktop artifacts."
+              echo "- GitHub Release: https://github.com/Guesswhat-Studio/Calabash/releases/tag/${CNB_BRANCH}"
+            } > release-notes.md
+
+        - name: create CNB release
+          type: git:release
+          options:
+            tag: $CNB_BRANCH
+            title: Calabash $CNB_BRANCH
+            descriptionFromFile: release-notes.md
+            latest: true
+
+        - name: upload CNB release asset
+          image: cnbcool/attachments:latest
+          settings:
+            attachments:
+              - release-assets/*.zip

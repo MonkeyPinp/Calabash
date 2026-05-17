@@ -281,24 +281,6 @@ export default function BookList() {
     setNewCategoryId(category.id);
   }
 
-  async function handleSeedAckroyd() {
-    if (!activeUserId) return;
-    const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind: 'ackroyd' });
-    const book = await getBook(newBookId);
-    await refresh();
-    setCharacterNodeViewMode(getTutorialDefaultViewMode('ackroyd'));
-    setActiveBook(newBookId);
-    if (book) {
-      setCurrentChapter(book.currentChapter);
-      setTotalChapters(book.totalChapters);
-      setSpoilerShield(book.spoilerShield);
-      setSpoilerChapters(book.spoilerChapters);
-      setHighlightedChapters(book.highlightedChapters);
-    }
-    clearGraphSelection();
-    setShowCreateMenu(false);
-  }
-
   async function handleSeedTutorial(kind: TutorialKind) {
     if (!activeUserId) return;
     const newBookId = await seedTutorialBook({ userId: activeUserId, language: resolvedLanguage, kind });
@@ -454,6 +436,7 @@ export default function BookList() {
 
       {showCreateMenu && !showBookStartChoice && !showNewForm && !showNewCategoryForm && (
         <div
+          data-testid="library-create-menu"
           style={{
             margin: '0 12px 8px',
             padding: 4,
@@ -471,20 +454,11 @@ export default function BookList() {
           <button type="button" onClick={() => { setShowNewCategoryForm(true); setShowCreateMenu(false); }} style={menuActionStyle}>
             {t('sidebar.category')}
           </button>
-          <button type="button" onClick={() => void handleSeedAckroyd()} style={secondaryMenuActionStyle}>
-            {t('sidebar.loadDemo')}
-          </button>
-          <button type="button" onClick={() => void handleSeedTutorial('hida')} style={secondaryMenuActionStyle}>
-            {t('sidebar.createTutorial')}
-          </button>
-          <button type="button" onClick={() => void handleSeedTutorial('contest')} style={secondaryMenuActionStyle}>
-            {t('sidebar.createContestTemplate')}
-          </button>
         </div>
       )}
 
       {showBookStartChoice && (
-        <div style={{ margin: '0 12px 8px', padding: 8, border: '1px solid var(--ink-200)', borderRadius: 5, background: 'var(--bg-canvas)', display: 'grid', gap: 6 }}>
+        <div data-testid="book-create-choice" style={{ margin: '0 12px 8px', padding: 8, border: '1px solid var(--ink-200)', borderRadius: 5, background: 'var(--bg-canvas)', display: 'grid', gap: 6 }}>
           <button
             type="button"
             onClick={() => {
@@ -934,18 +908,6 @@ const menuActionStyle: React.CSSProperties = {
   borderRadius: 4,
   color: 'var(--ink-700)',
   cursor: 'pointer',
-};
-
-const secondaryMenuActionStyle: React.CSSProperties = {
-  gridColumn: '1 / -1',
-  padding: '5px 0',
-  fontSize: 11,
-  background: 'transparent',
-  border: '1px dashed var(--ink-300)',
-  borderRadius: 4,
-  color: 'var(--ink-600)',
-  cursor: 'pointer',
-  opacity: 0.78,
 };
 
 const choiceButtonStyle: React.CSSProperties = {

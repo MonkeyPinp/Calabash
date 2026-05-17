@@ -1,15 +1,22 @@
 {
   "name": "calabash-desktop",
-  "version": "0.5.1",
+  "version": "0.5.3",
   "private": true,
   "type": "module",
   "scripts": {
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --no-bundle",
-    "desktop:build:debug": "tauri build --debug --no-bundle"
+    "desktop:build:debug": "tauri build --debug --no-bundle",
+    "verify:version": "node scripts/verify-version.mjs",
+    "test:update-live": "node scripts/update-check-live.mjs",
+    "test:web:pipeline": "npm run verify:version && npm --prefix app test && npm --prefix app run typecheck && npm --prefix app run build && node scripts/web-smoke.mjs",
+    "test:desktop:crud": "node scripts/desktop-crud-smoke.mjs",
+    "test:desktop:pipeline": "npm run verify:version && npm --prefix app test && npm --prefix app run typecheck && npm run desktop:build:debug && npm run test:desktop:crud",
+    "test:release-local": "npm run test:web:pipeline && npm run test:update-live && npm run desktop:build:debug && npm run test:desktop:crud"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.11.1"
+    "@tauri-apps/cli": "2.11.1",
+    "webdriverio": "^9.27.1"
   }
 }

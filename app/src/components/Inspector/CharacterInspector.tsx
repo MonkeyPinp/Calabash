@@ -13,6 +13,7 @@ import {
   getCharacterRoleCssVar,
   normalizeCharacterRole,
 } from '@/lib/roles';
+import { syncPrimaryAliasForNameEdit } from '@/lib/characterNames';
 import PresetTextInput from '@/components/Form/PresetTextInput';
 
 const labelStyle: React.CSSProperties = {
@@ -174,7 +175,12 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
 
   function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
     const val = e.target.value.trim();
-    if (val && val !== character!.name) void persist({ name: val });
+    if (val && val !== character!.name) {
+      void persist({
+        name: val,
+        aliases: syncPrimaryAliasForNameEdit(character!, val),
+      });
+    }
   }
 
   function handleKindChange(e: React.ChangeEvent<HTMLSelectElement>) {

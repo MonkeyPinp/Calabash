@@ -1,7 +1,7 @@
 import type { Book, Category, Character, EvidenceImage, GroupRange, Relationship, StickyNote, User } from '@/types';
 import type { PortraitRow } from './schema';
 
-const SQLITE_DB_PATH = 'sqlite:calabash.db';
+const DEFAULT_SQLITE_DB_PATH = 'sqlite:calabash.db';
 const INDEXEDDB_MIGRATION_KEY = 'indexeddb-migrated-at';
 const BASE64_CHUNK_SIZE = 0x8000;
 
@@ -135,6 +135,7 @@ export class SqliteCalabashDB {
   });
 
   private sqlPromise: Promise<SqlDatabase> | null = null;
+  private sqliteDbPathPromise: Promise<string> | null = null;
   private readyPromise: Promise<void> | null = null;
   private transactionStatements: SqliteTransactionStatement[] | null = null;
 
@@ -177,8 +178,15 @@ export class SqliteCalabashDB {
 
   private async getSql(): Promise<SqlDatabase> {
     this.sqlPromise ??= import('@tauri-apps/plugin-sql')
-      .then((module) => module.default.load(SQLITE_DB_PATH) as Promise<SqlDatabase>);
+      .then(async (module) => module.default.load(await this.getSqliteDbPath()) as Promise<SqlDatabase>);
     return this.sqlPromise;
+  }
+
+  private async getSqliteDbPath(): Promise<string> {
+    this.sqliteDbPathPromise ??= import('@tauri-apps/api/core')
+      .then((module) => module.invoke<string>('get_sqlite_db_path'))
+      .catch(() => DEFAULT_SQLITE_DB_PATH);
+    return this.sqliteDbPathPromise;
   }
 
   private async prepare(): Promise<void> {
@@ -282,7 +290,7 @@ export class SqliteCalabashDB {
   private async executeSqliteTransaction(statements: SqliteTransactionStatement[]): Promise<void> {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('execute_sqlite_transaction', {
-      db: SQLITE_DB_PATH,
+      db: await this.getSqliteDbPath(),
       statements,
     });
   }

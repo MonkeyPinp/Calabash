@@ -6,7 +6,7 @@
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.2`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.3`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -43,6 +43,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
 - **Templates and chapter safety**: `v0.5.2` adds reusable book templates, current-book template export, GitHub preview cards, and guards chapter totals from shrinking below existing chapter content.
+- **Touch and fallback polish**: `v0.5.3` adds tablet touch smoke coverage, a compact Help panel, a read-only phone fallback, and clearer library/settings entry points.
 
 ## Data And Privacy
 
@@ -177,6 +178,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.5.0`: tablet-oriented interaction polish, effective board locking, duplicate case-title disambiguation, and smaller production chunks.
 - `0.5.1`: iPad Safari safe-area fix for the bottom chapter slider and CNB release deployment coverage.
 - `0.5.2`: reusable book templates, current-book template export, GitHub preview cards, and chapter-total guards for existing chapter content.
+- `0.5.3`: tablet touch smoke coverage, live GitHub update-check smoke, compact Help guidance, read-only phone fallback, and library/settings polish.
 
 ## License
 

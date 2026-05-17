@@ -26,6 +26,7 @@ import { db } from '@/db/schema';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const STUDIO_URL = 'https://guesswhat.studio';
+const STUDIO_LOGO_URL = '/guesswhat-studio-logo.png';
 
 type SettingsTab = 'library' | 'data' | 'guides' | 'look' | 'about';
 
@@ -253,7 +254,7 @@ export default function SettingsPanel({
             {activeTab === 'guides' && (
               <>
                 <SectionTab color={activeColor} number="01">{t('settings.tutorials')}</SectionTab>
-                <div style={tutorialGridStyle}>
+                <div data-testid="settings-tutorial-grid" style={tutorialGridStyle}>
                   <TutorialCard
                     eyebrow="PUZZLE"
                     title={t('onboarding.createContestTemplate')}
@@ -324,7 +325,21 @@ export default function SettingsPanel({
                   </div>
                 </FolderRow>
                 <FolderRow label={t('settings.studio')}>
-                  <a href={STUDIO_URL} target="_blank" rel="noreferrer" style={studioLinkStyle}>Guesswhat Studio</a>
+                  <a
+                    href={STUDIO_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={studioCardStyle}
+                    aria-label={t('settings.openStudio')}
+                  >
+                    <span style={studioLogoFrameStyle}>
+                      <img src={STUDIO_LOGO_URL} alt={t('settings.studioLogoAlt')} style={studioLogoStyle} />
+                    </span>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={studioLinkStyle}>Guesswhat Studio</span>
+                      <span style={studioTaglineStyle}>{t('settings.studioTagline')}</span>
+                    </span>
+                  </a>
                 </FolderRow>
                 <SectionTab color="var(--accent)" number="02" tilt={0.3}>{t('settings.distribution')}</SectionTab>
                 <FolderRow label={t('settings.links')} align="top">
@@ -468,14 +483,23 @@ function TutorialCard({ eyebrow, title, author, accent, onClick }: {
 }) {
   const color = accent ? 'var(--accent)' : 'var(--ink-700)';
   return (
-    <div style={{
+    <button type="button" onClick={onClick} data-testid="settings-tutorial-card" style={{
       position: 'relative',
-      padding: '22px 14px 14px',
+      minWidth: 0,
+      minHeight: 112,
+      display: 'grid',
+      gridTemplateRows: 'auto 1fr auto',
+      alignItems: 'start',
+      gap: 5,
+      padding: '18px 12px 12px',
       background: 'color-mix(in srgb, var(--bg-canvas) 92%, var(--ink-100))',
       border: `1px solid color-mix(in srgb, ${color} 35%, var(--ink-300))`,
       borderTop: `3px solid ${color}`,
       borderRadius: '0 0 4px 4px',
       boxShadow: '0 1px 2px rgba(40,28,12,.10), 0 8px 16px -8px rgba(40,28,12,.22)',
+      color: 'var(--ink-900)',
+      cursor: 'pointer',
+      textAlign: 'left',
     }}>
       <div style={{
         position: 'absolute',
@@ -487,14 +511,17 @@ function TutorialCard({ eyebrow, title, author, accent, onClick }: {
         background: `radial-gradient(circle at 30% 30%, color-mix(in srgb, ${color} 30%, white), ${color})`,
         boxShadow: '0 1px 2px rgba(0,0,0,.4), inset 0 -1px 2px rgba(0,0,0,.3)',
       }} />
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color, letterSpacing: '.14em', fontWeight: 700 }}>{eyebrow}</div>
-      <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 14, color: 'var(--ink-900)', marginTop: 5, lineHeight: 1.25 }}>{title}</div>
-      <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 4, fontStyle: 'italic' }}>{author}</div>
-      <button type="button" onClick={onClick} style={{ ...actionButtonStyle(false), marginTop: 11, height: 28 }}>
-        <PlayCircle size={12} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, letterSpacing: '.12em', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {eyebrow}
+        </span>
+        <PlayCircle size={12} style={{ color, flexShrink: 0 }} />
+      </div>
+      <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 13.5, color: 'var(--ink-900)', lineHeight: 1.22, overflowWrap: 'anywhere' }}>
         {title}
-      </button>
-    </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--ink-500)', fontStyle: 'italic', lineHeight: 1.25, overflowWrap: 'anywhere' }}>{author}</div>
+    </button>
   );
 }
 
@@ -783,8 +810,8 @@ const warningNoteStyle: CSSProperties = {
 
 const tutorialGridStyle: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: 12,
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gap: 8,
   marginTop: 4,
 };
 
@@ -850,9 +877,54 @@ const linkButtonStyle: CSSProperties = {
 
 const studioLinkStyle: CSSProperties = {
   color: 'var(--ink-900)',
-  textDecoration: 'none',
+  display: 'block',
   fontFamily: 'var(--font-case-title)',
-  fontSize: 15,
+  fontSize: 16,
+  lineHeight: 1.15,
+};
+
+const studioCardStyle: CSSProperties = {
+  width: 'min(100%, 420px)',
+  minHeight: 74,
+  padding: 10,
+  display: 'grid',
+  gridTemplateColumns: '54px 1fr',
+  alignItems: 'center',
+  gap: 12,
+  border: '1px solid color-mix(in srgb, var(--role-bystander) 32%, var(--ink-200))',
+  borderRadius: 6,
+  background: 'linear-gradient(135deg, color-mix(in srgb, var(--role-bystander) 10%, var(--bg-canvas)), var(--bg-panel) 72%)',
+  color: 'var(--ink-900)',
+  textDecoration: 'none',
+  boxShadow: 'var(--shadow-soft)',
+};
+
+const studioLogoFrameStyle: CSSProperties = {
+  width: 54,
+  height: 54,
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: 999,
+  background: 'var(--bg-canvas)',
+  border: '1px solid color-mix(in srgb, var(--role-bystander) 45%, var(--ink-200))',
+  boxShadow: '0 1px 2px rgba(40,28,12,.14), inset 0 0 0 3px color-mix(in srgb, var(--bg-panel) 68%, transparent)',
+  overflow: 'hidden',
+};
+
+const studioLogoStyle: CSSProperties = {
+  width: 48,
+  height: 48,
+  objectFit: 'cover',
+  borderRadius: 999,
+  display: 'block',
+};
+
+const studioTaglineStyle: CSSProperties = {
+  display: 'block',
+  marginTop: 3,
+  color: 'var(--ink-500)',
+  fontSize: 11.5,
+  lineHeight: 1.35,
 };
 
 const closeFolderButtonStyle: CSSProperties = {

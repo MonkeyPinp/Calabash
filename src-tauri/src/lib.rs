@@ -12,6 +12,14 @@ struct SqliteStatement {
 }
 
 #[tauri::command]
+fn get_sqlite_db_path() -> String {
+    std::env::var("CALABASH_SQLITE_DB_PATH")
+        .ok()
+        .filter(|db| validate_sqlite_db_path(db).is_ok())
+        .unwrap_or_else(|| "sqlite:calabash.db".to_string())
+}
+
+#[tauri::command]
 async fn execute_sqlite_transaction(
     app: tauri::AppHandle,
     db: String,
@@ -28,29 +36,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![execute_sqlite_transaction])
+        .invoke_handler(tauri::generate_handler![
+            execute_sqlite_transaction,
+            get_sqlite_db_path
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Calabash");
 }
 
 fn sqlite_url_for_app(app: &tauri::AppHandle, db: &str) -> Result<String, String> {
-    let relative = db
-        .strip_prefix("sqlite:")
-        .ok_or_else(|| "Only sqlite: database URLs are supported".to_string())?;
-    let relative_path = PathBuf::from(relative);
-
-    if relative_path.is_absolute()
-        || relative_path.components().any(|component| {
-            matches!(
-                component,
-                std::path::Component::ParentDir
-                    | std::path::Component::RootDir
-                    | std::path::Component::Prefix(_)
-            )
-        })
-    {
-        return Err("SQLite database path must stay inside the app config directory".to_string());
-    }
+    let relative_path = validate_sqlite_db_path(db)?;
 
     let mut db_path = app
         .path()
@@ -69,6 +64,28 @@ fn sqlite_url_for_app(app: &tauri::AppHandle, db: &str) -> Result<String, String
             .to_str()
             .ok_or_else(|| "Database path is not valid UTF-8".to_string())?
     ))
+}
+
+fn validate_sqlite_db_path(db: &str) -> Result<PathBuf, String> {
+    let relative = db
+        .strip_prefix("sqlite:")
+        .ok_or_else(|| "Only sqlite: database URLs are supported".to_string())?;
+    let relative_path = PathBuf::from(relative);
+
+    if relative_path.is_absolute()
+        || relative_path.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::ParentDir
+                    | std::path::Component::RootDir
+                    | std::path::Component::Prefix(_)
+            )
+        })
+    {
+        return Err("SQLite database path must stay inside the app config directory".to_string());
+    }
+
+    Ok(relative_path)
 }
 
 async fn execute_sqlite_statements(

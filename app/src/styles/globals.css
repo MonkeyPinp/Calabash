@@ -420,7 +420,7 @@ button.toolbar-btn:disabled {
   }
 
   .app-shell--touch .shortcut-legend {
-    display: none !important;
+    display: flex !important;
   }
 
   .app-shell--touch .canvas-action-dock {

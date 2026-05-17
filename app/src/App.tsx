@@ -20,7 +20,8 @@ import { useUiStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
 import { exportBookTemplateAsJson, exportLibraryAsJson, importBookFromJson, importLibraryFromJson, isLibraryExport } from './db/importExport';
 import GlobalSearch from './components/CommandBar/GlobalSearch';
-import { ChapterTotalTooLowError, createBook, getBook, updateBook } from './db/books';
+import { ChapterTotalTooLowError, createBook, getBook, listBooks, updateBook } from './db/books';
+import { listCategories } from './db/categories';
 import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
 import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage } from './db/evidenceImages';
@@ -29,7 +30,7 @@ import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter 
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { isDesktopRuntime, openDesktopJsonFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
 import { useT } from './i18n';
-import type { Book, EvidenceImageKind } from './types';
+import type { Book, Category, EvidenceImageKind } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
 import { EVIDENCE_IMAGE_DEFAULT_HEIGHT, EVIDENCE_IMAGE_DEFAULT_WIDTH } from './lib/evidenceImages';
 
@@ -106,6 +107,30 @@ const sidebarUtilityButtonStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 500,
   padding: '0 8px',
+};
+
+const sidebarUtilitySecondaryButtonStyle: React.CSSProperties = {
+  ...sidebarUtilityButtonStyle,
+  gridColumn: '1 / -1',
+  width: '100%',
+  borderStyle: 'dashed',
+  color: 'var(--ink-600)',
+};
+
+const phoneFallbackButtonStyle: React.CSSProperties = {
+  minHeight: 38,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 7,
+  padding: '8px 10px',
+  border: '1px solid var(--ink-200)',
+  borderRadius: 5,
+  background: 'var(--bg-canvas)',
+  color: 'var(--ink-800)',
+  cursor: 'pointer',
+  fontSize: 12.5,
+  fontWeight: 700,
 };
 
 const toastStyle: React.CSSProperties = {
@@ -312,54 +337,209 @@ function EmptyInspectorGuide({
   ];
 
   return (
-    <div style={{ padding: 18, color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.55 }}>
-      {bookId && (
-        <div style={{ marginBottom: 18 }}>
-          <OpenCluesPanel bookId={bookId} currentChapter={currentChapter} />
-        </div>
-      )}
+    <div
+      data-testid="empty-inspector-guide"
+      style={{ height: '100%', overflowY: 'auto', padding: 18, color: 'var(--ink-500)', fontSize: 13, lineHeight: 1.55 }}
+    >
       <div style={{ fontSize: 9.5, color: 'var(--ink-400)', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>
         {t('app.inspector')}
       </div>
       <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 18, color: 'var(--ink-900)', marginTop: 4, marginBottom: 14 }}>
         {t('app.nothingSelected')}
       </div>
-      {rows.map((row) => (
-        <div
-          key={row.title}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '28px 1fr',
-            gap: 12,
-            padding: '12px 0',
-            borderTop: '1px solid var(--ink-150)',
-          }}
-        >
+      <div data-testid="empty-inspector-guide-list">
+        {rows.map((row) => (
           <div
+            key={row.title}
             style={{
-              width: 26,
-              height: 26,
               display: 'grid',
-              placeItems: 'center',
-              background: 'var(--bg-canvas)',
-              border: '1px solid var(--ink-200)',
-              borderRadius: 4,
-              color: 'var(--ink-600)',
+              gridTemplateColumns: '28px 1fr',
+              gap: 12,
+              padding: '12px 0',
+              borderTop: '1px solid var(--ink-150)',
             }}
           >
-            {row.icon}
+            <div
+              style={{
+                width: 26,
+                height: 26,
+                display: 'grid',
+                placeItems: 'center',
+                background: 'var(--bg-canvas)',
+                border: '1px solid var(--ink-200)',
+                borderRadius: 4,
+                color: 'var(--ink-600)',
+              }}
+            >
+              {row.icon}
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 13.5, color: 'var(--ink-900)', lineHeight: 1.2 }}>
+                {row.title}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, lineHeight: 1.5 }}>
+                {row.body}
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 13.5, color: 'var(--ink-900)', lineHeight: 1.2 }}>
-              {row.title}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 2, lineHeight: 1.5 }}>
-              {row.body}
-            </div>
+        ))}
+      </div>
+      {bookId && (
+        <div style={{ marginTop: 18 }}>
+          <OpenCluesPanel bookId={bookId} currentChapter={currentChapter} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhoneFallback({
+  activeUserId,
+  onExportLibrary,
+  onImportLibrary,
+  onOpenSettings,
+}: {
+  activeUserId: string | null;
+  onExportLibrary: () => void;
+  onImportLibrary: () => void;
+  onOpenSettings: () => void;
+}) {
+  const t = useT();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadLibrary() {
+      const [loadedBooks, loadedCategories] = await Promise.all([
+        listBooks(activeUserId ?? undefined),
+        listCategories(activeUserId ?? undefined),
+      ]);
+      if (cancelled) return;
+      setBooks(loadedBooks);
+      setCategories(loadedCategories);
+    }
+    void loadLibrary();
+    return () => { cancelled = true; };
+  }, [activeUserId]);
+
+  const categoryIds = useMemo(() => new Set(categories.map((category) => category.id)), [categories]);
+  const groups = useMemo(() => {
+    const uncategorized = books.filter((book) => !book.categoryId || !categoryIds.has(book.categoryId));
+    return [
+      { id: 'uncategorized', name: t('sidebar.uncategorized'), books: uncategorized },
+      ...categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        books: books.filter((book) => book.categoryId === category.id),
+      })),
+    ].filter((group) => group.books.length > 0);
+  }, [books, categories, categoryIds, t]);
+
+  return (
+    <main
+      data-testid="phone-fallback"
+      style={{
+        minHeight: 'var(--app-viewport-height)',
+        width: '100vw',
+        overflowY: 'auto',
+        background: 'var(--bg-canvas)',
+        color: 'var(--ink-900)',
+        padding: '22px 18px calc(28px + var(--app-safe-bottom, 0px))',
+        boxSizing: 'border-box',
+      }}
+    >
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+        <div style={{ color: 'var(--accent)', flexShrink: 0 }}>
+          <CalabashLogo size={42} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 26, lineHeight: 1.05 }}>
+            Calabash
+          </div>
+          <div style={{ marginTop: 4, fontSize: 10, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--ink-500)', fontWeight: 700 }}>
+            {t('app.subtitle')}
           </div>
         </div>
-      ))}
-    </div>
+      </header>
+
+      <section
+        style={{
+          padding: 16,
+          border: '1px solid var(--ink-200)',
+          borderTop: '3px solid var(--accent)',
+          borderRadius: 6,
+          background: 'var(--bg-panel)',
+          boxShadow: 'var(--shadow-panel)',
+        }}
+      >
+        <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 21, lineHeight: 1.15 }}>
+          {t('phoneFallback.title')}
+        </div>
+        <p style={{ margin: '9px 0 0', color: 'var(--ink-600)', fontSize: 13, lineHeight: 1.6 }}>
+          {t('phoneFallback.body')}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
+          <button type="button" onClick={onExportLibrary} style={phoneFallbackButtonStyle}>
+            <Download size={14} />
+            <span>{t('app.export')}</span>
+          </button>
+          <button type="button" onClick={onImportLibrary} style={phoneFallbackButtonStyle}>
+            <Upload size={14} />
+            <span>{t('app.import')}</span>
+          </button>
+          <button type="button" onClick={onOpenSettings} style={{ ...phoneFallbackButtonStyle, gridColumn: '1 / -1' }}>
+            <SettingsIcon size={14} />
+            <span>{t('app.settings')}</span>
+          </button>
+        </div>
+      </section>
+
+      <section style={{ marginTop: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 9 }}>
+          <div style={{ fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-500)', fontWeight: 800 }}>
+            {t('phoneFallback.library')}
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-500)' }}>
+            {t('phoneFallback.bookCount', { count: books.length })}
+          </div>
+        </div>
+        {books.length === 0 ? (
+          <div style={{ padding: 13, border: '1px dashed var(--ink-200)', borderRadius: 5, background: 'var(--bg-panel)', color: 'var(--ink-500)', fontSize: 12.5, lineHeight: 1.5 }}>
+            {t('phoneFallback.empty')}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 10 }}>
+            {groups.map((group) => (
+              <div key={group.id} style={{ border: '1px solid var(--ink-200)', borderRadius: 5, background: 'var(--bg-panel)', overflow: 'hidden' }}>
+                <div style={{ padding: '7px 10px', borderBottom: '1px solid var(--ink-150)', color: 'var(--ink-500)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 800 }}>
+                  {group.name}
+                </div>
+                {group.books.map((book) => (
+                  <div key={book.id} style={{ padding: '10px 11px', borderTop: '1px solid var(--ink-100)' }}>
+                    <div style={{ fontFamily: 'var(--font-case-title)', fontSize: 15, lineHeight: 1.2, color: 'var(--ink-900)' }}>
+                      {book.title}
+                    </div>
+                    <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, color: 'var(--ink-500)', fontSize: 11 }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {book.author || t('phoneFallback.unknownAuthor')}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                        {book.currentChapter}/{book.totalChapters}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <p style={{ margin: '16px 2px 0', color: 'var(--ink-500)', fontSize: 11.5, lineHeight: 1.55 }}>
+        {t('phoneFallback.backupHint')}
+      </p>
+    </main>
   );
 }
 
@@ -493,6 +673,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const phoneShell = useMediaQuery('(max-width: 700px)');
   const tabletShell = useMediaQuery('(max-width: 1180px)');
   const coarsePointer = useMediaQuery('(pointer: coarse)');
   const touchOptimized = tabletShell || coarsePointer;
@@ -1032,6 +1213,53 @@ export default function App() {
     setInspectorOpen(false);
   }
 
+  if (phoneShell) {
+    return (
+      <div
+        className="app-shell app-shell--phone app-shell--touch"
+        style={{
+          width: '100vw',
+          minHeight: 'var(--app-viewport-height)',
+          background: 'var(--bg-canvas)',
+          color: 'var(--ink-900)',
+          fontFamily: 'var(--font-ui)',
+        }}
+      >
+        <PhoneFallback
+          activeUserId={activeUserId}
+          onExportLibrary={() => void handleExport()}
+          onImportLibrary={() => void handleImport()}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+        <input
+          ref={libraryImportInputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void handleImportFile(file);
+            e.target.value = '';
+          }}
+        />
+        {settingsOpen && (
+          <SettingsPanel
+            onClose={() => setSettingsOpen(false)}
+            onExportLibrary={() => void handleExport()}
+            onImportLibrary={() => void handleImport()}
+            onOpenOnboarding={() => setOnboardingOpen(true)}
+            onCreateTutorial={(kind) => void handleCreateTutorialBook(kind)}
+          />
+        )}
+        {toastMessage && (
+          <div role="status" aria-live="polite" style={toastStyle}>
+            {toastMessage}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className={[
@@ -1148,7 +1376,8 @@ export default function App() {
             style={{
               borderTop: '1px solid var(--ink-150)',
               padding: '8px 10px',
-              display: 'flex',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
               gap: 6,
             }}
           >
@@ -1164,21 +1393,6 @@ export default function App() {
             </button>
             <button
               type="button"
-              disabled={!activeBookId}
-              onClick={() => void handleExportTemplate()}
-              style={{
-                ...sidebarUtilityButtonStyle,
-                opacity: activeBookId ? 1 : 0.45,
-                cursor: activeBookId ? 'pointer' : 'not-allowed',
-              }}
-              title={t('app.exportTemplate')}
-              aria-label={t('app.exportTemplate')}
-            >
-              <FileText size={13} />
-              <span>{t('app.template')}</span>
-            </button>
-            <button
-              type="button"
               onClick={() => void handleImport()}
               style={sidebarUtilityButtonStyle}
               title={t('app.importLibrary')}
@@ -1186,6 +1400,21 @@ export default function App() {
             >
               <Upload size={13} />
               <span>{t('app.import')}</span>
+            </button>
+            <button
+              type="button"
+              disabled={!activeBookId}
+              onClick={() => void handleExportTemplate()}
+              style={{
+                ...sidebarUtilitySecondaryButtonStyle,
+                opacity: activeBookId ? 1 : 0.45,
+                cursor: activeBookId ? 'pointer' : 'not-allowed',
+              }}
+              title={t('app.exportTemplate')}
+              aria-label={t('app.exportTemplate')}
+            >
+              <FileText size={13} />
+              <span>{t('app.exportCurrentBook')}</span>
             </button>
             <input
               ref={libraryImportInputRef}

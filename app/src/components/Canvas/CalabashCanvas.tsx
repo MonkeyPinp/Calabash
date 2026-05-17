@@ -18,7 +18,7 @@ import {
   type NodeMouseHandler,
   type EdgeMouseHandler,
 } from '@xyflow/react';
-import { Link2, Lock, PanelRight, Trash2, Unlock } from 'lucide-react';
+import { CircleDashed, FileText, Image as ImageIcon, LayoutGrid, Link2, Lock, PanelRight, Shield, StickyNote as StickyNoteIcon, Trash2, Unlock, UserPlus } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
 import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CharacterNode from './CharacterNode';
@@ -233,6 +233,21 @@ function CalabashCanvasInner({
     ] as const,
     [t],
   );
+  const helpTools = useMemo(
+    () => [
+      { key: 'node', icon: <UserPlus size={12} />, label: t('app.addCharacter'), body: t('help.tool.addNode') },
+      { key: 'note', icon: <StickyNoteIcon size={12} />, label: t('app.note'), body: t('help.tool.note') },
+      { key: 'group', icon: <CircleDashed size={12} />, label: t('app.range'), body: t('help.tool.group') },
+      { key: 'illustration', icon: <ImageIcon size={12} />, label: t('app.image'), body: t('help.tool.illustration') },
+      { key: 'text', icon: <FileText size={12} />, label: t('app.textMode'), body: t('help.tool.textMode') },
+      { key: 'portrait', icon: <ImageIcon size={12} />, label: t('app.portraitMode'), body: t('help.tool.portraitMode') },
+      { key: 'layout', icon: <LayoutGrid size={12} />, label: t('app.layout'), body: t('help.tool.layout') },
+      { key: 'shield', icon: <Shield size={12} />, label: t('app.shield'), body: t('help.tool.shield') },
+      { key: 'lock', icon: <Lock size={12} />, label: t('canvas.lockBoard'), body: t('help.tool.lockBoard') },
+    ],
+    [t],
+  );
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     onFitViewReady?.(fitView);
@@ -939,15 +954,17 @@ function CalabashCanvasInner({
       )}
 
       <div
-        aria-label="Keyboard shortcuts"
+        aria-label={t('help.ariaLabel')}
+        title={t('help.ariaLabel')}
         data-testid="keyboard-shortcuts-legend"
-        className="shortcut-legend"
+        data-help-surface="canvas"
+        className={`shortcut-legend ${helpOpen ? 'shortcut-legend--open' : ''}`}
         style={{
           position: 'absolute',
           right: 14,
           top: 14,
           zIndex: 8,
-          width: 178,
+          width: 'min(520px, calc(100vw - 36px))',
           boxSizing: 'border-box',
           padding: 0,
           pointerEvents: 'none',
@@ -957,7 +974,11 @@ function CalabashCanvasInner({
           gap: 6,
         }}
       >
-        <div
+        <button
+          type="button"
+          data-testid="canvas-help-trigger"
+          aria-expanded={helpOpen}
+          onClick={() => setHelpOpen((open) => !open)}
           style={{
             padding: '5px 9px 5px 8px',
             background: 'var(--bg-panel)',
@@ -969,6 +990,8 @@ function CalabashCanvasInner({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
+            cursor: 'help',
+            font: 'inherit',
           }}
         >
           <span
@@ -986,35 +1009,61 @@ function CalabashCanvasInner({
           >
             ?
           </span>
-          Shortcuts
-        </div>
+          {t('help.title')}
+        </button>
         <div
           className="shortcut-panel"
+          data-testid="canvas-help-panel"
           style={{
-            width: 178,
+            width: 'min(520px, calc(100vw - 36px))',
+            maxWidth: 'calc(100vw - 36px)',
             boxSizing: 'border-box',
-            padding: '10px 12px 11px',
+            padding: '11px 12px 12px',
             borderRadius: 6,
             border: '1px solid var(--ink-200)',
             background: 'var(--bg-panel)',
             boxShadow: 'var(--shadow-pop)',
-            opacity: 0,
-            transform: 'translateY(-4px)',
+            opacity: helpOpen ? 1 : 0,
+            transform: helpOpen ? 'translateY(0)' : 'translateY(-4px)',
+            pointerEvents: helpOpen ? 'auto' : 'none',
             transition: 'opacity var(--transition-fast), transform var(--transition-fast)',
           }}
         >
+          <div style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            color: 'var(--ink-400)',
+            letterSpacing: '.12em',
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            marginBottom: 7,
+          }}>
+            {t('help.shortcuts')}
+          </div>
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'auto 1fr',
-              columnGap: 10,
-              rowGap: 5,
+              gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
+              gap: 6,
               fontSize: 11,
               color: 'var(--ink-600)',
             }}
           >
             {shortcuts.map(([key, label]) => (
-              <div key={`${key}-${label}`} style={{ display: 'contents' }}>
+              <div
+                key={`${key}-${label}`}
+                style={{
+                  minWidth: 0,
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr',
+                  alignItems: 'center',
+                  columnGap: 6,
+                  padding: '4px 5px',
+                  border: '1px solid var(--ink-150)',
+                  borderRadius: 4,
+                  background: 'color-mix(in srgb, var(--bg-canvas) 70%, transparent)',
+                }}
+              >
                 <span style={kbdStyle}>{key}</span>
                 <span
                   style={{
@@ -1026,6 +1075,67 @@ function CalabashCanvasInner({
                   }}
                 >
                   {label}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              height: 1,
+              background: 'var(--ink-150)',
+              margin: '10px 0 9px',
+            }}
+          />
+          <div style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            color: 'var(--ink-400)',
+            letterSpacing: '.12em',
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            marginBottom: 7,
+          }}>
+            {t('help.tools')}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 8 }}>
+            {helpTools.map((tool) => (
+              <div
+                key={tool.key}
+                style={{
+                  minWidth: 0,
+                  display: 'grid',
+                  gridTemplateColumns: '18px 1fr',
+                  columnGap: 8,
+                  alignItems: 'start',
+                  padding: '6px',
+                  border: '1px solid var(--ink-150)',
+                  borderRadius: 4,
+                  background: 'color-mix(in srgb, var(--bg-canvas) 62%, transparent)',
+                  color: 'var(--ink-600)',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 4,
+                    border: '1px solid var(--ink-200)',
+                    background: 'var(--bg-canvas)',
+                    color: 'var(--ink-600)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  {tool.icon}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-900)', fontWeight: 700, lineHeight: 1.15 }}>
+                    {tool.label}
+                  </span>
+                  <span style={{ display: 'block', marginTop: 1, fontSize: 10.5, color: 'var(--ink-500)', lineHeight: 1.3 }}>
+                    {tool.body}
+                  </span>
                 </span>
               </div>
             ))}
@@ -1116,9 +1226,11 @@ function CalabashCanvasInner({
           pointer-events: auto !important;
         }
         .shortcut-legend:hover .shortcut-panel,
-        .shortcut-legend:focus-within .shortcut-panel {
+        .shortcut-legend:focus-within .shortcut-panel,
+        .shortcut-legend--open .shortcut-panel {
           opacity: 1 !important;
           transform: translateY(0) !important;
+          pointer-events: auto !important;
         }
       `}</style>
 

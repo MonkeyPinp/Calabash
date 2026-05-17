@@ -49,7 +49,9 @@ describe('SettingsPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /About/i }));
-    expect(screen.getByText('0.5.2')).toBeInTheDocument();
+    expect(screen.getByText('0.5.3')).toBeInTheDocument();
+    expect(screen.getByAltText('Guesswhat Studio logo')).toHaveAttribute('src', '/guesswhat-studio-logo.png');
+    expect(screen.getByRole('link', { name: /Open Guesswhat Studio website/i })).toHaveAttribute('href', 'https://guesswhat.studio');
     expect(screen.queryByText('Built on')).not.toBeInTheDocument();
   });
 
@@ -61,11 +63,11 @@ describe('SettingsPanel', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{
-        tag_name: 'v0.5.3',
-        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.5.3',
+        tag_name: 'v0.5.4',
+        html_url: 'https://github.com/Guesswhat-Studio/Calabash/releases/tag/v0.5.4',
         draft: false,
         assets: [
-          { name: 'Calabash_0.5.3_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
+          { name: 'Calabash_0.5.4_windows_x64.exe', browser_download_url: 'https://example.com/calabash.exe' },
         ],
       }],
     }));
@@ -83,9 +85,9 @@ describe('SettingsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /About/i }));
     fireEvent.click(screen.getByRole('button', { name: /Check for updates/i }));
-    await waitFor(() => expect(screen.getByText('Download 0.5.3')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Download 0.5.4')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Download 0.5.3'));
+    fireEvent.click(screen.getByText('Download 0.5.4'));
     expect(open).toHaveBeenCalledWith('https://example.com/calabash.exe', '_blank', 'noopener,noreferrer');
   });
 

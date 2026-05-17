@@ -212,16 +212,19 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('第5-9集')).toBeInTheDocument();
   });
 
-  it('renders a compact keyboard shortcut legend above the minimap area', () => {
+  it('renders a compact help legend above the minimap area', () => {
     render(
       <div style={{ width: 800, height: 600 }}>
         <CalabashCanvas characters={characters} relationships={[]} currentChapter={10} bookId={null} />
       </div>,
     );
-    expect(screen.getByLabelText('Keyboard shortcuts')).toBeInTheDocument();
+    expect(screen.getByLabelText('Help')).toBeInTheDocument();
     expect(screen.getByText('N')).toBeInTheDocument();
     expect(screen.getByText('New node')).toBeInTheDocument();
     expect(screen.getByText('Ctrl Z')).toBeInTheDocument();
+    expect(screen.getByText('UI buttons')).toBeInTheDocument();
+    expect(screen.getByText('Layout')).toBeInTheDocument();
+    expect(screen.getByText('Shield')).toBeInTheDocument();
   });
 
   it('shows group ranges only after their display chapter and renders their chapter tag', () => {

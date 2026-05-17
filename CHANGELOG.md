@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.3 - 2026-05-17
+
+- Added a friendly phone fallback that keeps the library readable while directing board editing to tablet, desktop, or the desktop app.
+- Expanded the public web smoke pipeline with touch coverage for tablet landscape, tablet portrait, and phone fallback viewports.
+- Added a live GitHub Releases update-check smoke to the local release pipeline.
+- Reworked the canvas Help panel into a compact touch-friendly guide that explains both shortcuts and visible toolbar controls.
+- Polished the library/settings surfaces with clearer create/export entry points, Open Clues below the inspector guide, and the Guesswhat Studio logo in About.
+- Bumped web, desktop, import/export, docs example, and template metadata to `0.5.3`.
+
+## 0.5.2 - 2026-05-17
+
+- Added reusable book templates and current-book template export.
+- Added GitHub preview cards for shared repository links.
+- Guarded total chapter edits so users cannot shrink below existing chapter content.
+- Bumped web, desktop, import/export, and template metadata to `0.5.2`.
+
 ## 0.5.1 - 2026-05-17
 
 - Added a mystery puzzle/contest starter template for quick blank case setup.

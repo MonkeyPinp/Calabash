@@ -1,0 +1,57 @@
+name: Update Impact Metrics
+
+on:
+  schedule:
+    # Daily UTC refresh. GitHub traffic data is a rolling 14-day window, so
+    # once per day is enough and avoids noisy generated commits.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: impact-metrics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Refresh README impact snapshot
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Update metrics
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CALABASH_GITHUB_PAGES_VISITS_30D: ${{ vars.CALABASH_GITHUB_PAGES_VISITS_30D }}
+          CALABASH_GITHUB_PAGES_SOURCE: ${{ vars.CALABASH_GITHUB_PAGES_SOURCE }}
+          CALABASH_EDGEONE_REQUESTS_30D: ${{ vars.CALABASH_EDGEONE_REQUESTS_30D }}
+          CALABASH_EDGEONE_UNIQUE_IPS_30D: ${{ vars.CALABASH_EDGEONE_UNIQUE_IPS_30D }}
+          CALABASH_EDGEONE_SOURCE: ${{ vars.CALABASH_EDGEONE_SOURCE }}
+        run: npm run metrics:update
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- docs/assets/impact-metrics.json docs/assets/impact-snapshot.svg; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit metrics snapshot
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/assets/impact-metrics.json docs/assets/impact-snapshot.svg
+          git commit -m "chore: update impact metrics [skip ci]"
+          git push

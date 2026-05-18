@@ -18,9 +18,9 @@ import {
   type NodeMouseHandler,
   type EdgeMouseHandler,
 } from '@xyflow/react';
-import { CircleDashed, FileText, Image as ImageIcon, LayoutGrid, Link2, Lock, PanelRight, Shield, StickyNote as StickyNoteIcon, Trash2, Unlock, UserPlus } from 'lucide-react';
+import { CircleDashed, Clock3, FileText, Image as ImageIcon, LayoutGrid, Link2, Lock, PanelRight, Shield, StickyNote as StickyNoteIcon, Trash2, Unlock, UserPlus } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
-import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
+import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote, TimeLayer } from '@/types';
 import CharacterNode from './CharacterNode';
 import RelationshipEdge from './RelationshipEdge';
 import StickyNoteNode from './StickyNoteNode';
@@ -41,6 +41,7 @@ import { computeForceLayout } from '@/lib/layout';
 import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
 import { isEvidenceImageVisibleAtChapter } from '@/lib/evidenceImages';
+import { ALL_TIME_LAYERS_ID, isVisibleInTimeLayer } from '@/lib/timeLayers';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -159,6 +160,8 @@ export interface CalabashCanvasProps {
   evidenceImages?: EvidenceImage[];
   characterNodeViewMode?: CharacterNodeViewMode;
   currentChapter: number;
+  currentTimeLayerId?: string;
+  timeLayers?: TimeLayer[];
   bookId: string | null;
   newCharacterRequestId?: number;
   startEdgeRequestId?: number;
@@ -182,6 +185,8 @@ function CalabashCanvasInner({
   evidenceImages = EMPTY_EVIDENCE_IMAGES,
   characterNodeViewMode = 'text',
   currentChapter,
+  currentTimeLayerId = ALL_TIME_LAYERS_ID,
+  timeLayers = [],
   bookId,
   newCharacterRequestId = 0,
   startEdgeRequestId = 0,
@@ -203,6 +208,11 @@ function CalabashCanvasInner({
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [boardLocked, setBoardLocked] = useState(false);
+
+  const timeLayerColorById = useMemo(
+    () => new Map(timeLayers.map((layer) => [layer.id, layer.color] as const)),
+    [timeLayers],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const handledNewCharacterRequestId = useRef(0);
@@ -246,6 +256,7 @@ function CalabashCanvasInner({
       { key: 'illustration', icon: <ImageIcon size={12} />, label: t('app.image'), body: t('help.tool.illustration') },
       { key: 'text', icon: <FileText size={12} />, label: t('app.textMode'), body: t('help.tool.textMode') },
       { key: 'portrait', icon: <ImageIcon size={12} />, label: t('app.portraitMode'), body: t('help.tool.portraitMode') },
+      { key: 'timeLayer', icon: <Clock3 size={12} />, label: t('timeLayer.switcher'), body: t('help.tool.timeLayer') },
       { key: 'layout', icon: <LayoutGrid size={12} />, label: t('app.layout'), body: t('help.tool.layout') },
       { key: 'shield', icon: <Shield size={12} />, label: t('app.shield'), body: t('help.tool.shield') },
       { key: 'lock', icon: <Lock size={12} />, label: t('canvas.lockBoard'), body: t('help.tool.lockBoard') },
@@ -328,7 +339,10 @@ function CalabashCanvasInner({
   const stickyNoteNodes: Node[] = useMemo(
     () =>
       stickyNotes
-        .filter((s) => isStickyNoteVisibleAtChapter(s, currentChapter))
+        .filter((s) => (
+          isStickyNoteVisibleAtChapter(s, currentChapter) &&
+          isVisibleInTimeLayer(s.timeLayerId, currentTimeLayerId)
+        ))
         .map((s) => ({
           id: s.id,
           type: 'stickyNote',
@@ -339,14 +353,17 @@ function CalabashCanvasInner({
           style: { width: s.width, height: s.height },
           data: { note: s },
         })),
-    [stickyNotes, currentChapter, boardLocked],
+    [stickyNotes, currentChapter, currentTimeLayerId, boardLocked],
   );
 
   // Group range nodes stay visually behind characters, notes, and relationship edges.
   const groupRangeNodes: Node[] = useMemo(
     () =>
       groupRanges
-        .filter((r) => isGroupRangeVisibleAtChapter(r, currentChapter))
+        .filter((r) => (
+          isGroupRangeVisibleAtChapter(r, currentChapter) &&
+          isVisibleInTimeLayer(r.timeLayerId, currentTimeLayerId)
+        ))
         .map((r) => ({
           id: r.id,
           type: 'groupRange',
@@ -358,13 +375,16 @@ function CalabashCanvasInner({
           style: { width: r.width, height: r.height, zIndex: -20 },
           data: { range: r },
         })),
-    [groupRanges, currentChapter, boardLocked],
+    [groupRanges, currentChapter, currentTimeLayerId, boardLocked],
   );
 
   const evidenceImageNodes: Node[] = useMemo(
     () =>
       evidenceImages
-        .filter((image) => isEvidenceImageVisibleAtChapter(image, currentChapter))
+        .filter((image) => (
+          isEvidenceImageVisibleAtChapter(image, currentChapter) &&
+          isVisibleInTimeLayer(image.timeLayerId, currentTimeLayerId)
+        ))
         .map((image) => {
           const zIndex = image.layer === 'background' ? -30 : -1;
           return {
@@ -379,7 +399,7 @@ function CalabashCanvasInner({
             data: { image },
           };
         }),
-    [evidenceImages, currentChapter, boardLocked],
+    [evidenceImages, currentChapter, currentTimeLayerId, boardLocked],
   );
 
   const allComputedNodes: Node[] = useMemo(
@@ -434,6 +454,7 @@ function CalabashCanvasInner({
     const visible = relationships.filter(
       (r) =>
         r.chapterRevealed <= currentChapter &&
+        isVisibleInTimeLayer(r.timeLayerId, currentTimeLayerId) &&
         visibleCharIds.has(r.sourceId) &&
         visibleCharIds.has(r.targetId),
     );
@@ -454,7 +475,8 @@ function CalabashCanvasInner({
       const spread = 45;
       const pathOffset = count === 1 ? 0 : (idx - (count - 1) / 2) * spread;
 
-      const color = getRelationshipTypeMarkerColor(r.type);
+      const timeLayerColor = r.timeLayerId ? timeLayerColorById.get(r.timeLayerId) : undefined;
+      const color = timeLayerColor ?? getRelationshipTypeMarkerColor(r.type);
       const filled = { type: MarkerType.ArrowClosed, color, width: 14, height: 14 };
 
       const markerEnd = isRelationshipDirected(r) ? filled : undefined;
@@ -476,10 +498,10 @@ function CalabashCanvasInner({
         targetPosition: handles.targetPosition,
         type: 'relationship',
         markerEnd,
-        data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset },
+        data: { certainty: r.certainty, type: r.type, relationship: r, pathOffset, timeLayerColor },
       };
     });
-  }, [relationships, visibleCharIds, currentChapter, nodeCenter]);
+  }, [relationships, visibleCharIds, currentChapter, currentTimeLayerId, nodeCenter, timeLayerColorById]);
 
   // ── Auto-layout (lives here so it has direct access to setRfNodes + fitView) ──
 
@@ -499,7 +521,12 @@ function CalabashCanvasInner({
       }),
     );
     const visibleEdges = relationships
-      .filter((r) => r.chapterRevealed <= currentChapter && visibleIds.has(r.sourceId) && visibleIds.has(r.targetId))
+      .filter((r) => (
+        r.chapterRevealed <= currentChapter &&
+        isVisibleInTimeLayer(r.timeLayerId, currentTimeLayerId) &&
+        visibleIds.has(r.sourceId) &&
+        visibleIds.has(r.targetId)
+      ))
       .map((r) => ({ source: r.sourceId, target: r.targetId, directed: isRelationshipDirected(r) }));
 
     const positions = computeForceLayout(
@@ -531,7 +558,7 @@ function CalabashCanvasInner({
       async () => applyCharacterLayoutMoves(moves, 'before'),
       async () => applyCharacterLayoutMoves(moves, 'after'),
     );
-  }, [bookId, boardLocked, characters, relationships, currentChapter, characterNodeViewMode, t, applyCharacterLayoutMoves, pushUndo]);
+  }, [bookId, boardLocked, characters, relationships, currentChapter, currentTimeLayerId, characterNodeViewMode, t, applyCharacterLayoutMoves, pushUndo]);
 
   useEffect(() => {
     onLayoutReady?.(runLayout);
@@ -1279,6 +1306,7 @@ function CalabashCanvasInner({
           sourceId={pendingConnection.sourceId}
           targetId={pendingConnection.targetId}
           currentChapter={currentChapter}
+          timeLayerId={currentTimeLayerId === ALL_TIME_LAYERS_ID ? null : currentTimeLayerId}
           onClose={() => setPendingConnection(null)}
           onCreated={() => setPendingConnection(null)}
         />

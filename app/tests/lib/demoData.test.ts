@@ -459,6 +459,85 @@ describe('Ackroyd demo data', () => {
     expect(notes.map((note) => note.content).join(' ')).toContain('章スライダー');
   });
 
+  it('creates a Seven Deaths time-layer tutorial', async () => {
+    const bookId = await seedTutorialBook({ userId: 'reader-1', language: 'zh-CN', kind: 'sevenDeaths' });
+    const book = await getBook(bookId);
+    const characters = await listCharactersByBook(bookId);
+    const relationships = await listRelationshipsByBook(bookId);
+    const notes = await listAnnotationsByBook(bookId);
+    const groups = await listGroupRangesByBook(bookId);
+
+    expect(getTutorialDefaultViewMode('sevenDeaths')).toBe('text');
+    expect(book).toMatchObject({
+      title: '死了七次的男人：时间层教程',
+      currentChapter: 1,
+      totalChapters: 9,
+      spoilerShield: true,
+      spoilerChapters: [7, 9],
+      defaultTimeLayerId: 'loop-1',
+    });
+    expect(book?.timeLayers).toHaveLength(9);
+    expect(book?.timeLayers?.map((layer) => layer.id)).toContain('loop-9');
+    expect(characters.map((character) => character.name)).toEqual(expect.arrayContaining([
+      '久太郎',
+      '渊上零治郎',
+      '阁楼',
+      '铜花瓶',
+    ]));
+    expect(relationships.map((relationship) => relationship.timeLayerId).filter(Boolean)).toEqual(expect.arrayContaining([
+      'loop-2',
+      'loop-7',
+      'loop-9',
+    ]));
+    expect(notes.map((note) => note.timeLayerId).filter(Boolean)).toEqual(expect.arrayContaining([
+      'loop-1',
+      'loop-2',
+      'loop-7',
+      'loop-9',
+    ]));
+    expect(groups.map((group) => group.timeLayerId).filter(Boolean)).toEqual(expect.arrayContaining(['loop-2', 'loop-7']));
+  });
+
+  it('localizes the Seven Deaths time-layer tutorial for English and Japanese', async () => {
+    const englishBookId = await seedTutorialBook({ userId: 'reader-1', language: 'en', kind: 'sevenDeaths' });
+    const englishBook = await getBook(englishBookId);
+    const englishCharacters = await listCharactersByBook(englishBookId);
+    const englishRelationships = await listRelationshipsByBook(englishBookId);
+
+    const japaneseBookId = await seedTutorialBook({ userId: 'reader-1', language: 'ja', kind: 'sevenDeaths' });
+    const japaneseBook = await getBook(japaneseBookId);
+    const japaneseCharacters = await listCharactersByBook(japaneseBookId);
+    const japaneseRelationships = await listRelationshipsByBook(japaneseBookId);
+
+    expect(englishBook?.title).toBe('The Man Who Died Seven Times: Time Layer Tutorial');
+    expect(englishBook?.timeLayers?.[0]?.name).toBe('Loop 1');
+    expect(englishCharacters.map((character) => character.name)).toEqual(expect.arrayContaining([
+      'Hisataro',
+      'Reijiro Fuchigami',
+      'Attic',
+      'Bronze vase',
+    ]));
+    expect(englishRelationships.map((relationship) => relationship.label)).toEqual(expect.arrayContaining([
+      'finds the death scene',
+      'possible weapon',
+      'goal: prevent the death',
+    ]));
+
+    expect(japaneseBook?.title).toBe('七回死んだ男：時間レイヤー教程');
+    expect(japaneseBook?.timeLayers?.[0]?.name).toBe('1巡目');
+    expect(japaneseCharacters.map((character) => character.name)).toEqual(expect.arrayContaining([
+      '久太郎',
+      '淵上零治郎',
+      '屋根裏',
+      '銅の花瓶',
+    ]));
+    expect(japaneseRelationships.map((relationship) => relationship.label)).toEqual(expect.arrayContaining([
+      '死亡現場を発見',
+      '凶器候補',
+      '目的: 死を防ぐ',
+    ]));
+  });
+
   it('attaches optional local portrait assets to the tutorial when available', async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn(async () => new Response(

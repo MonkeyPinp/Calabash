@@ -5,6 +5,7 @@ import { createRelationship } from '@/db/relationships';
 import { createAnnotation } from '@/db/annotations';
 import { createGroupRange } from '@/db/groupRanges';
 import { savePortrait } from '@/db/portraits';
+import { createOpenClueDraft } from '@/lib/clues';
 import { publicAsset } from '@/lib/publicAsset';
 import { createBookFromBundledTemplate } from '@/templates';
 import type { CharacterNodeViewMode, ResolvedLanguage } from '@/stores/uiStore';
@@ -16,7 +17,7 @@ interface SeedOptions {
   kind?: TutorialKind;
 }
 
-export type TutorialKind = 'ackroyd' | 'hida' | 'contest';
+export type TutorialKind = 'ackroyd' | 'hida' | 'contest' | 'sevenDeaths';
 
 export function getTutorialDefaultViewMode(kind: TutorialKind): CharacterNodeViewMode {
   return kind === 'ackroyd' ? 'portrait' : 'text';
@@ -684,9 +685,415 @@ const tutorialCopy: Record<ResolvedLanguage, {
   },
 };
 
+function sevenDeathsString(
+  language: ResolvedLanguage,
+  values: Partial<Record<ResolvedLanguage, string>> & { en: string },
+): string {
+  return values[language] ?? values.en;
+}
+
+async function seedSevenDeathsTimeLoop(userId?: string, language: ResolvedLanguage = 'en'): Promise<string> {
+  const text = {
+    category: sevenDeathsString(language, {
+      en: 'Tutorials',
+      'zh-CN': '教程',
+      ja: 'チュートリアル',
+      es: 'Tutoriales',
+      'pt-BR': 'Tutoriais',
+    }),
+    title: sevenDeathsString(language, {
+      en: 'The Man Who Died Seven Times: Time Layer Tutorial',
+      'zh-CN': '死了七次的男人：时间层教程',
+      ja: '七回死んだ男：時間レイヤー教程',
+      es: 'El hombre que murió siete veces: tutorial de capas temporales',
+      'pt-BR': 'O homem que morreu sete vezes: tutorial de camadas temporais',
+    }),
+    author: sevenDeathsString(language, {
+      en: 'Yasuhiko Nishizawa',
+      'zh-CN': '西泽保彦',
+      ja: '西澤保彦',
+      es: 'Yasuhiko Nishizawa',
+      'pt-BR': 'Yasuhiko Nishizawa',
+    }),
+    loopName: (n: number) => sevenDeathsString(language, {
+      en: `Loop ${n}`,
+      'zh-CN': `第 ${n} 次重复`,
+      ja: `${n}巡目`,
+      es: `Bucle ${n}`,
+      'pt-BR': `Loop ${n}`,
+    }),
+    familyGroup: sevenDeathsString(language, {
+      en: 'Fuchigami family pressure',
+      'zh-CN': '渊上家族压力',
+      ja: '渕上家の圧力',
+      es: 'Presión de la familia Fuchigami',
+      'pt-BR': 'Pressão da família Fuchigami',
+    }),
+    obaGroup: sevenDeathsString(language, {
+      en: 'Oba household',
+      'zh-CN': '大庭家',
+      ja: '大庭家',
+      es: 'Casa Oba',
+      'pt-BR': 'Família Oba',
+    }),
+    kaneGroup: sevenDeathsString(language, {
+      en: 'Kanonoe household',
+      'zh-CN': '钟之江家',
+      ja: '鐘之江家',
+      es: 'Casa Kanonoe',
+      'pt-BR': 'Família Kanonoe',
+    }),
+    loopGroup: sevenDeathsString(language, {
+      en: 'Loop-specific facts',
+      'zh-CN': '循环限定事实',
+      ja: 'ループ限定の事実',
+      es: 'Hechos de este bucle',
+      'pt-BR': 'Fatos deste loop',
+    }),
+    observer: sevenDeathsString(language, {
+      en: 'time-loop observer',
+      'zh-CN': '时间循环观察者',
+      ja: '時間ループの観測者',
+      es: 'observador del bucle temporal',
+      'pt-BR': 'observador do loop temporal',
+    }),
+    victimRole: sevenDeathsString(language, {
+      en: 'grandfather / possible victim',
+      'zh-CN': '外公 / 可能的受害者',
+      ja: '祖父 / 被害者候補',
+      es: 'abuelo / posible víctima',
+      'pt-BR': 'avô / possível vítima',
+    }),
+    startNote: sevenDeathsString(language, {
+      en: 'Time Layer demo: the same January 2 repeats. Use the top Time layer selector to compare which relationships, notes, and group areas belong to a specific loop.',
+      'zh-CN': '时间层 Demo：同一个一月二日会反复出现。用顶部“时间层”切换器比较哪些关系、便笺和分组只属于某一次重复。',
+      ja: '時間レイヤーのデモです。同じ1月2日が繰り返されます。上部の時間レイヤー切替で、各ループだけに属する関係・付箋・グループを比較できます。',
+      es: 'Demo de capas temporales: el mismo 2 de enero se repite. Usa el selector superior para comparar qué relaciones, notas y grupos pertenecen a cada bucle.',
+      'pt-BR': 'Demo de camadas temporais: o mesmo 2 de janeiro se repete. Use o seletor superior para comparar quais relações, notas e grupos pertencem a cada loop.',
+    }),
+    baselineNote: sevenDeathsString(language, {
+      en: 'Loop 1: start with the stable family map. Keep facts that apply to every loop outside any specific time layer.',
+      'zh-CN': '第 1 次重复：先从稳定的家族图开始。每次重复都成立的事实，不绑定到任何具体时间层。',
+      ja: '1巡目: まず安定した家族図から始めます。どのループにも当てはまる事実は、特定レイヤーに入れません。',
+      es: 'Bucle 1: empieza con el mapa familiar estable. Los hechos que valen en todos los bucles quedan fuera de una capa específica.',
+      'pt-BR': 'Loop 1: comece pelo mapa familiar estável. Fatos que valem em todos os loops ficam fora de uma camada específica.',
+    }),
+    discoveryNote: sevenDeathsString(language, {
+      en: 'Loop 2: record the discovered death as a loop-specific fact. It can disappear when you switch back to the baseline layer.',
+      'zh-CN': '第 2 次重复：把“发现死亡现场”作为本轮限定事实。切回基准层时，它会消失。',
+      ja: '2巡目: 死亡現場の発見をこの巡目限定の事実として記録します。基準レイヤーに戻すと非表示になります。',
+      es: 'Bucle 2: registra el hallazgo de la muerte como hecho específico. Desaparece al volver a la capa base.',
+      'pt-BR': 'Loop 2: registre a morte descoberta como fato específico. Ela some ao voltar à camada base.',
+    }),
+    lateLoopNote: sevenDeathsString(language, {
+      en: 'Loop 7: compare failed prevention attempts. The useful question becomes not only “who”, but “which intervention changed the outcome?”',
+      'zh-CN': '第 7 次重复：对照失败的阻止尝试。真正有用的问题不只是“是谁”，而是“哪一次介入改变了结果”。',
+      ja: '7巡目: 失敗した阻止策を比較します。大事なのは「誰か」だけでなく、「どの介入が結果を変えたか」です。',
+      es: 'Bucle 7: compara intentos fallidos de prevención. La pregunta útil no es solo “quién”, sino “qué intervención cambió el resultado”.',
+      'pt-BR': 'Loop 7: compare tentativas falhas de prevenção. A pergunta útil não é só “quem”, mas “qual intervenção mudou o resultado”.',
+    }),
+    finalNote: sevenDeathsString(language, {
+      en: 'Loop 9: the board shifts from solving a past murder to preventing the next version of the event.',
+      'zh-CN': '第 9 次重复：看板的目标从“破解已经发生的命案”转为“阻止下一次事件发生”。',
+      ja: '9巡目: ボードの目的は、過去の殺人を解くことから、次の事件を防ぐことへ移ります。',
+      es: 'Bucle 9: el tablero pasa de resolver un crimen ocurrido a prevenir la próxima versión del evento.',
+      'pt-BR': 'Loop 9: o quadro muda de resolver um crime passado para impedir a próxima versão do evento.',
+    }),
+    clueA: sevenDeathsString(language, {
+      en: 'Which intervention changes the outcome across loops?',
+      'zh-CN': '哪一次介入会改变循环结果？',
+      ja: 'どの介入がループの結果を変えるのか？',
+      es: '¿Qué intervención cambia el resultado entre bucles?',
+      'pt-BR': 'Qual intervenção muda o resultado entre loops?',
+    }),
+    clueB: sevenDeathsString(language, {
+      en: 'Are the attic route and vase position consistent in every loop?',
+      'zh-CN': '阁楼动线和花瓶位置在每次重复里是否一致？',
+      ja: '屋根裏への動線と花瓶の位置は毎回同じか？',
+      es: '¿La ruta al ático y la posición del jarrón son consistentes en cada bucle?',
+      'pt-BR': 'O caminho até o sótão e a posição do vaso são consistentes em todos os loops?',
+    }),
+    clueC: sevenDeathsString(language, {
+      en: 'Which inheritance motive survives every reset?',
+      'zh-CN': '哪一个继承/遗产动机能跨过所有重置？',
+      ja: 'どの相続動機がすべてのリセット後も残るか？',
+      es: '¿Qué motivo de herencia sobrevive a todos los reinicios?',
+      'pt-BR': 'Que motivo de herança sobrevive a todos os reinícios?',
+    }),
+    names: {
+      q: sevenDeathsString(language, { en: 'Hisataro', 'zh-CN': '久太郎', ja: '久太郎', es: 'Hisataro', 'pt-BR': 'Hisataro' }),
+      reijiro: sevenDeathsString(language, { en: 'Reijiro Fuchigami', 'zh-CN': '渊上零治郎', ja: '淵上零治郎', es: 'Reijiro Fuchigami', 'pt-BR': 'Reijiro Fuchigami' }),
+      kazumi: sevenDeathsString(language, { en: 'Kazumi', 'zh-CN': '加实寿', ja: '加実寿', es: 'Kazumi', 'pt-BR': 'Kazumi' }),
+      kuruno: sevenDeathsString(language, { en: 'Kuruno', 'zh-CN': '胡留乃', ja: '胡留乃', es: 'Kuruno', 'pt-BR': 'Kuruno' }),
+      haruna: sevenDeathsString(language, { en: 'Haruna', 'zh-CN': '叶流名', ja: '叶流名', es: 'Haruna', 'pt-BR': 'Haruna' }),
+      fujitaka: sevenDeathsString(language, { en: 'Fujitaka Oba', 'zh-CN': '富士高', ja: '富士高', es: 'Fujitaka Oba', 'pt-BR': 'Fujitaka Oba' }),
+      yoshio: sevenDeathsString(language, { en: 'Yoshio Oba', 'zh-CN': '世史夫', ja: '世史夫', es: 'Yoshio Oba', 'pt-BR': 'Yoshio Oba' }),
+      mai: sevenDeathsString(language, { en: 'Mai Kanonoe', 'zh-CN': '舞', ja: '舞', es: 'Mai Kanonoe', 'pt-BR': 'Mai Kanonoe' }),
+      luna: sevenDeathsString(language, { en: 'Runa Kanonoe', 'zh-CN': '瑠奈', ja: '瑠奈', es: 'Runa Kanonoe', 'pt-BR': 'Runa Kanonoe' }),
+      ikuko: sevenDeathsString(language, { en: 'Ikuko', 'zh-CN': '居子', ja: '居子', es: 'Ikuko', 'pt-BR': 'Ikuko' }),
+      tsuchiya: sevenDeathsString(language, { en: 'Ryuichi Tsuchiya', 'zh-CN': '槌矢龙一', ja: '槌矢竜一', es: 'Ryuichi Tsuchiya', 'pt-BR': 'Ryuichi Tsuchiya' }),
+      yuri: sevenDeathsString(language, { en: 'Yuri Emi', 'zh-CN': '友理绘美', ja: '友理絵美', es: 'Yuri Emi', 'pt-BR': 'Yuri Emi' }),
+      attic: sevenDeathsString(language, { en: 'Attic', 'zh-CN': '阁楼', ja: '屋根裏', es: 'Ático', 'pt-BR': 'Sótão' }),
+      vase: sevenDeathsString(language, { en: 'Bronze vase', 'zh-CN': '铜花瓶', ja: '銅の花瓶', es: 'Jarrón de bronce', 'pt-BR': 'Vaso de bronze' }),
+    },
+    professions: {
+      kazumi: sevenDeathsString(language, { en: "eldest daughter / Hisataro's mother", 'zh-CN': '长女 / 久太郎的母亲', ja: '長女 / 久太郎の母', es: 'hija mayor / madre de Hisataro', 'pt-BR': 'filha mais velha / mãe de Hisataro' }),
+      kuruno: sevenDeathsString(language, { en: 'second daughter', 'zh-CN': '次女', ja: '次女', es: 'segunda hija', 'pt-BR': 'segunda filha' }),
+      haruna: sevenDeathsString(language, { en: 'third daughter / Kanonoe household', 'zh-CN': '三女 / 钟之江家', ja: '三女 / 鐘之江家', es: 'tercera hija / casa Kanonoe', 'pt-BR': 'terceira filha / família Kanonoe' }),
+      fujitaka: sevenDeathsString(language, { en: 'Oba household son', 'zh-CN': '大庭家的儿子', ja: '大庭家の息子', es: 'hijo de la casa Oba', 'pt-BR': 'filho da família Oba' }),
+      yoshio: sevenDeathsString(language, { en: 'Oba household son', 'zh-CN': '大庭家的儿子', ja: '大庭家の息子', es: 'hijo de la casa Oba', 'pt-BR': 'filho da família Oba' }),
+      mai: sevenDeathsString(language, { en: "Haruna's daughter", 'zh-CN': '叶流名的女儿', ja: '叶流名の娘', es: 'hija de Haruna', 'pt-BR': 'filha de Haruna' }),
+      luna: sevenDeathsString(language, { en: "Haruna's daughter", 'zh-CN': '叶流名的女儿', ja: '叶流名の娘', es: 'hija de Haruna', 'pt-BR': 'filha de Haruna' }),
+      ikuko: sevenDeathsString(language, { en: 'Fuchigami family maid', 'zh-CN': '渊上家女佣', ja: '淵上家の女中', es: 'sirvienta de los Fuchigami', 'pt-BR': 'criada da família Fuchigami' }),
+      tsuchiya: sevenDeathsString(language, { en: "Reijiro's secretary", 'zh-CN': '零治郎的秘书', ja: '零治郎の秘書', es: 'secretario de Reijiro', 'pt-BR': 'secretário de Reijiro' }),
+      yuri: sevenDeathsString(language, { en: "Kuruno's secretary", 'zh-CN': '胡留乃的秘书', ja: '胡留乃の秘書', es: 'secretaria de Kuruno', 'pt-BR': 'secretária de Kuruno' }),
+      attic: sevenDeathsString(language, { en: 'key room', 'zh-CN': '关键房间', ja: '重要な部屋', es: 'habitación clave', 'pt-BR': 'cômodo-chave' }),
+      vase: sevenDeathsString(language, { en: 'suspicious object', 'zh-CN': '可疑物品', ja: '怪しい物品', es: 'objeto sospechoso', 'pt-BR': 'objeto suspeito' }),
+    },
+    labels: {
+      fatherDaughter: sevenDeathsString(language, { en: 'father-daughter', 'zh-CN': '父女', ja: '父娘', es: 'padre-hija', 'pt-BR': 'pai-filha' }),
+      motherSon: sevenDeathsString(language, { en: 'mother-son', 'zh-CN': '母子', ja: '母子', es: 'madre-hijo', 'pt-BR': 'mãe-filho' }),
+      motherDaughter: sevenDeathsString(language, { en: 'mother-daughter', 'zh-CN': '母女', ja: '母娘', es: 'madre-hija', 'pt-BR': 'mãe-filha' }),
+      maid: sevenDeathsString(language, { en: 'maid', 'zh-CN': '女佣', ja: '女中', es: 'sirvienta', 'pt-BR': 'criada' }),
+      secretary: sevenDeathsString(language, { en: 'secretary', 'zh-CN': '秘书', ja: '秘書', es: 'secretario/a', 'pt-BR': 'secretário/a' }),
+      discoveredDeath: sevenDeathsString(language, { en: 'finds the death scene', 'zh-CN': '发现死亡现场', ja: '死亡現場を発見', es: 'descubre la escena', 'pt-BR': 'descobre a cena da morte' }),
+      deathScene: sevenDeathsString(language, { en: 'death scene', 'zh-CN': '死亡地点', ja: '死亡場所', es: 'lugar de la muerte', 'pt-BR': 'local da morte' }),
+      possibleWeapon: sevenDeathsString(language, { en: 'possible weapon', 'zh-CN': '可能凶器', ja: '凶器候補', es: 'posible arma', 'pt-BR': 'possível arma' }),
+      routeCheck: sevenDeathsString(language, { en: 'checks the route again', 'zh-CN': '反复核对动线', ja: '動線を再確認', es: 'revisa la ruta', 'pt-BR': 'confere a rota outra vez' }),
+      preventDeath: sevenDeathsString(language, { en: 'goal: prevent the death', 'zh-CN': '目标：阻止死亡', ja: '目的: 死を防ぐ', es: 'objetivo: impedir la muerte', 'pt-BR': 'meta: impedir a morte' }),
+    },
+  };
+
+  const timeLayers = Array.from({ length: 9 }, (_, index) => ({
+    id: `loop-${index + 1}`,
+    name: text.loopName(index + 1),
+    order: index + 1,
+    color: ['#6a4f1b', '#8f2f1f', '#1f5f7a', '#9f6b14', '#4e7c56', '#70528f', '#7a4d2c', '#2f6d65', '#9a7a1b'][index],
+  }));
+
+  const category = await findOrCreateCategory({ name: text.category, userId });
+  const book = await createBook({
+    userId,
+    title: text.title,
+    author: text.author,
+    totalChapters: 9,
+    spoilerShield: true,
+    spoilerChapters: [7, 9],
+    highlightedChapters: [1, 2, 7, 9],
+    timeLayers,
+    defaultTimeLayerId: 'loop-1',
+    categoryId: category.id,
+  });
+  const bookId = book.id;
+  const now = Date.now();
+  await updateBook(bookId, {
+    currentChapter: 1,
+    openClues: [
+      createOpenClueDraft(text.clueA, 2, now),
+      createOpenClueDraft(text.clueB, 2, now + 1),
+      createOpenClueDraft(text.clueC, 4, now + 2),
+    ],
+  });
+
+  const q = await createCharacter({
+    bookId,
+    name: text.names.q,
+    role: 'detective',
+    profession: text.observer,
+    chapterIntroduced: 1,
+    position: { x: -720, y: -45 },
+    notes: text.startNote,
+  });
+  const reijiro = await createCharacter({
+    bookId,
+    name: text.names.reijiro,
+    role: 'victim',
+    profession: text.victimRole,
+    chapterIntroduced: 1,
+    position: { x: -10, y: -360 },
+  });
+  const kazumi = await createCharacter({ bookId, name: text.names.kazumi, role: 'suspect', profession: text.professions.kazumi, chapterIntroduced: 1, position: { x: -300, y: -105 } });
+  const kuruno = await createCharacter({ bookId, name: text.names.kuruno, role: 'suspect', profession: text.professions.kuruno, chapterIntroduced: 1, position: { x: -10, y: -105 } });
+  const haruna = await createCharacter({ bookId, name: text.names.haruna, role: 'suspect', profession: text.professions.haruna, chapterIntroduced: 1, position: { x: 280, y: -105 } });
+  const fujitaka = await createCharacter({ bookId, name: text.names.fujitaka, role: 'suspect', profession: text.professions.fujitaka, chapterIntroduced: 1, position: { x: -430, y: 165 } });
+  const yoshio = await createCharacter({ bookId, name: text.names.yoshio, role: 'suspect', profession: text.professions.yoshio, chapterIntroduced: 1, position: { x: -180, y: 175 } });
+  const mai = await createCharacter({ bookId, name: text.names.mai, role: 'suspect', profession: text.professions.mai, chapterIntroduced: 1, position: { x: 180, y: 175 } });
+  const luna = await createCharacter({ bookId, name: text.names.luna, role: 'suspect', profession: text.professions.luna, chapterIntroduced: 1, position: { x: 430, y: 165 } });
+  const ikuko = await createCharacter({ bookId, name: text.names.ikuko, role: 'witness', profession: text.professions.ikuko, chapterIntroduced: 1, position: { x: 220, y: -360 } });
+  const tsuchiya = await createCharacter({ bookId, name: text.names.tsuchiya, role: 'witness', profession: text.professions.tsuchiya, chapterIntroduced: 1, position: { x: 455, y: -350 } });
+  const yuri = await createCharacter({ bookId, name: text.names.yuri, role: 'witness', profession: text.professions.yuri, chapterIntroduced: 1, position: { x: 455, y: -105 } });
+  const attic = await createCharacter({
+    bookId,
+    name: text.names.attic,
+    kind: 'room',
+    role: 'other',
+    profession: text.professions.attic,
+    chapterIntroduced: 2,
+    position: { x: -80, y: 455 },
+  });
+  const vase = await createCharacter({
+    bookId,
+    name: text.names.vase,
+    kind: 'item',
+    role: 'other',
+    profession: text.professions.vase,
+    chapterIntroduced: 2,
+    position: { x: 165, y: 455 },
+  });
+
+  const rel = async (
+    sourceId: string,
+    targetId: string,
+    type: string,
+    label: string,
+    chapterRevealed = 1,
+    timeLayerId?: string,
+    certainty: 'confirmed' | 'suspected' | 'disproven' = 'confirmed',
+  ) => createRelationship({ bookId, sourceId, targetId, type, label, chapterRevealed, timeLayerId, certainty });
+
+  await Promise.all([
+    rel(reijiro.id, kazumi.id, 'family', text.labels.fatherDaughter),
+    rel(reijiro.id, kuruno.id, 'family', text.labels.fatherDaughter),
+    rel(reijiro.id, haruna.id, 'family', text.labels.fatherDaughter),
+    rel(kazumi.id, q.id, 'family', text.labels.motherSon),
+    rel(kazumi.id, fujitaka.id, 'family', text.labels.motherSon),
+    rel(kazumi.id, yoshio.id, 'family', text.labels.motherSon),
+    rel(haruna.id, mai.id, 'family', text.labels.motherDaughter),
+    rel(haruna.id, luna.id, 'family', text.labels.motherDaughter),
+    rel(ikuko.id, reijiro.id, 'professional', text.labels.maid),
+    rel(tsuchiya.id, reijiro.id, 'professional', text.labels.secretary),
+    rel(yuri.id, kuruno.id, 'professional', text.labels.secretary),
+    rel(q.id, reijiro.id, 'witness', text.labels.discoveredDeath, 2, 'loop-2', 'confirmed'),
+    rel(attic.id, reijiro.id, 'suspicion', text.labels.deathScene, 2, 'loop-2', 'confirmed'),
+    rel(vase.id, attic.id, 'suspicion', text.labels.possibleWeapon, 2, 'loop-2', 'suspected'),
+    rel(q.id, attic.id, 'other', text.labels.routeCheck, 7, 'loop-7', 'confirmed'),
+    rel(q.id, reijiro.id, 'other', text.labels.preventDeath, 9, 'loop-9', 'confirmed'),
+  ]);
+
+  await Promise.all([
+    createGroupRange({
+      bookId,
+      label: text.familyGroup,
+      color: 'ochre',
+      position: { x: -540, y: -510 },
+      width: 1120,
+      height: 760,
+      labelFontSize: 34,
+      labelPosition: { x: 0.54, y: 0.16 },
+      chapterIntroduced: 1,
+    }),
+    createGroupRange({
+      bookId,
+      label: text.obaGroup,
+      color: 'blue',
+      position: { x: -485, y: -220 },
+      width: 420,
+      height: 500,
+      labelFontSize: 24,
+      labelPosition: { x: 0.36, y: 0.18 },
+      chapterIntroduced: 1,
+    }),
+    createGroupRange({
+      bookId,
+      label: text.kaneGroup,
+      color: 'green',
+      position: { x: 105, y: -220 },
+      width: 460,
+      height: 500,
+      labelFontSize: 24,
+      labelPosition: { x: 0.55, y: 0.18 },
+      chapterIntroduced: 1,
+    }),
+    createGroupRange({
+      bookId,
+      label: text.loopGroup,
+      color: 'red',
+      position: { x: -190, y: 325 },
+      width: 520,
+      height: 320,
+      labelFontSize: 30,
+      labelPosition: { x: 0.5, y: 0.18 },
+      chapterIntroduced: 2,
+      timeLayerId: 'loop-2',
+    }),
+    createGroupRange({
+      bookId,
+      label: text.loopGroup,
+      color: 'violet',
+      position: { x: -780, y: 330 },
+      width: 430,
+      height: 330,
+      labelFontSize: 28,
+      labelPosition: { x: 0.48, y: 0.2 },
+      chapterIntroduced: 7,
+      timeLayerId: 'loop-7',
+    }),
+  ]);
+
+  await Promise.all([
+    createAnnotation({
+      bookId,
+      content: text.startNote,
+      position: { x: -820, y: -450 },
+      width: 340,
+      height: 180,
+      color: 'yellow',
+      fontSize: 18,
+      chapterIntroduced: 1,
+    }),
+    createAnnotation({
+      bookId,
+      content: text.baselineNote,
+      position: { x: -820, y: -220 },
+      width: 340,
+      height: 170,
+      color: 'green',
+      fontSize: 18,
+      chapterIntroduced: 1,
+      timeLayerId: 'loop-1',
+    }),
+    createAnnotation({
+      bookId,
+      content: text.discoveryNote,
+      position: { x: 390, y: 360 },
+      width: 350,
+      height: 180,
+      color: 'pink',
+      fontSize: 18,
+      chapterIntroduced: 2,
+      timeLayerId: 'loop-2',
+    }),
+    createAnnotation({
+      bookId,
+      content: text.lateLoopNote,
+      position: { x: -820, y: 600 },
+      width: 350,
+      height: 180,
+      color: 'purple',
+      fontSize: 18,
+      chapterIntroduced: 7,
+      timeLayerId: 'loop-7',
+    }),
+    createAnnotation({
+      bookId,
+      content: text.finalNote,
+      position: { x: 610, y: 70 },
+      width: 360,
+      height: 180,
+      color: 'blue',
+      fontSize: 18,
+      chapterIntroduced: 9,
+      timeLayerId: 'loop-9',
+    }),
+  ]);
+
+  return bookId;
+}
+
 export async function seedTutorialBook(options: SeedOptions = {}): Promise<string> {
   if (options.kind === 'ackroyd') return seedRogerAckroyd(options.userId, options.language ?? 'en');
   if (options.kind === 'contest') return seedContestTemplate(options.userId, options.language ?? 'en');
+  if (options.kind === 'sevenDeaths') return seedSevenDeathsTimeLoop(options.userId, options.language ?? 'en');
   const language = options.language ?? 'en';
   const copy = tutorialCopy[language];
   const category = await findOrCreateCategory({ name: copy.category, userId: options.userId });

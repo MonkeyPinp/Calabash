@@ -16,6 +16,7 @@ export interface CreateAnnotationInput {
   color?: StickyNoteColor;
   fontSize?: number;
   chapterIntroduced?: number;
+  timeLayerId?: string | null;
   locked?: boolean;
 }
 
@@ -34,6 +35,7 @@ export async function createAnnotation(input: CreateAnnotationInput): Promise<St
       input.chapterIntroduced,
       inferStickyNoteChapter(input.content) ?? 1,
     ),
+    timeLayerId: input.timeLayerId ?? null,
     locked: input.locked === true,
     createdAt: now,
     updatedAt: now,

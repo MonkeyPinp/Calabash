@@ -9,6 +9,7 @@ export interface CreateRelationshipInput {
   type?: RelationshipType;
   directed?: boolean;
   chapterRevealed: number;
+  timeLayerId?: string | null;
   label?: string;
   notes?: string;
   certainty?: CertaintyLevel;
@@ -26,6 +27,7 @@ export async function createRelationship(input: CreateRelationshipInput): Promis
     label: input.label,
     notes: input.notes,
     chapterRevealed: input.chapterRevealed,
+    timeLayerId: input.timeLayerId ?? null,
     certainty: input.certainty ?? 'suspected',
     createdAt: now,
     updatedAt: now,

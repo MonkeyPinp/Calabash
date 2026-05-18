@@ -1,10 +1,12 @@
 import { db } from './schema';
 import type { Book } from '@/types';
 import { createOpenClueDraft, normalizeOpenClues } from '@/lib/clues';
+import { normalizeDefaultTimeLayerReference, normalizeTimeLayers } from '@/lib/timeLayers';
 
 function normalizeBook(book: Book): Book {
   const currentChapter = normalizeChapterNumber(book.currentChapter, 1);
   const totalChapters = Math.max(normalizeChapterNumber(book.totalChapters, 1), currentChapter);
+  const timeLayers = normalizeTimeLayers(book.timeLayers);
   return {
     ...book,
     currentChapter,
@@ -12,6 +14,8 @@ function normalizeBook(book: Book): Book {
     spoilerShield: book.spoilerShield ?? false,
     spoilerChapters: normalizeChapters(book.spoilerChapters),
     highlightedChapters: normalizeChapters(book.highlightedChapters),
+    timeLayers,
+    defaultTimeLayerId: normalizeDefaultTimeLayerReference(book.defaultTimeLayerId, timeLayers),
     openClues: normalizeOpenClues(book.openClues),
   };
 }
@@ -68,6 +72,8 @@ export async function createBook(input: {
   spoilerShield?: boolean;
   spoilerChapters?: number[];
   highlightedChapters?: number[];
+  timeLayers?: Book['timeLayers'];
+  defaultTimeLayerId?: string | null;
   categoryId?: string;
 }): Promise<Book> {
   const now = Date.now();
@@ -79,6 +85,7 @@ export async function createBook(input: {
     ...spoilerChapters,
     ...highlightedChapters,
   );
+  const timeLayers = normalizeTimeLayers(input.timeLayers);
   const book: Book = {
     id: crypto.randomUUID(),
     userId: input.userId,
@@ -90,6 +97,8 @@ export async function createBook(input: {
     spoilerShield: input.spoilerShield ?? false,
     spoilerChapters,
     highlightedChapters,
+    timeLayers,
+    defaultTimeLayerId: normalizeDefaultTimeLayerReference(input.defaultTimeLayerId, timeLayers),
     openClues: [],
     createdAt: now,
     updatedAt: now,
@@ -136,6 +145,11 @@ export async function updateBook(
   };
   if (patch.spoilerChapters) next.spoilerChapters = normalizeChapters(patch.spoilerChapters);
   if (patch.highlightedChapters) next.highlightedChapters = normalizeChapters(patch.highlightedChapters);
+  if (patch.timeLayers) next.timeLayers = normalizeTimeLayers(patch.timeLayers);
+  if ('defaultTimeLayerId' in patch || patch.timeLayers) {
+    const requestedDefault = 'defaultTimeLayerId' in patch ? patch.defaultTimeLayerId : normalizedExisting.defaultTimeLayerId;
+    next.defaultTimeLayerId = normalizeDefaultTimeLayerReference(requestedDefault, next.timeLayers ?? []);
+  }
   if (patch.openClues) next.openClues = normalizeOpenClues(patch.openClues);
   if (touchesChapterBoundary(patch)) {
     const minimumTotalChapters = await getMinimumTotalChaptersForBook(next);

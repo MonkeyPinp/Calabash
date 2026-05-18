@@ -11,6 +11,7 @@ import { useUiStore } from '@/stores/uiStore';
 import { useT } from '@/i18n';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from '@/lib/demoData';
 import { isDesktopRuntime, openDesktopJsonFile } from '@/lib/desktopFiles';
+import { ALL_TIME_LAYERS_ID, resolveDefaultTimeLayerId } from '@/lib/timeLayers';
 
 function relativeTime(ms: number, t: ReturnType<typeof useT>): string {
   const seconds = Math.floor((Date.now() - ms) / 1000);
@@ -111,6 +112,8 @@ export default function BookList() {
   const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
   const setSpoilerChapters = useBookStore((s) => s.setSpoilerChapters);
   const setHighlightedChapters = useBookStore((s) => s.setHighlightedChapters);
+  const setTimeLayers = useBookStore((s) => s.setTimeLayers);
+  const setCurrentTimeLayerId = useBookStore((s) => s.setCurrentTimeLayerId);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
   const setStickyNotes = useGraphStore((s) => s.setStickyNotes);
@@ -224,6 +227,8 @@ export default function BookList() {
     setSpoilerShield(false);
     setSpoilerChapters([]);
     setHighlightedChapters([]);
+    setTimeLayers([]);
+    setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
     clearGraphSelection();
   }
 
@@ -263,6 +268,9 @@ export default function BookList() {
         setSpoilerShield(book.spoilerShield);
         setSpoilerChapters(book.spoilerChapters);
         setHighlightedChapters(book.highlightedChapters);
+        const timeLayers = book.timeLayers ?? [];
+        setTimeLayers(timeLayers);
+        setCurrentTimeLayerId(resolveDefaultTimeLayerId(timeLayers, book.defaultTimeLayerId));
       }
       clearGraphSelection();
     } catch {
@@ -294,6 +302,9 @@ export default function BookList() {
       setSpoilerShield(book.spoilerShield);
       setSpoilerChapters(book.spoilerChapters);
       setHighlightedChapters(book.highlightedChapters);
+      const timeLayers = book.timeLayers ?? [];
+      setTimeLayers(timeLayers);
+      setCurrentTimeLayerId(resolveDefaultTimeLayerId(timeLayers, book.defaultTimeLayerId));
     }
     clearGraphSelection();
     setShowCreateMenu(false);
@@ -339,6 +350,8 @@ export default function BookList() {
       setSpoilerShield(false);
       setSpoilerChapters([]);
       setHighlightedChapters([]);
+      setTimeLayers([]);
+      setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
       clearGraphSelection();
     }
     setDeleteBookTarget(null);
@@ -366,6 +379,9 @@ export default function BookList() {
     setSpoilerShield(book.spoilerShield);
     setSpoilerChapters(book.spoilerChapters);
     setHighlightedChapters(book.highlightedChapters);
+    const timeLayers = book.timeLayers ?? [];
+    setTimeLayers(timeLayers);
+    setCurrentTimeLayerId(resolveDefaultTimeLayerId(timeLayers, book.defaultTimeLayerId));
     setActiveBook(book.id);
   }
 

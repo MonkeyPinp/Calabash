@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Copy, Lock, Maximize2, Trash2, Unlock } from 'lucide-react';
-import type { EvidenceImageLayer } from '@/types';
+import type { EvidenceImageLayer, TimeLayer } from '@/types';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from '@/db/evidenceImages';
 import {
   EVIDENCE_IMAGE_KINDS,
@@ -15,6 +15,7 @@ import {
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import IllustrationPreviewModal from '@/components/IllustrationPreviewModal';
+import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -51,6 +52,7 @@ function blurOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
 export interface EvidenceImageInspectorProps {
   evidenceImageId: string;
   bookId: string;
+  timeLayers?: TimeLayer[];
   onDeleted?: () => void;
   onDuplicated?: (newId: string) => void;
 }
@@ -58,6 +60,7 @@ export interface EvidenceImageInspectorProps {
 export default function EvidenceImageInspector({
   evidenceImageId,
   bookId,
+  timeLayers = [],
   onDeleted,
   onDuplicated,
 }: EvidenceImageInspectorProps) {
@@ -188,6 +191,22 @@ export default function EvidenceImageInspector({
     );
   }
 
+  async function handleTimeLayerChange(timeLayerId: string | null) {
+    const before = image!.timeLayerId ?? null;
+    if (timeLayerId === before) return;
+    await persist({ timeLayerId });
+    pushUndo(
+      async () => {
+        const updated = await updateEvidenceImage(evidenceImageId, { timeLayerId: before });
+        updateEvidenceImageInStore(updated);
+      },
+      async () => {
+        const updated = await updateEvidenceImage(evidenceImageId, { timeLayerId });
+        updateEvidenceImageInStore(updated);
+      },
+    );
+  }
+
   async function handleLockedToggle() {
     const before = image!.locked === true;
     const after = !before;
@@ -217,6 +236,7 @@ export default function EvidenceImageInspector({
       width: current.width,
       height: current.height,
       chapterIntroduced: current.chapterIntroduced,
+      timeLayerId: current.timeLayerId ?? null,
       position: { x: current.position.x + 36, y: current.position.y + 36 },
     });
     addEvidenceImage(copy);
@@ -365,6 +385,17 @@ export default function EvidenceImageInspector({
             onBlur={(e) => void handleChapterBlur(e.target.value)}
           />
         </div>
+
+        {timeLayers.length > 0 && (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>{t('timeLayer.field')}</label>
+            <TimeLayerSelect
+              layers={timeLayers}
+              value={image.timeLayerId}
+              onChange={(timeLayerId) => void handleTimeLayerChange(timeLayerId)}
+            />
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ ...fieldStyle, flex: 1 }}>

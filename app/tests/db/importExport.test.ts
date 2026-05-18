@@ -51,7 +51,15 @@ describe('importExport', () => {
   });
 
   it('round-trips a book with characters, relationships, a portrait, notes, ranges, and illustrations', async () => {
-    const book = await createBook({ title: 'Murder of Roger Ackroyd', highlightedChapters: [3, 8] });
+    const book = await createBook({
+      title: 'Murder of Roger Ackroyd',
+      highlightedChapters: [3, 8],
+      timeLayers: [
+        { id: 'loop-1', name: 'Loop 1', order: 1, color: '#6a4f1b' },
+        { id: 'loop-2', name: 'Loop 2', order: 2, color: '#8f2f1f' },
+      ],
+      defaultTimeLayerId: 'loop-2',
+    });
     const portrait = await savePortrait({
       bookId: book.id,
       blob: new Blob([new Uint8Array([200, 201, 202])], { type: 'image/png' }),
@@ -68,9 +76,9 @@ describe('importExport', () => {
     });
     await createRelationship({
       bookId: book.id, sourceId: c1.id, targetId: c2.id,
-      type: 'professional', chapterRevealed: 1, certainty: 'confirmed',
+      type: 'professional', chapterRevealed: 1, timeLayerId: 'loop-2', certainty: 'confirmed',
     });
-    await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 }, chapterIntroduced: 7 });
+    await createAnnotation({ bookId: book.id, content: 'check alibi', position: { x: 12, y: 24 }, chapterIntroduced: 7, timeLayerId: 'loop-2' });
     await createOpenClue({ bookId: book.id, text: 'Who had the key to the study?', chapterIntroduced: 5 });
     await createGroupRange({
       bookId: book.id,
@@ -80,6 +88,7 @@ describe('importExport', () => {
       height: 260,
       color: 'green',
       chapterIntroduced: 5,
+      timeLayerId: 'loop-2',
     });
     await createEvidenceImage({
       bookId: book.id,
@@ -92,17 +101,26 @@ describe('importExport', () => {
       width: 420,
       height: 280,
       chapterIntroduced: 6,
+      timeLayerId: 'loop-2',
     });
 
     const exported = await exportBookAsJson(book.id);
     expect(exported.portraits).toHaveLength(1);
     expect(exported.book.highlightedChapters).toEqual([3, 8]);
+    expect(exported.book.timeLayers).toEqual([
+      { id: 'loop-1', name: 'Loop 1', order: 1, color: '#6a4f1b' },
+      { id: 'loop-2', name: 'Loop 2', order: 2, color: '#8f2f1f' },
+    ]);
+    expect(exported.book.defaultTimeLayerId).toBe('loop-2');
+    expect(exported.relationships[0].timeLayerId).toBe('loop-2');
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
     expect(exported.annotations).toHaveLength(1);
+    expect(exported.annotations[0].timeLayerId).toBe('loop-2');
     expect(exported.book.openClues).toMatchObject([{ text: 'Who had the key to the study?', chapterIntroduced: 5 }]);
     expect(exported.groupRanges).toHaveLength(1);
+    expect(exported.groupRanges?.[0].timeLayerId).toBe('loop-2');
     expect(exported.illustrations).toHaveLength(1);
-    expect(exported.illustrations?.[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', chapterIntroduced: 6 });
+    expect(exported.illustrations?.[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', chapterIntroduced: 6, timeLayerId: 'loop-2' });
     expect(exported.attachments).toBeUndefined();
     expect(exported.evidenceImages).toBeUndefined();
 
@@ -114,6 +132,8 @@ describe('importExport', () => {
     const reBook = await db.books.get(newBookId);
     expect(reBook?.title).toBe('Murder of Roger Ackroyd');
     expect(reBook?.highlightedChapters).toEqual([3, 8]);
+    expect(reBook?.timeLayers).toHaveLength(2);
+    expect(reBook?.defaultTimeLayerId).toBe('loop-2');
     expect(reBook?.userId).toBe('reader-1');
     expect(reBook?.id).not.toBe(book.id);
 
@@ -126,6 +146,7 @@ describe('importExport', () => {
 
     const reRels = await listRelationshipsByBook(newBookId);
     expect(reRels).toHaveLength(1);
+    expect(reRels[0].timeLayerId).toBe('loop-2');
 
     const rePortraitId = reChars.find((c) => c.name === 'Hercule Poirot')?.portraitId;
     expect(rePortraitId).toBeDefined();
@@ -138,6 +159,7 @@ describe('importExport', () => {
     expect(reNotes).toHaveLength(1);
     expect(reNotes[0].content).toBe('check alibi');
     expect(reNotes[0].chapterIntroduced).toBe(7);
+    expect(reNotes[0].timeLayerId).toBe('loop-2');
     expect(await listOpenClues(newBookId)).toMatchObject([
       { text: 'Who had the key to the study?', chapterIntroduced: 5, status: 'open' },
     ]);
@@ -145,11 +167,12 @@ describe('importExport', () => {
     const reRanges = await listGroupRangesByBook(newBookId);
     expect(reRanges).toHaveLength(1);
     expect(reRanges[0]).toMatchObject({ label: 'Village circle', color: 'green', width: 420, height: 260, chapterIntroduced: 5 });
+    expect(reRanges[0].timeLayerId).toBe('loop-2');
     expect(reRanges[0].id).not.toBe(exported.groupRanges?.[0].id);
 
     const reImages = await listEvidenceImagesByBook(newBookId);
     expect(reImages).toHaveLength(1);
-    expect(reImages[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', width: 420, height: 280, chapterIntroduced: 6 });
+    expect(reImages[0]).toMatchObject({ title: 'Study floor plan', kind: 'floorPlan', layer: 'background', width: 420, height: 280, chapterIntroduced: 6, timeLayerId: 'loop-2' });
     expect(reImages[0].id).not.toBe(exported.illustrations?.[0].id);
   });
 

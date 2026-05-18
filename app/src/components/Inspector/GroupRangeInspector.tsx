@@ -1,5 +1,5 @@
 import { Copy, Lock, Trash2, Unlock } from 'lucide-react';
-import type { GroupRangeColor } from '@/types';
+import type { GroupRangeColor, TimeLayer } from '@/types';
 import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from '@/db/groupRanges';
 import {
   GROUP_RANGE_COLORS,
@@ -9,6 +9,7 @@ import {
 } from '@/lib/groupRanges';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
+import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -45,6 +46,7 @@ function blurOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
 export interface GroupRangeInspectorProps {
   groupRangeId: string;
   bookId: string;
+  timeLayers?: TimeLayer[];
   onDeleted?: () => void;
   onDuplicated?: (newId: string) => void;
 }
@@ -52,6 +54,7 @@ export interface GroupRangeInspectorProps {
 export default function GroupRangeInspector({
   groupRangeId,
   bookId,
+  timeLayers = [],
   onDeleted,
   onDuplicated,
 }: GroupRangeInspectorProps) {
@@ -160,6 +163,22 @@ export default function GroupRangeInspector({
     );
   }
 
+  async function handleTimeLayerChange(timeLayerId: string | null) {
+    const before = range!.timeLayerId ?? null;
+    if (timeLayerId === before) return;
+    await persist({ timeLayerId });
+    pushUndo(
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { timeLayerId: before });
+        updateGroupRangeInStore(updated);
+      },
+      async () => {
+        const updated = await updateGroupRange(groupRangeId, { timeLayerId });
+        updateGroupRangeInStore(updated);
+      },
+    );
+  }
+
   async function handleLockedToggle() {
     const before = range!.locked === true;
     const after = !before;
@@ -187,6 +206,7 @@ export default function GroupRangeInspector({
       labelFontSize: current.labelFontSize,
       labelPosition: current.labelPosition,
       chapterIntroduced: current.chapterIntroduced,
+      timeLayerId: current.timeLayerId ?? null,
       position: { x: current.position.x + 36, y: current.position.y + 36 },
     });
     addGroupRange(copy);
@@ -301,6 +321,17 @@ export default function GroupRangeInspector({
             onBlur={(e) => void handleLabelBlur(e.target.value)}
           />
         </div>
+
+        {timeLayers.length > 0 && (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>{t('timeLayer.field')}</label>
+            <TimeLayerSelect
+              layers={timeLayers}
+              value={range.timeLayerId}
+              onChange={(timeLayerId) => void handleTimeLayerChange(timeLayerId)}
+            />
+          </div>
+        )}
 
         <div style={fieldStyle}>
           <label style={labelStyle}>{t('groupRange.color')}</label>

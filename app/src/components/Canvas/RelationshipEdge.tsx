@@ -12,6 +12,7 @@ export interface RelationshipEdgeData {
   type?: RelationshipType;
   relationship: Relationship;
   pathOffset?: number;
+  timeLayerColor?: string;
 }
 
 const BADGE: Record<CertaintyLevel, string> = { confirmed: '✓', suspected: '?', disproven: '✗' };
@@ -67,7 +68,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
   // Offsets are assigned within an undirected pair; reverse local sign for B -> A
   // so opposite-direction parallel relationships do not collapse onto one curve.
   const offset = fullRel.sourceId <= fullRel.targetId ? rawOffset : -rawOffset;
-  const stroke = getRelationshipTypeCssVar(data.type);
+  const stroke = data.timeLayerColor ?? getRelationshipTypeCssVar(data.type);
   const { strokeDasharray, opacity } = CERTAINTY_STYLE[data.certainty];
   const displayLabel = fullRel?.label?.trim() || formatRelationshipType(data.type, t) || t('app.inspectRelationship');
   const labelTextDecoration = data.certainty === 'disproven' ? 'line-through' : 'none';

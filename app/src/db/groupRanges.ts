@@ -16,6 +16,7 @@ export interface CreateGroupRangeInput {
   labelFontSize?: number;
   labelPosition?: { x: number; y: number };
   chapterIntroduced?: number;
+  timeLayerId?: string | null;
   locked?: boolean;
 }
 
@@ -32,6 +33,7 @@ export async function createGroupRange(input: CreateGroupRangeInput): Promise<Gr
     labelFontSize: input.labelFontSize ?? GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE,
     labelPosition: input.labelPosition ?? GROUP_RANGE_DEFAULT_LABEL_POSITION,
     chapterIntroduced: input.chapterIntroduced ?? 1,
+    timeLayerId: input.timeLayerId ?? null,
     locked: input.locked === true,
     createdAt: now,
     updatedAt: now,

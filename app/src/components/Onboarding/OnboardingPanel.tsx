@@ -1,4 +1,4 @@
-import { CheckCircle2, Languages, MousePointer2, Network, Shield, X } from 'lucide-react';
+import { CheckCircle2, Languages, MousePointer2, Network, Shield } from 'lucide-react';
 import { useT } from '@/i18n';
 import CalabashLogo from '@/components/Brand/CalabashLogo';
 import type { TutorialKind } from '@/lib/demoData';
@@ -6,10 +6,11 @@ import { useUiStore, type LanguagePreference } from '@/stores/uiStore';
 
 export interface OnboardingPanelProps {
   onClose: () => void;
+  onCreateBlank: () => void;
   onCreateTutorial: (kind: TutorialKind) => void;
 }
 
-export default function OnboardingPanel({ onClose, onCreateTutorial }: OnboardingPanelProps) {
+export default function OnboardingPanel({ onClose, onCreateBlank, onCreateTutorial }: OnboardingPanelProps) {
   const t = useT();
   const language = useUiStore((s) => s.language);
   const setLanguage = useUiStore((s) => s.setLanguage);
@@ -70,9 +71,6 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
               {t('onboarding.body')}
             </p>
           </div>
-          <button type="button" onClick={onClose} title={t('onboarding.skip')} aria-label={t('onboarding.skip')} style={iconButtonStyle}>
-            <X size={15} />
-          </button>
         </div>
 
         <div style={{ padding: '4px 22px 18px', display: 'grid', gap: 8 }}>
@@ -107,11 +105,8 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
           <button type="button" onClick={onClose} style={secondaryButtonStyle}>
             {t('onboarding.done')}
           </button>
-          <button type="button" onClick={() => onCreateTutorial('hida')} style={secondaryButtonStyle}>
-            {t('onboarding.createHidaTutorial')}
-          </button>
-          <button type="button" onClick={() => onCreateTutorial('contest')} style={secondaryButtonStyle}>
-            {t('onboarding.createContestTemplate')}
+          <button type="button" onClick={onCreateBlank} style={secondaryButtonStyle}>
+            {t('app.starterBlankAction')}
           </button>
           <button type="button" onClick={() => onCreateTutorial('ackroyd')} style={primaryButtonStyle}>
             {t('onboarding.createAckroydTutorial')}
@@ -121,19 +116,6 @@ export default function OnboardingPanel({ onClose, onCreateTutorial }: Onboardin
     </div>
   );
 }
-
-const iconButtonStyle: React.CSSProperties = {
-  width: 28,
-  height: 28,
-  borderRadius: 5,
-  border: '1px solid transparent',
-  background: 'transparent',
-  color: 'var(--ink-600)',
-  cursor: 'pointer',
-  display: 'grid',
-  placeItems: 'center',
-  padding: 0,
-};
 
 const languageLabelStyle: React.CSSProperties = {
   display: 'flex',

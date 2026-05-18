@@ -1,5 +1,5 @@
 import { Trash2, Copy } from 'lucide-react';
-import type { CertaintyLevel } from '@/types';
+import type { CertaintyLevel, TimeLayer } from '@/types';
 import { createRelationship, updateRelationship, deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
@@ -15,6 +15,7 @@ import {
 } from '@/lib/relationshipTypes';
 import PresetTextInput from '@/components/Form/PresetTextInput';
 import DirectionSegmentedControl from '@/components/Form/DirectionSegmentedControl';
+import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
 
 const CERTAINTY_LEVELS: CertaintyLevel[] = ['confirmed', 'suspected', 'disproven'];
 
@@ -34,6 +35,7 @@ const fieldStyle: React.CSSProperties = { marginBottom: 14 };
 export interface RelationshipInspectorProps {
   relationshipId: string;
   bookId: string;
+  timeLayers?: TimeLayer[];
   onDeleted?: () => void;
   onDuplicated?: (newId: string) => void;
 }
@@ -41,6 +43,7 @@ export interface RelationshipInspectorProps {
 export default function RelationshipInspector({
   relationshipId,
   bookId,
+  timeLayers = [],
   onDeleted,
   onDuplicated,
 }: RelationshipInspectorProps) {
@@ -90,6 +93,7 @@ export default function RelationshipInspector({
       certainty: rel.certainty,
       label: rel.label ? `${rel.label} (copy)` : undefined,
       chapterRevealed: rel.chapterRevealed,
+      timeLayerId: rel.timeLayerId ?? null,
       notes: rel.notes,
     });
     addRelationship(copy);
@@ -293,6 +297,17 @@ export default function RelationshipInspector({
           }}
         />
       </div>
+
+      {timeLayers.length > 0 && (
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('timeLayer.field')}</label>
+          <TimeLayerSelect
+            layers={timeLayers}
+            value={rel.timeLayerId}
+            onChange={(timeLayerId) => void persist({ timeLayerId })}
+          />
+        </div>
+      )}
 
       {/* Notes */}
       <div style={fieldStyle}>

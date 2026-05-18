@@ -21,6 +21,7 @@ export interface CreateEvidenceImageInput {
   width?: number;
   height?: number;
   chapterIntroduced?: number;
+  timeLayerId?: string | null;
   locked?: boolean;
 }
 
@@ -39,6 +40,7 @@ export async function createEvidenceImage(input: CreateEvidenceImageInput): Prom
     width: input.width ?? EVIDENCE_IMAGE_DEFAULT_WIDTH,
     height: input.height ?? EVIDENCE_IMAGE_DEFAULT_HEIGHT,
     chapterIntroduced: normalizeEvidenceImageChapter(input.chapterIntroduced),
+    timeLayerId: input.timeLayerId ?? null,
     locked: input.locked === true,
     createdAt: now,
     updatedAt: now,

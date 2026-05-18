@@ -276,6 +276,12 @@ export default function SettingsPanel({
                     author="Kindaichi · 3 ep."
                     onClick={() => onCreateTutorial('hida')}
                   />
+                  <TutorialCard
+                    eyebrow="TIME LOOP"
+                    title={t('onboarding.createSevenDeathsTutorial')}
+                    author="Nishizawa · 9 loops"
+                    onClick={() => onCreateTutorial('sevenDeaths')}
+                  />
                 </div>
                 <SectionTab color="var(--role-bystander)" number="02" tilt={0.4}>{t('settings.reference')}</SectionTab>
                 <FolderRow label={t('settings.openGuide')} hint={t('settings.openGuideHint')}>
@@ -814,7 +820,7 @@ const warningNoteStyle: CSSProperties = {
 
 const tutorialGridStyle: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
   gap: 8,
   marginTop: 4,
 };

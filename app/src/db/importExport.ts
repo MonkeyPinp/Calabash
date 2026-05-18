@@ -15,6 +15,7 @@ import type {
   Relationship,
   StickyNote,
   StickyNoteColor,
+  TimeLayer,
   User,
 } from '@/types';
 import { APP_VERSION } from '@/version';
@@ -34,6 +35,7 @@ import {
   mimeTypeFromDataUrl,
   normalizeEvidenceImage,
 } from '@/lib/evidenceImages';
+import { normalizeDefaultTimeLayerReference, normalizeTimeLayerReference, normalizeTimeLayers } from '@/lib/timeLayers';
 
 const CALABASH_VERSION = APP_VERSION;
 
@@ -82,8 +84,12 @@ export interface CalabashBookImportTemplate {
     spoilerShield?: boolean;
     spoilerChapters?: number[];
     highlightedChapters?: number[];
+    timeLayers?: Array<Record<string, unknown> | TimeLayer | string>;
+    defaultTimeLayerId?: string | null;
+    defaultTimeLayer?: string | null;
     openClues?: Array<Record<string, unknown> | string>;
   };
+  timeLayers?: Array<Record<string, unknown> | TimeLayer | string>;
   characters?: Array<Record<string, unknown>>;
   relationships?: Array<Record<string, unknown>>;
   clues?: Array<Record<string, unknown> | string>;
@@ -147,11 +153,14 @@ function dataUrlToBuffer(dataUrl: string): { buffer: ArrayBuffer; mimeType: stri
 }
 
 function normalizeBookForPortableData(book: Book): Book {
+  const timeLayers = normalizeTimeLayers(book.timeLayers);
   return {
     ...book,
     spoilerShield: book.spoilerShield ?? false,
     spoilerChapters: book.spoilerChapters ?? [],
     highlightedChapters: book.highlightedChapters ?? [],
+    timeLayers,
+    defaultTimeLayerId: normalizeDefaultTimeLayerReference(book.defaultTimeLayerId, timeLayers),
     openClues: normalizeOpenClues(book.openClues),
   };
 }
@@ -232,6 +241,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
   const characterIds = new Set<string>();
   const characterLookup = new Map<string, string>();
   const rawCharacters = arrayOfRecords(payload.characters);
+  const timeLayers = normalizeTimeLayers(bookInput.timeLayers ?? payload.timeLayers);
   const openClues = normalizeOpenClues([
     ...arrayOfClueInputs(bookInput.openClues),
     ...arrayOfClueInputs(payload.clues),
@@ -280,6 +290,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       label: stringValue(raw.label),
       notes: stringValue(raw.notes),
       chapterRevealed: positiveInt(raw.chapterRevealed ?? raw.chapter ?? raw.chapterIntroduced, 1),
+      timeLayerId: normalizeTimeLayerReference(raw.timeLayerId ?? raw.timeLayer ?? raw.layer, timeLayers),
       certainty: normalizeCertainty(raw.certainty),
       createdAt: 0,
       updatedAt: 0,
@@ -300,6 +311,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     color: normalizeStickyNoteColor(raw.color),
     fontSize: positiveInt(raw.fontSize, STICKY_NOTE_DEFAULT_FONT_SIZE),
     chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    timeLayerId: normalizeTimeLayerReference(raw.timeLayerId ?? raw.timeLayer ?? raw.layer, timeLayers),
     locked: booleanValue(raw.locked),
     createdAt: 0,
     updatedAt: 0,
@@ -320,6 +332,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
     labelFontSize: positiveInt(raw.labelFontSize ?? raw.fontSize, GROUP_RANGE_DEFAULT_LABEL_FONT_SIZE),
     labelPosition: normalizePoint(raw.labelPosition, GROUP_RANGE_DEFAULT_LABEL_POSITION),
     chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+    timeLayerId: normalizeTimeLayerReference(raw.timeLayerId ?? raw.timeLayer ?? raw.layer, timeLayers),
     locked: booleanValue(raw.locked),
     createdAt: 0,
     updatedAt: 0,
@@ -348,6 +361,7 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       width: positiveNumber(raw.width, EVIDENCE_IMAGE_DEFAULT_WIDTH),
       height: positiveNumber(raw.height, EVIDENCE_IMAGE_DEFAULT_HEIGHT),
       chapterIntroduced: positiveInt(raw.chapterIntroduced ?? raw.chapter, 1),
+      timeLayerId: normalizeTimeLayerReference(raw.timeLayerId ?? raw.timeLayer, timeLayers),
       locked: booleanValue(raw.locked),
       createdAt: 0,
       updatedAt: 0,
@@ -377,6 +391,11 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       spoilerShield: typeof bookInput.spoilerShield === 'boolean' ? bookInput.spoilerShield : false,
       spoilerChapters: numberArray(bookInput.spoilerChapters),
       highlightedChapters: numberArray(bookInput.highlightedChapters),
+      timeLayers,
+      defaultTimeLayerId: normalizeDefaultTimeLayerReference(
+        bookInput.defaultTimeLayerId ?? bookInput.defaultTimeLayer ?? payload.defaultTimeLayerId ?? payload.defaultTimeLayer,
+        timeLayers,
+      ),
       openClues,
       createdAt: 0,
       updatedAt: 0,
@@ -594,6 +613,8 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       spoilerShield: data.book.spoilerShield,
       spoilerChapters: data.book.spoilerChapters,
       highlightedChapters: data.book.highlightedChapters,
+      timeLayers: data.book.timeLayers,
+      defaultTimeLayerId: data.book.defaultTimeLayerId,
       openClues: (data.book.openClues ?? []).map((clue) => ({
         text: clue.text,
         status: clue.status,
@@ -623,6 +644,7 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       label: relationship.label,
       notes: relationship.notes,
       chapterRevealed: relationship.chapterRevealed,
+      timeLayerId: relationship.timeLayerId,
       certainty: relationship.certainty,
     })),
     notes: (data.annotations ?? []).map((note) => ({
@@ -634,6 +656,7 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       color: note.color,
       fontSize: note.fontSize,
       chapterIntroduced: note.chapterIntroduced,
+      timeLayerId: note.timeLayerId,
       locked: note.locked,
     })),
     groups: (data.groupRanges ?? []).map((group) => ({
@@ -646,6 +669,7 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       labelFontSize: group.labelFontSize,
       labelPosition: group.labelPosition,
       chapterIntroduced: group.chapterIntroduced,
+      timeLayerId: group.timeLayerId,
       locked: group.locked,
     })),
     evidenceImages: (data.illustrations ?? []).map((image) => ({
@@ -660,6 +684,7 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       width: image.width,
       height: image.height,
       chapterIntroduced: image.chapterIntroduced,
+      timeLayerId: image.timeLayerId,
       locked: image.locked,
     })),
   };

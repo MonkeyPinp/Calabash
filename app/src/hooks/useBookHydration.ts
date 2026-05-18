@@ -8,6 +8,7 @@ import { listEvidenceImagesByBook } from '@/db/evidenceImages';
 import { useBookStore } from '@/stores/bookStore';
 import { useGraphStore } from '@/stores/graphStore';
 import { useUserStore } from '@/stores/userStore';
+import { ALL_TIME_LAYERS_ID, resolveDefaultTimeLayerId } from '@/lib/timeLayers';
 
 export function useBookHydration(): { loading: boolean } {
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,8 @@ export function useBookHydration(): { loading: boolean } {
   const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
   const setSpoilerChapters = useBookStore((s) => s.setSpoilerChapters);
   const setHighlightedChapters = useBookStore((s) => s.setHighlightedChapters);
+  const setTimeLayers = useBookStore((s) => s.setTimeLayers);
+  const setCurrentTimeLayerId = useBookStore((s) => s.setCurrentTimeLayerId);
   const activeBookId = useBookStore((s) => s.activeBookId);
   const setCharacters = useGraphStore((s) => s.setCharacters);
   const setRelationships = useGraphStore((s) => s.setRelationships);
@@ -55,6 +58,8 @@ export function useBookHydration(): { loading: boolean } {
       setSpoilerShield(false);
       setSpoilerChapters([]);
       setHighlightedChapters([]);
+      setTimeLayers([]);
+      setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
       return;
     }
 
@@ -83,6 +88,8 @@ export function useBookHydration(): { loading: boolean } {
       setSpoilerShield(false);
       setSpoilerChapters([]);
       setHighlightedChapters([]);
+      setTimeLayers([]);
+      setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
       return;
     }
 
@@ -108,6 +115,9 @@ export function useBookHydration(): { loading: boolean } {
         setSpoilerShield(book.spoilerShield);
         setSpoilerChapters(book.spoilerChapters);
         setHighlightedChapters(book.highlightedChapters);
+        const timeLayers = book.timeLayers ?? [];
+        setTimeLayers(timeLayers);
+        setCurrentTimeLayerId(resolveDefaultTimeLayerId(timeLayers, book.defaultTimeLayerId));
       }
     })();
 

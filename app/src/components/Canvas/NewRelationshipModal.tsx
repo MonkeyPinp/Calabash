@@ -36,6 +36,7 @@ export interface NewRelationshipModalProps {
   sourceId: string;
   targetId: string;
   currentChapter: number;
+  timeLayerId?: string | null;
   onClose: () => void;
   onCreated: (rel: Relationship) => void;
 }
@@ -45,6 +46,7 @@ export default function NewRelationshipModal({
   sourceId,
   targetId,
   currentChapter,
+  timeLayerId = null,
   onClose,
   onCreated,
 }: NewRelationshipModalProps) {
@@ -92,6 +94,7 @@ export default function NewRelationshipModal({
       directed: directedOverrideForChoice(type, values.direction),
       label: values.label || undefined,
       chapterRevealed: values.chapterRevealed,
+      timeLayerId,
       certainty: values.certainty,
     });
     addRelationship(rel);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowRight, BookOpen, CircleDashed, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, CircleDashed, Clock3, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider, { type ChapterSliderMark } from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
@@ -10,6 +10,7 @@ import GroupRangeInspector from './components/Inspector/GroupRangeInspector';
 import EvidenceImageInspector from './components/Inspector/EvidenceImageInspector';
 import OpenCluesPanel from './components/Inspector/OpenCluesPanel';
 import SettingsPanel from './components/Settings/SettingsPanel';
+import TimeLayerManagerModal from './components/TimeLayers/TimeLayerManagerModal';
 import OnboardingPanel from './components/Onboarding/OnboardingPanel';
 import CalabashLogo from './components/Brand/CalabashLogo';
 import { useBookHydration } from './hooks/useBookHydration';
@@ -22,15 +23,17 @@ import { exportBookTemplateAsJson, exportLibraryAsJson, importBookFromJson, impo
 import GlobalSearch from './components/CommandBar/GlobalSearch';
 import { ChapterTotalTooLowError, createBook, getBook, listBooks, updateBook } from './db/books';
 import { listCategories } from './db/categories';
-import { createAnnotation, deleteAnnotation, restoreAnnotation } from './db/annotations';
-import { createGroupRange, deleteGroupRange, restoreGroupRange } from './db/groupRanges';
-import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage } from './db/evidenceImages';
+import { createAnnotation, deleteAnnotation, restoreAnnotation, updateAnnotation } from './db/annotations';
+import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from './db/groupRanges';
+import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from './db/evidenceImages';
+import { updateRelationship } from './db/relationships';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { isDesktopRuntime, openDesktopJsonFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
+import { ALL_TIME_LAYERS_ID, resolveDefaultTimeLayerId } from './lib/timeLayers';
 import { useT } from './i18n';
-import type { Book, Category, EvidenceImageKind } from './types';
+import type { Book, Category, EvidenceImageKind, TimeLayer } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
 import { EVIDENCE_IMAGE_DEFAULT_HEIGHT, EVIDENCE_IMAGE_DEFAULT_WIDTH } from './lib/evidenceImages';
 
@@ -185,6 +188,217 @@ function BoardStyleSwitcher({
         );
       })}
     </div>
+  );
+}
+
+function getTimeLayerThumbLabel(id: string, name: string, index: number) {
+  if (id === ALL_TIME_LAYERS_ID) return 'All';
+  const numeric = name.match(/\d+/)?.[0] ?? id.match(/\d+/)?.[0];
+  if (numeric) return numeric;
+  const compact = name.trim().replace(/\s+/g, '');
+  return compact.slice(0, 2).toUpperCase() || String(index + 1);
+}
+
+function TimeLayerSwitcher({
+  layers,
+  value,
+  onChange,
+  onManage,
+  disabled = false,
+  t,
+}: {
+  layers: TimeLayer[];
+  value: string;
+  onChange: (id: string) => void;
+  onManage: () => void;
+  disabled?: boolean;
+  t: ReturnType<typeof useT>;
+}) {
+  if (layers.length === 0) {
+    return (
+      <button
+        type="button"
+        className="time-layer-switcher"
+        title={t('timeLayer.manage')}
+        disabled={disabled}
+        onClick={onManage}
+        style={{
+          ...toolbarBtnStyle,
+          height: 34,
+          borderColor: 'var(--ink-200)',
+          borderRadius: 6,
+          background: 'var(--bg-canvas)',
+          color: disabled ? 'var(--ink-400)' : 'var(--ink-700)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        <Clock3 size={13} />
+        <span>{t('timeLayer.addFirst')}</span>
+      </button>
+    );
+  }
+
+  const selectedIndex = layers.findIndex((layer) => layer.id === value);
+  const selectedLayer = selectedIndex >= 0 ? layers[selectedIndex] : undefined;
+  const selectedColor = selectedLayer?.color;
+  const selectedName = selectedLayer?.name ?? t('timeLayer.all');
+  const selectedThumb = selectedLayer
+    ? getTimeLayerThumbLabel(selectedLayer.id, selectedLayer.name, selectedIndex)
+    : 'All';
+
+  return (
+    <div
+      className="time-layer-switcher"
+      title={t('timeLayer.switcher')}
+      style={{
+        height: 34,
+        minWidth: 0,
+        maxWidth: 236,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '0 4px 0 8px',
+        border: `1px solid ${selectedColor ?? 'var(--ink-200)'}`,
+        borderRadius: 6,
+        background: 'var(--bg-canvas)',
+        color: selectedColor ?? 'var(--ink-600)',
+        boxShadow: selectedColor ? `inset 3px 0 0 ${selectedColor}` : 'none',
+        flexShrink: 1,
+      }}
+    >
+      <Clock3 className="time-layer-switcher-icon" size={13} style={{ flexShrink: 0 }} />
+      <span
+        aria-hidden="true"
+        className="time-layer-switcher-thumb"
+        style={{
+          background: selectedColor
+            ? `color-mix(in srgb, ${selectedColor} 18%, var(--bg-panel))`
+            : 'color-mix(in srgb, var(--bg-canvas) 82%, transparent)',
+          borderColor: selectedColor ?? 'var(--ink-400)',
+          color: selectedColor ?? 'var(--ink-600)',
+        }}
+      >
+        {selectedThumb}
+      </span>
+      <select
+        className="time-layer-switcher-select"
+        aria-label={t('timeLayer.switcher')}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        title={selectedName}
+        style={{
+          minWidth: 0,
+          width: '100%',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          color: selectedColor ?? 'var(--ink-800)',
+          fontSize: 11.5,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        <option value={ALL_TIME_LAYERS_ID}>{t('timeLayer.all')}</option>
+        {layers.map((layer) => (
+          <option key={layer.id} value={layer.id}>
+            {layer.name}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="time-layer-switcher-manage"
+        onClick={onManage}
+        title={t('timeLayer.manage')}
+        aria-label={t('timeLayer.manage')}
+        style={{
+          width: 24,
+          height: 24,
+          display: 'grid',
+          placeItems: 'center',
+          padding: 0,
+          border: '1px solid transparent',
+          borderRadius: 4,
+          background: 'transparent',
+          color: 'var(--ink-500)',
+          cursor: 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        <SettingsIcon size={12} />
+      </button>
+    </div>
+  );
+}
+
+function TimeLayerRail({
+  layers,
+  value,
+  onChange,
+  disabled = false,
+  t,
+}: {
+  layers: TimeLayer[];
+  value: string;
+  onChange: (id: string) => void;
+  disabled?: boolean;
+  t: ReturnType<typeof useT>;
+}) {
+  if (layers.length === 0) return null;
+
+  const options = [
+    { id: ALL_TIME_LAYERS_ID, name: t('timeLayer.all'), color: 'var(--ink-500)', thumb: 'All' },
+    ...layers.map((layer, index) => ({
+      id: layer.id,
+      name: layer.name,
+      color: layer.color ?? 'var(--ink-500)',
+      thumb: getTimeLayerThumbLabel(layer.id, layer.name, index),
+    })),
+  ];
+
+  return (
+    <nav className="time-layer-rail" aria-label={t('timeLayer.switcher')}>
+      {options.map((option) => {
+        const active = value === option.id;
+        const isAll = option.id === ALL_TIME_LAYERS_ID;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            disabled={disabled}
+            aria-pressed={active}
+            title={option.name}
+            onClick={() => onChange(option.id)}
+            className="time-layer-rail-button"
+            style={{
+              borderColor: active ? option.color : 'transparent',
+              background: active
+                ? `color-mix(in srgb, ${option.color} 16%, var(--bg-panel))`
+                : 'transparent',
+              color: active ? 'var(--ink-900)' : 'var(--ink-700)',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="time-layer-rail-thumb"
+              style={{
+                background: isAll
+                  ? 'color-mix(in srgb, var(--bg-canvas) 82%, transparent)'
+                  : `color-mix(in srgb, ${option.color} 18%, var(--bg-panel))`,
+                borderColor: option.color,
+                color: option.color,
+                boxShadow: active ? `0 0 0 3px color-mix(in srgb, ${option.color} 18%, transparent)` : 'none',
+              }}
+            >
+              {option.thumb}
+            </span>
+            <span className="time-layer-rail-label">{option.name}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -684,6 +898,8 @@ export default function App() {
   const [spoilerConfirmOpen, setSpoilerConfirmOpen] = useState(false);
   const [activeBookSummary, setActiveBookSummary] = useState<Book | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [timeLayerManagerOpen, setTimeLayerManagerOpen] = useState(false);
+  const [timeLayerSaving, setTimeLayerSaving] = useState(false);
   const libraryImportInputRef = useRef<HTMLInputElement>(null);
   const evidenceImageInputRef = useRef<HTMLInputElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -695,12 +911,16 @@ export default function App() {
   const spoilerShield = useBookStore((s) => s.spoilerShield);
   const spoilerChapters = useBookStore((s) => s.spoilerChapters);
   const highlightedChapters = useBookStore((s) => s.highlightedChapters);
+  const timeLayers = useBookStore((s) => s.timeLayers);
+  const currentTimeLayerId = useBookStore((s) => s.currentTimeLayerId);
   const setCurrentChapter = useBookStore((s) => s.setCurrentChapter);
   const setCurrentChapterAndPersist = useBookStore((s) => s.setCurrentChapterAndPersist);
   const setTotalChapters = useBookStore((s) => s.setTotalChapters);
   const setSpoilerShield = useBookStore((s) => s.setSpoilerShield);
   const setSpoilerChapters = useBookStore((s) => s.setSpoilerChapters);
   const setHighlightedChapters = useBookStore((s) => s.setHighlightedChapters);
+  const setTimeLayers = useBookStore((s) => s.setTimeLayers);
+  const setCurrentTimeLayerId = useBookStore((s) => s.setCurrentTimeLayerId);
 
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
@@ -714,10 +934,14 @@ export default function App() {
   const setEvidenceImages = useGraphStore((s) => s.setEvidenceImages);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
+  const updateRelationshipInStore = useGraphStore((s) => s.updateRelationshipInStore);
+  const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
   const addGroupRange = useGraphStore((s) => s.addGroupRange);
   const removeGroupRange = useGraphStore((s) => s.removeGroupRange);
+  const updateGroupRangeInStore = useGraphStore((s) => s.updateGroupRangeInStore);
   const addEvidenceImage = useGraphStore((s) => s.addEvidenceImage);
   const removeEvidenceImage = useGraphStore((s) => s.removeEvidenceImage);
+  const updateEvidenceImageInStore = useGraphStore((s) => s.updateEvidenceImageInStore);
   const pushUndo = useGraphStore((s) => s.pushUndo);
   const undo = useGraphStore((s) => s.undo);
   const redo = useGraphStore((s) => s.redo);
@@ -796,6 +1020,13 @@ export default function App() {
     if (spoilerShield) setRevealedSpoilerKey(null);
     setSpoilerConfirmOpen(false);
   }, [spoilerShield]);
+
+  useEffect(() => {
+    if (currentTimeLayerId === ALL_TIME_LAYERS_ID) return;
+    if (!timeLayers.some((layer) => layer.id === currentTimeLayerId)) {
+      setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
+    }
+  }, [currentTimeLayerId, timeLayers]);
 
   // Auto-open inspector panel when a node or edge is selected
   useEffect(() => {
@@ -939,6 +1170,9 @@ export default function App() {
     setSpoilerShield(book.spoilerShield);
     setSpoilerChapters(book.spoilerChapters);
     setHighlightedChapters(book.highlightedChapters);
+    const nextTimeLayers = book.timeLayers ?? [];
+    setTimeLayers(nextTimeLayers);
+    setCurrentTimeLayerId(resolveDefaultTimeLayerId(nextTimeLayers, book.defaultTimeLayerId));
   }
 
   async function handleCreateStarterBook() {
@@ -956,6 +1190,7 @@ export default function App() {
     setStickyNotes([]);
     setGroupRanges([]);
     setEvidenceImages([]);
+    setCurrentTimeLayerId(ALL_TIME_LAYERS_ID);
   }
 
   async function handleCreateTutorialBook(kind: TutorialKind = 'ackroyd') {
@@ -977,6 +1212,8 @@ export default function App() {
     setOnboardingOpen(false);
   }
 
+  const scopedTimeLayerId = currentTimeLayerId === ALL_TIME_LAYERS_ID ? null : currentTimeLayerId;
+
   // Add sticky note at canvas centre, with undo support
   async function handleAddStickyNote() {
     if (!activeBookId) return;
@@ -985,6 +1222,7 @@ export default function App() {
       content: '',
       position: { x: (Math.random() - 0.5) * 200, y: (Math.random() - 0.5) * 200 },
       chapterIntroduced: currentChapter,
+      timeLayerId: scopedTimeLayerId,
     });
     addStickyNote(note);
     pushUndo(
@@ -1000,6 +1238,7 @@ export default function App() {
       label: t('groupRange.defaultLabel'),
       position: { x: -180 + (Math.random() - 0.5) * 120, y: -110 + (Math.random() - 0.5) * 120 },
       chapterIntroduced: currentChapter,
+      timeLayerId: scopedTimeLayerId,
     });
     addGroupRange(range);
     setSelectedCharId(null);
@@ -1035,6 +1274,7 @@ export default function App() {
         y: -Math.round(size.height / 2) + (Math.random() - 0.5) * 120,
       },
       chapterIntroduced: currentChapter,
+      timeLayerId: scopedTimeLayerId,
       layer: kind === 'floorPlan' ? 'background' : 'board',
     });
     addEvidenceImage(image);
@@ -1047,7 +1287,7 @@ export default function App() {
       async () => { await deleteEvidenceImage(image.id); removeEvidenceImage(image.id); },
       async () => { await restoreEvidenceImage(image); addEvidenceImage(image); },
     );
-  }, [activeBookId, addEvidenceImage, currentChapter, pushUndo, removeEvidenceImage]);
+  }, [activeBookId, addEvidenceImage, currentChapter, pushUndo, removeEvidenceImage, scopedTimeLayerId]);
 
   useEffect(() => {
     async function handlePaste(e: ClipboardEvent) {
@@ -1211,6 +1451,68 @@ export default function App() {
   function closeTabletPanels() {
     setSidebarOpen(false);
     setInspectorOpen(false);
+  }
+
+  function handleTimeLayerChange(id: string) {
+    setCurrentTimeLayerId(id);
+    setSelectedRelId(null);
+    setSelectedStickyNoteId(null);
+    setSelectedGroupRangeId(null);
+    setSelectedEvidenceImageId(null);
+  }
+
+  async function handleSaveTimeLayers(nextLayers: TimeLayer[]) {
+    if (!activeBookId) return;
+    setTimeLayerSaving(true);
+
+    try {
+      const nextLayerIds = new Set(nextLayers.map((layer) => layer.id));
+      const removedLayerIds = new Set(
+        timeLayers
+          .filter((layer) => !nextLayerIds.has(layer.id))
+          .map((layer) => layer.id),
+      );
+
+      const updatedBook = await updateBook(activeBookId, { timeLayers: nextLayers });
+      const normalizedLayers = updatedBook.timeLayers ?? [];
+      const normalizedLayerIds = new Set(normalizedLayers.map((layer) => layer.id));
+      setTimeLayers(normalizedLayers);
+      setActiveBookSummary(updatedBook);
+
+      if (removedLayerIds.size > 0) {
+        const hasRemovedLayer = (id?: string | null): id is string => Boolean(id && removedLayerIds.has(id));
+        await Promise.all([
+          ...relationships.filter((rel) => hasRemovedLayer(rel.timeLayerId)).map(async (rel) => {
+            const updated = await updateRelationship(rel.id, { timeLayerId: null });
+            updateRelationshipInStore(updated);
+          }),
+          ...stickyNotes.filter((note) => hasRemovedLayer(note.timeLayerId)).map(async (note) => {
+            const updated = await updateAnnotation(note.id, { timeLayerId: null });
+            updateStickyNoteInStore(updated);
+          }),
+          ...groupRanges.filter((range) => hasRemovedLayer(range.timeLayerId)).map(async (range) => {
+            const updated = await updateGroupRange(range.id, { timeLayerId: null });
+            updateGroupRangeInStore(updated);
+          }),
+          ...evidenceImages.filter((image) => hasRemovedLayer(image.timeLayerId)).map(async (image) => {
+            const updated = await updateEvidenceImage(image.id, { timeLayerId: null });
+            updateEvidenceImageInStore(updated);
+          }),
+        ]);
+      }
+
+      if (currentTimeLayerId !== ALL_TIME_LAYERS_ID && !normalizedLayerIds.has(currentTimeLayerId)) {
+        handleTimeLayerChange(ALL_TIME_LAYERS_ID);
+      }
+
+      setTimeLayerManagerOpen(false);
+      showToast(t('timeLayer.saved'));
+    } catch (error) {
+      console.error('Failed to save time layers', error);
+      showToast(t('timeLayer.saveFailed'));
+    } finally {
+      setTimeLayerSaving(false);
+    }
   }
 
   if (phoneShell) {
@@ -1664,6 +1966,15 @@ export default function App() {
             t={t}
           />
 
+          <TimeLayerSwitcher
+            layers={timeLayers}
+            value={currentTimeLayerId}
+            onChange={handleTimeLayerChange}
+            onManage={() => setTimeLayerManagerOpen(true)}
+            disabled={!activeBookId}
+            t={t}
+          />
+
           <div
             className="toolbar-book-title"
             style={{
@@ -1839,7 +2150,7 @@ export default function App() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
                     gap: 12,
                     marginTop: 24,
                     alignItems: 'stretch',
@@ -1882,13 +2193,31 @@ export default function App() {
                   />
                   <StarterActionCard
                     tone="ochre"
-                    icon={<Upload size={16} />}
-                    title={t('app.starterImportTitle')}
-                    body={t('app.starterImportBody')}
-                    action={t('app.importLibrary')}
-                    onClick={() => void handleImport()}
+                    icon={<Clock3 size={16} />}
+                    title={t('app.starterSevenDeathsTitle')}
+                    body={t('app.starterSevenDeathsBody')}
+                    action={t('onboarding.createSevenDeathsTutorial')}
+                    onClick={() => void handleCreateTutorialBook('sevenDeaths')}
+                    disabled={!activeUserId}
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void handleImport()}
+                  style={{
+                    marginTop: 16,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    textDecoration: 'underline',
+                    textUnderlineOffset: 3,
+                  }}
+                >
+                  {t('app.starterImportLink')}
+                </button>
                 <div style={{ maxWidth: 640, margin: '18px auto 0', color: 'var(--ink-500)', fontSize: 12, lineHeight: 1.55 }}>
                   {t('app.starterLocalHint')}
                 </div>
@@ -1914,6 +2243,8 @@ export default function App() {
                   evidenceImages={evidenceImages}
                   characterNodeViewMode={characterNodeViewMode}
                   currentChapter={currentChapter}
+                  currentTimeLayerId={currentTimeLayerId}
+                  timeLayers={timeLayers}
                   bookId={activeBookId}
                   newCharacterRequestId={newCharacterRequestId}
                   startEdgeRequestId={startEdgeRequestId}
@@ -1972,6 +2303,14 @@ export default function App() {
                   onLayoutReady={handleLayoutReady}
                 />
               </div>
+              {timeLayers.length > 0 && !spoilerShieldCoverActive && (
+                <TimeLayerRail
+                  layers={timeLayers}
+                  value={currentTimeLayerId}
+                  onChange={handleTimeLayerChange}
+                  t={t}
+                />
+              )}
               {spoilerShieldCoverActive && (
                 <button
                   onClick={() => setSpoilerConfirmOpen(true)}
@@ -2055,18 +2394,21 @@ export default function App() {
               <RelationshipInspector
                 relationshipId={selectedRelId}
                 bookId={activeBookId}
+                timeLayers={timeLayers}
                 onDeleted={() => setSelectedRelId(null)}
                 onDuplicated={(id) => setSelectedRelId(id)}
               />
             ) : selectedStickyNoteId && activeBookId ? (
               <StickyNoteInspector
                 stickyNoteId={selectedStickyNoteId}
+                timeLayers={timeLayers}
                 onDeleted={() => setSelectedStickyNoteId(null)}
               />
             ) : selectedGroupRangeId && activeBookId ? (
               <GroupRangeInspector
                 groupRangeId={selectedGroupRangeId}
                 bookId={activeBookId}
+                timeLayers={timeLayers}
                 onDeleted={() => setSelectedGroupRangeId(null)}
                 onDuplicated={(id) => setSelectedGroupRangeId(id)}
               />
@@ -2074,6 +2416,7 @@ export default function App() {
               <EvidenceImageInspector
                 evidenceImageId={selectedEvidenceImageId}
                 bookId={activeBookId}
+                timeLayers={timeLayers}
                 onDeleted={() => setSelectedEvidenceImageId(null)}
                 onDuplicated={(id) => setSelectedEvidenceImageId(id)}
               />
@@ -2120,10 +2463,23 @@ export default function App() {
       {onboardingOpen && (
         <OnboardingPanel
           onClose={closeOnboarding}
+          onCreateBlank={() => {
+            void handleCreateStarterBook();
+            closeOnboarding();
+          }}
           onCreateTutorial={(kind) => {
             void handleCreateTutorialBook(kind);
             closeOnboarding();
           }}
+        />
+      )}
+
+      {timeLayerManagerOpen && activeBookId && (
+        <TimeLayerManagerModal
+          layers={timeLayers}
+          saving={timeLayerSaving}
+          onClose={() => setTimeLayerManagerOpen(false)}
+          onSave={(layers) => void handleSaveTimeLayers(layers)}
         />
       )}
 

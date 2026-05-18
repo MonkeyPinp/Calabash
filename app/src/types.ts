@@ -18,6 +18,13 @@ export interface RoleReveal {
   chapterRevealed: number;
 }
 
+export interface TimeLayer {
+  id: string;
+  name: string;
+  order: number;
+  color?: string;
+}
+
 export interface Book {
   id: string;
   userId?: string;
@@ -29,6 +36,8 @@ export interface Book {
   spoilerShield: boolean;
   spoilerChapters: number[];
   highlightedChapters: number[];
+  timeLayers?: TimeLayer[];
+  defaultTimeLayerId?: string | null;
   openClues?: OpenClue[];
   createdAt: number;
   updatedAt: number;
@@ -90,6 +99,7 @@ export interface Relationship {
   label?: string;
   notes?: string;
   chapterRevealed: number;
+  timeLayerId?: string | null;
   certainty: CertaintyLevel;
   createdAt: number;
   updatedAt: number;
@@ -121,6 +131,7 @@ export interface StickyNote {
   color: StickyNoteColor;
   fontSize: number;
   chapterIntroduced: number;
+  timeLayerId?: string | null;
   locked?: boolean;
   createdAt: number;
   updatedAt: number;
@@ -137,6 +148,7 @@ export interface GroupRange {
   labelFontSize: number;
   labelPosition: { x: number; y: number };
   chapterIntroduced: number;
+  timeLayerId?: string | null;
   locked?: boolean;
   createdAt: number;
   updatedAt: number;
@@ -155,6 +167,7 @@ export interface EvidenceImage {
   width: number;
   height: number;
   chapterIntroduced: number;
+  timeLayerId?: string | null;
   locked?: boolean;
   createdAt: number;
   updatedAt: number;

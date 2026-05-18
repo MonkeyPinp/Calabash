@@ -1,9 +1,10 @@
 import { Lock, Trash2, Unlock } from 'lucide-react';
-import type { StickyNoteColor } from '@/types';
+import type { StickyNoteColor, TimeLayer } from '@/types';
 import { deleteAnnotation, restoreAnnotation, updateAnnotation } from '@/db/annotations';
 import { useGraphStore } from '@/stores/graphStore';
 import { normalizeStickyNoteChapter, normalizeStickyNoteFontSize } from '@/lib/stickyNotes';
 import { useT } from '@/i18n';
+import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
 
 const COLORS: StickyNoteColor[] = ['yellow', 'green', 'blue', 'pink', 'purple'];
 
@@ -41,10 +42,11 @@ function blurOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
 
 export interface StickyNoteInspectorProps {
   stickyNoteId: string;
+  timeLayers?: TimeLayer[];
   onDeleted?: () => void;
 }
 
-export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyNoteInspectorProps) {
+export default function StickyNoteInspector({ stickyNoteId, timeLayers = [], onDeleted }: StickyNoteInspectorProps) {
   const t = useT();
   const stickyNotes = useGraphStore((s) => s.stickyNotes);
   const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
@@ -151,6 +153,22 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
     );
   }
 
+  async function handleTimeLayerChange(timeLayerId: string | null) {
+    const before = note!.timeLayerId ?? null;
+    if (timeLayerId === before) return;
+    await persist({ timeLayerId });
+    pushUndo(
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { timeLayerId: before });
+        updateStickyNoteInStore(updated);
+      },
+      async () => {
+        const updated = await updateAnnotation(stickyNoteId, { timeLayerId });
+        updateStickyNoteInStore(updated);
+      },
+    );
+  }
+
   async function handleLockedToggle() {
     const before = note!.locked === true;
     const after = !before;
@@ -245,6 +263,17 @@ export default function StickyNoteInspector({ stickyNoteId, onDeleted }: StickyN
           onBlur={(e) => void handleChapterBlur(e.target.value)}
         />
       </div>
+
+      {timeLayers.length > 0 && (
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('timeLayer.field')}</label>
+          <TimeLayerSelect
+            layers={timeLayers}
+            value={note.timeLayerId}
+            onChange={(timeLayerId) => void handleTimeLayerChange(timeLayerId)}
+          />
+        </div>
+      )}
 
       <div style={fieldStyle}>
         <label style={labelStyle}>{t('stickyNote.content')}</label>

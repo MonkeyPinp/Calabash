@@ -21,7 +21,20 @@ function tokenFromGhCli() {
   }
 }
 
-const token = process.env.CALABASH_METRICS_TOKEN || process.env.CNB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || tokenFromGhCli();
+function githubTokenCandidates() {
+  return [
+    process.env.CALABASH_METRICS_TOKEN,
+    process.env.CNB_TOKEN,
+    process.env.GH_TOKEN,
+    process.env.GITHUB_TOKEN,
+    tokenFromGhCli(),
+  ]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .filter((value, index, values) => values.indexOf(value) === index);
+}
+
+const tokenCandidates = githubTokenCandidates();
 
 function readPreviousMetrics() {
   try {
@@ -32,26 +45,38 @@ function readPreviousMetrics() {
 }
 
 async function githubJson(endpoint, { optional = false } = {}) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  let lastFailure = null;
+  const candidates = tokenCandidates.length > 0 ? tokenCandidates : [''];
 
-  if (!response.ok) {
+  for (const token of candidates) {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (response.ok) return response.json();
+
+    const failure = {
+      unavailable: true,
+      status: response.status,
+      message: await response.text(),
+    };
+    lastFailure = failure;
+
+    if (response.status === 401) continue;
     if (optional) {
-      return {
-        unavailable: true,
-        status: response.status,
-        message: await response.text(),
-      };
+      return failure;
     }
-    throw new Error(`GitHub API ${endpoint} failed with ${response.status}: ${await response.text()}`);
+    throw new Error(`GitHub API ${endpoint} failed with ${response.status}: ${failure.message}`);
   }
 
-  return response.json();
+  if (optional) {
+    return lastFailure ?? { unavailable: true, status: 0, message: 'GitHub API unavailable' };
+  }
+  throw new Error(`GitHub API ${endpoint} failed with ${lastFailure?.status ?? 0}: ${lastFailure?.message ?? 'unavailable'}`);
 }
 
 function numberFromEnv(name) {

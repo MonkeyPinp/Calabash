@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-18T09:43:40.355Z",
+  "generatedAt": "2026-05-18T18:13:33.791Z",
   "appVersion": "0.5.4",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -11,13 +11,13 @@
     "githubPagesVisits30d": null,
     "edgeOneRequests30d": null,
     "edgeOneUniqueIps30d": null,
-    "releaseDownloads": 30,
-    "desktopDownloads": 25,
-    "latestReleaseDownloads": 5,
-    "githubRepoViews14d": 131,
-    "githubRepoVisitors14d": 9,
-    "githubClones14d": 599,
-    "githubUniqueCloners14d": 210
+    "releaseDownloads": 31,
+    "desktopDownloads": 26,
+    "latestReleaseDownloads": 6,
+    "githubRepoViews14d": null,
+    "githubRepoVisitors14d": null,
+    "githubClones14d": null,
+    "githubUniqueCloners14d": null
   },
   "web": {
     "githubPages": {
@@ -32,243 +32,29 @@
     }
   },
   "repository": {
-    "stars": 2,
+    "stars": 3,
     "forks": 0,
     "openIssues": 5,
     "views14d": {
-      "count": 131,
-      "uniques": 9,
-      "daily": [
-        {
-          "timestamp": "2026-05-04T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-05T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-06T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-07T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-08T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-09T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-10T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-11T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-12T00:00:00Z",
-          "count": 1,
-          "uniques": 1
-        },
-        {
-          "timestamp": "2026-05-13T00:00:00Z",
-          "count": 4,
-          "uniques": 1
-        },
-        {
-          "timestamp": "2026-05-14T00:00:00Z",
-          "count": 46,
-          "uniques": 1
-        },
-        {
-          "timestamp": "2026-05-15T00:00:00Z",
-          "count": 21,
-          "uniques": 2
-        },
-        {
-          "timestamp": "2026-05-16T00:00:00Z",
-          "count": 2,
-          "uniques": 2
-        },
-        {
-          "timestamp": "2026-05-17T00:00:00Z",
-          "count": 57,
-          "uniques": 6
-        }
-      ]
+      "unavailable": true,
+      "status": 403,
+      "message": "{\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/metrics/traffic#get-page-views\",\"status\":\"403\"}"
     },
     "clones14d": {
-      "count": 599,
-      "uniques": 210,
-      "daily": [
-        {
-          "timestamp": "2026-05-04T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-05T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-06T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-07T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-08T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-09T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-10T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-11T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-12T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-13T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
-        {
-          "timestamp": "2026-05-14T00:00:00Z",
-          "count": 183,
-          "uniques": 59
-        },
-        {
-          "timestamp": "2026-05-15T00:00:00Z",
-          "count": 108,
-          "uniques": 40
-        },
-        {
-          "timestamp": "2026-05-16T00:00:00Z",
-          "count": 23,
-          "uniques": 16
-        },
-        {
-          "timestamp": "2026-05-17T00:00:00Z",
-          "count": 285,
-          "uniques": 107
-        }
-      ]
+      "unavailable": true,
+      "status": 403,
+      "message": "{\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/metrics/traffic#get-repository-clones\",\"status\":\"403\"}"
     },
-    "referrers14d": [
-      {
-        "referrer": "github.com",
-        "count": 21,
-        "uniques": 2
-      },
-      {
-        "referrer": "tuilixy.net",
-        "count": 7,
-        "uniques": 1
-      }
-    ],
-    "popularPaths14d": [
-      {
-        "path": "/Guesswhat-Studio/Calabash",
-        "title": "Overview",
-        "count": 33,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/releases",
-        "title": "/releases",
-        "count": 9,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/blob/main/README.zh-CN.md",
-        "title": "/blob/main/README.zh-CN.md",
-        "count": 8,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tags",
-        "title": "/tags",
-        "count": 8,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.2.1",
-        "title": "/releases/tag/v0.2.1",
-        "count": 4,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.1",
-        "title": "/releases/tag/v0.3.1",
-        "count": 4,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tree/main/app",
-        "title": "/tree/main/app",
-        "count": 4,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/actions",
-        "title": "/actions",
-        "count": 4,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.0",
-        "title": "/releases/tag/v0.3.0",
-        "count": 4,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tree/main/.github",
-        "title": "/tree/main/.github",
-        "count": 3,
-        "uniques": 2
-      }
-    ]
+    "referrers14d": [],
+    "popularPaths14d": []
   },
   "releases": {
-    "totalDownloads": 30,
-    "desktopDownloads": 25,
+    "totalDownloads": 31,
+    "desktopDownloads": 26,
     "webDownloads": 5,
     "latestRelease": {
       "tag": "v0.5.3",
-      "downloads": 5
+      "downloads": 6
     },
     "assets": [
       {
@@ -294,7 +80,7 @@
       {
         "release": "v0.5.3",
         "name": "Calabash_0.5.3_windows_x64.exe",
-        "downloadCount": 1
+        "downloadCount": 2
       },
       {
         "release": "v0.5.2",

@@ -1,6 +1,6 @@
 {
   "name": "calabash-desktop",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --no-bundle",
     "desktop:build:debug": "tauri build --debug --no-bundle",
+    "metrics:update": "node scripts/update-impact-metrics.mjs",
     "verify:version": "node scripts/verify-version.mjs",
     "test:update-live": "node scripts/update-check-live.mjs",
     "test:web:pipeline": "npm run verify:version && npm --prefix app test && npm --prefix app run typecheck && npm --prefix app run build && node scripts/web-smoke.mjs",

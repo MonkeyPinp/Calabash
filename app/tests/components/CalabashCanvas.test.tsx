@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Character, EvidenceImage, GroupRange, Relationship, StickyNote } from '@/types';
 import CalabashCanvas from '@/components/Canvas/CalabashCanvas';
+import { db } from '@/db/schema';
+import { useGraphStore } from '@/stores/graphStore';
 
 // In jsdom React Flow's layout cycle doesn't complete, so edges are never drawn.
 // Replace ReactFlow with a lightweight renderer that invokes node/edge types directly.
@@ -52,6 +54,13 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     useReactFlow: () => ({ fitView: vi.fn() }),
   };
 });
+
+vi.mock('@/lib/layout', () => ({
+  computeForceLayout: vi.fn(() => new Map([
+    ['a', { x: 50, y: 60 }],
+    ['b', { x: 300, y: 80 }],
+  ])),
+}));
 
 vi.mock('@/components/Canvas/NewRelationshipModal', () => ({
   default: ({ sourceId, targetId, onCreated }: { sourceId: string; targetId: string; onCreated: () => void }) => (
@@ -151,6 +160,19 @@ const evidenceImages: EvidenceImage[] = [
 ];
 
 describe('CalabashCanvas', () => {
+  beforeEach(async () => {
+    await db.characters.clear();
+    useGraphStore.setState({
+      characters: [],
+      relationships: [],
+      stickyNotes: [],
+      groupRanges: [],
+      evidenceImages: [],
+      undoStack: [],
+      redoStack: [],
+    });
+  });
+
   it('renders nodes for every character and the certainty badge for every edge', () => {
     render(
       <div style={{ width: 800, height: 600 }}>
@@ -212,12 +234,15 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('第5-9集')).toBeInTheDocument();
   });
 
-  it('renders a compact help legend above the minimap area', () => {
+  it('renders a compact click-to-open help legend above the minimap area', () => {
     render(
       <div style={{ width: 800, height: 600 }}>
         <CalabashCanvas characters={characters} relationships={[]} currentChapter={10} bookId={null} />
       </div>,
     );
+    const trigger = screen.getByTestId('canvas-help-trigger');
+    const panel = screen.getByTestId('canvas-help-panel');
+
     expect(screen.getByLabelText('Help')).toBeInTheDocument();
     expect(screen.getByText('N')).toBeInTheDocument();
     expect(screen.getByText('New node')).toBeInTheDocument();
@@ -225,6 +250,68 @@ describe('CalabashCanvas', () => {
     expect(screen.getByText('UI buttons')).toBeInTheDocument();
     expect(screen.getByText('Layout')).toBeInTheDocument();
     expect(screen.getByText('Shield')).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(panel).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
+
+    fireEvent.mouseEnter(screen.getByTestId('keyboard-shortcuts-legend'));
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(panel).toHaveStyle({ opacity: '0', pointerEvents: 'none' });
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).toHaveStyle({ opacity: '1', pointerEvents: 'auto' });
+
+    const componentStyles = Array.from(document.querySelectorAll('style'))
+      .map((style) => style.textContent ?? '')
+      .join('\n');
+    expect(componentStyles).not.toContain('.shortcut-legend:hover .shortcut-panel');
+    expect(componentStyles).not.toContain('.shortcut-legend:focus-within .shortcut-panel');
+  });
+
+  it('pushes auto-layout character moves onto undo and redo', async () => {
+    const layoutCharacters = characters.map((character) => ({ ...character }));
+    await db.characters.bulkPut(layoutCharacters);
+    useGraphStore.setState({ characters: layoutCharacters });
+
+    let runLayout: (() => Promise<void>) | undefined;
+    render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={layoutCharacters}
+          relationships={[]}
+          currentChapter={10}
+          bookId="b"
+          onLayoutReady={(fn) => { runLayout = fn; }}
+        />
+      </div>,
+    );
+
+    await waitFor(() => expect(runLayout).toBeTypeOf('function'));
+
+    await act(async () => {
+      await runLayout?.();
+    });
+
+    expect(useGraphStore.getState().undoStack).toHaveLength(1);
+    await expect(db.characters.get('a')).resolves.toMatchObject({ position: { x: 50, y: 60 } });
+    expect(useGraphStore.getState().characters.find((character) => character.id === 'a')).toMatchObject({
+      position: { x: 50, y: 60 },
+    });
+
+    await act(async () => {
+      await useGraphStore.getState().undo();
+    });
+
+    await expect(db.characters.get('a')).resolves.toMatchObject({ position: { x: 0, y: 0 } });
+    expect(useGraphStore.getState().characters.find((character) => character.id === 'a')).toMatchObject({
+      position: { x: 0, y: 0 },
+    });
+
+    await act(async () => {
+      await useGraphStore.getState().redo();
+    });
+
+    await expect(db.characters.get('a')).resolves.toMatchObject({ position: { x: 50, y: 60 } });
   });
 
   it('shows group ranges only after their display chapter and renders their chapter tag', () => {

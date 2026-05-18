@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.4 - 2026-05-18
+
+- Changed the canvas Help panel to open only on click, preventing hover popups from covering board space.
+- Made Auto-layout undoable and redoable by recording the moved character positions.
+- Improved the phone Settings sheet with full-width layout, scrollable tabs, and single-column controls.
+- Added a compact Metrics-inspired README Impact Snapshot backed by `docs/assets/impact-metrics.json`, `docs/assets/impact-snapshot.svg`, and `npm run metrics:update`.
+- Bumped web, desktop, import/export, docs example, and template metadata to `0.5.4`.
+
 ## 0.5.3 - 2026-05-17
 
 - Added a friendly phone fallback that keeps the library readable while directing board editing to tablet, desktop, or the desktop app.

@@ -50,6 +50,11 @@ const edgeTypes = { relationship: RelationshipEdge };
 const EMPTY_STICKY_NOTES: StickyNote[] = [];
 const EMPTY_GROUP_RANGES: GroupRange[] = [];
 const EMPTY_EVIDENCE_IMAGES: EvidenceImage[] = [];
+type LayoutMove = {
+  id: string;
+  before: { x: number; y: number };
+  after: { x: number; y: number };
+};
 
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
@@ -248,6 +253,32 @@ function CalabashCanvasInner({
     [t],
   );
   const [helpOpen, setHelpOpen] = useState(false);
+
+  const scheduleFitView = useCallback(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15, maxZoom: 1.1 })));
+  }, [fitView]);
+
+  const applyCharacterLayoutMoves = useCallback(
+    async (moves: LayoutMove[], phase: 'before' | 'after') => {
+      const positionById = new Map(moves.map((move) => [move.id, move[phase]]));
+      await Promise.all(
+        moves.map(async (move) => {
+          const updated = await updateCharacter(move.id, { position: move[phase] });
+          updateCharacterInStore(updated);
+        }),
+      );
+
+      setRfNodes((nds) =>
+        nds.map((node) => {
+          if (node.type !== 'character') return node;
+          const position = positionById.get(node.id);
+          return position ? { ...node, position } : node;
+        }),
+      );
+      scheduleFitView();
+    },
+    [scheduleFitView, updateCharacterInStore],
+  );
 
   useEffect(() => {
     onFitViewReady?.(fitView);
@@ -479,29 +510,28 @@ function CalabashCanvasInner({
       { nodeSizes },
     );
 
-    // Write to DB + Zustand
-    await Promise.all(
-      visible.filter((c) => c.locked !== true).map(async (c) => {
+    const moves = visible
+      .filter((c) => c.locked !== true)
+      .map((c): LayoutMove | null => {
         const pos = positions.get(c.id);
-        if (!pos) return;
-        await updateCharacter(c.id, { position: pos });
-        updateCharacterInStore({ ...c, position: pos });
-      }),
-    );
+        if (!pos) return null;
+        if (c.position.x === pos.x && c.position.y === pos.y) return null;
+        return {
+          id: c.id,
+          before: { x: c.position.x, y: c.position.y },
+          after: pos,
+        };
+      })
+      .filter((move): move is LayoutMove => move !== null);
 
-    // Directly update rfNodes (bypasses the async useEffect chain)
-    setRfNodes((nds) =>
-      nds.map((n) => {
-        if (n.type !== 'character') return n;
-        if (lockedNodeIds.has(n.id)) return n;
-        const pos = positions.get(n.id);
-        return pos ? { ...n, position: pos } : n;
-      }),
-    );
+    if (moves.length === 0) return;
 
-    // fitView after React Flow renders the new rfNodes (double rAF ensures post-paint)
-    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.15, maxZoom: 1.1 })));
-  }, [bookId, boardLocked, characters, relationships, currentChapter, characterNodeViewMode, t, updateCharacterInStore, fitView, lockedNodeIds]);
+    await applyCharacterLayoutMoves(moves, 'after');
+    pushUndo(
+      async () => applyCharacterLayoutMoves(moves, 'before'),
+      async () => applyCharacterLayoutMoves(moves, 'after'),
+    );
+  }, [bookId, boardLocked, characters, relationships, currentChapter, characterNodeViewMode, t, applyCharacterLayoutMoves, pushUndo]);
 
   useEffect(() => {
     onLayoutReady?.(runLayout);
@@ -990,8 +1020,9 @@ function CalabashCanvasInner({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            cursor: 'help',
+            cursor: 'pointer',
             font: 'inherit',
+            pointerEvents: 'auto',
           }}
         >
           <span
@@ -1223,10 +1254,8 @@ function CalabashCanvasInner({
           pointer-events: auto !important;
         }
         .shortcut-legend {
-          pointer-events: auto !important;
+          pointer-events: none !important;
         }
-        .shortcut-legend:hover .shortcut-panel,
-        .shortcut-legend:focus-within .shortcut-panel,
         .shortcut-legend--open .shortcut-panel {
           opacity: 1 !important;
           transform: translateY(0) !important;

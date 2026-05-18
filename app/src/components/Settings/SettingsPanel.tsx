@@ -163,16 +163,18 @@ export default function SettingsPanel({
 
   return (
     <div
+      className="settings-overlay"
       role="dialog"
       aria-modal="true"
       aria-label={t('settings.title')}
       style={overlayStyle}
       onClick={onClose}
     >
-      <div style={folderFrameStyle} onClick={(e) => e.stopPropagation()}>
-        <div style={tabRailStyle}>
+      <div className="settings-folder-frame" style={folderFrameStyle} onClick={(e) => e.stopPropagation()}>
+        <div className="settings-tab-rail" style={tabRailStyle}>
           {tabs.map((tab) => (
             <button
+              className="settings-tab-button"
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
@@ -183,35 +185,35 @@ export default function SettingsPanel({
               {tab.label}
             </button>
           ))}
-          <button type="button" onClick={onClose} title={t('settings.close')} aria-label={t('settings.close')} style={roundCloseStyle}>
+          <button className="settings-close-button" type="button" onClick={onClose} title={t('settings.close')} aria-label={t('settings.close')} style={roundCloseStyle}>
             <X size={14} />
           </button>
         </div>
 
-        <div style={folderBodyStyle(activeColor)}>
-          <div style={binderEdgeStyle} aria-hidden="true">
+        <div className="settings-folder-body" style={folderBodyStyle(activeColor)}>
+          <div className="settings-binder-edge" style={binderEdgeStyle} aria-hidden="true">
             {[0, 1, 2].map((index) => <span key={index} style={binderHoleStyle} />)}
           </div>
 
-          <header style={folderHeaderStyle}>
+          <header className="settings-folder-header" style={folderHeaderStyle}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={fileLineStyle}>
+              <div className="settings-file-line" style={fileLineStyle}>
                 <span style={fileBadgeStyle}>FILE NO.</span>
                 <span>CB · 0042 · 26</span>
                 <span style={{ color: 'var(--ink-300)' }}>—</span>
                 <span>CASE SETTINGS</span>
               </div>
-              <div style={titleLineStyle}>
+              <div className="settings-title-line" style={titleLineStyle}>
                 Calabash
                 <span style={{ color: activeColor, fontSize: 18, fontStyle: 'italic' }}>
                   · {tabs.find((tab) => tab.id === activeTab)?.label.toLowerCase()}
                 </span>
               </div>
             </div>
-            <div style={stampStyle}>BETA · v{APP_VERSION}</div>
+            <div className="settings-stamp" style={stampStyle}>BETA · v{APP_VERSION}</div>
           </header>
 
-          <main style={folderContentStyle}>
+          <main className="settings-folder-content" style={folderContentStyle}>
             {activeTab === 'library' && (
               <>
                 <SectionTab color={activeColor} number="01">{t('settings.readingLog')}</SectionTab>
@@ -254,7 +256,7 @@ export default function SettingsPanel({
             {activeTab === 'guides' && (
               <>
                 <SectionTab color={activeColor} number="01">{t('settings.tutorials')}</SectionTab>
-                <div data-testid="settings-tutorial-grid" style={tutorialGridStyle}>
+                <div className="settings-tutorial-grid" data-testid="settings-tutorial-grid" style={tutorialGridStyle}>
                   <TutorialCard
                     eyebrow="PUZZLE"
                     title={t('onboarding.createContestTemplate')}
@@ -286,9 +288,10 @@ export default function SettingsPanel({
               <>
                 <SectionTab color={activeColor} number="01">{t('settings.readingConditions')}</SectionTab>
                 <FolderRow label={t('settings.theme')} hint={t('settings.themeHint')} align="top">
-                  <div style={themeGridStyle}>
+                  <div className="settings-theme-grid" style={themeGridStyle}>
                     {themeOptions.map((option) => (
                       <button
+                        className="settings-theme-choice"
                         key={option.value}
                         type="button"
                         onClick={() => setThemePreference(option.value)}
@@ -326,6 +329,7 @@ export default function SettingsPanel({
                 </FolderRow>
                 <FolderRow label={t('settings.studio')}>
                   <a
+                    className="settings-studio-card"
                     href={STUDIO_URL}
                     target="_blank"
                     rel="noreferrer"
@@ -344,7 +348,7 @@ export default function SettingsPanel({
                 <SectionTab color="var(--accent)" number="02" tilt={0.3}>{t('settings.distribution')}</SectionTab>
                 <FolderRow label={t('settings.links')} align="top">
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <a href={GITHUB_URL} target="_blank" rel="noreferrer" style={linkButtonStyle}>
+                    <a className="settings-link-button" href={GITHUB_URL} target="_blank" rel="noreferrer" style={linkButtonStyle}>
                       <Github size={13} />
                       GitHub
                     </a>
@@ -360,17 +364,17 @@ export default function SettingsPanel({
             )}
           </main>
 
-          <footer style={folderFooterStyle}>
+          <footer className="settings-folder-footer" style={folderFooterStyle}>
             <Paperclip />
             <DateStamp>{t('settings.filed')} · {filedDate}</DateStamp>
-            <div style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--ink-500)', fontStyle: 'italic' }}>
+            <div className="settings-auto-save-note" style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--ink-500)', fontStyle: 'italic' }}>
               {t('settings.autoSaveNote')}
             </div>
-            <button type="button" onClick={onClose} style={closeFolderButtonStyle}>{t('settings.closeFolder')}</button>
+            <button className="settings-close-folder-button" type="button" onClick={onClose} style={closeFolderButtonStyle}>{t('settings.closeFolder')}</button>
           </footer>
         </div>
-        <div style={ghostPageStyle(1)} />
-        <div style={ghostPageStyle(2)} />
+        <div className="settings-ghost-page" style={ghostPageStyle(1)} />
+        <div className="settings-ghost-page" style={ghostPageStyle(2)} />
       </div>
     </div>
   );
@@ -378,7 +382,7 @@ export default function SettingsPanel({
 
 function SectionTab({ number, color, tilt = -0.5, children }: { number: string; color: string; tilt?: number; children: ReactNode }) {
   return (
-    <div style={{
+    <div className="settings-section-tab" style={{
       display: 'inline-flex',
       alignItems: 'center',
       gap: 8,
@@ -410,7 +414,7 @@ function FolderRow({ label, hint, align = 'center', children }: {
   children: ReactNode;
 }) {
   return (
-    <div style={{
+    <div className="settings-folder-row" style={{
       display: 'grid',
       gridTemplateColumns: '150px 1fr',
       gap: 18,
@@ -429,7 +433,7 @@ function FolderRow({ label, hint, align = 'center', children }: {
         }}>{label}</div>
         {hint && <div style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-500)', lineHeight: 1.35 }}>{hint}</div>}
       </div>
-      <div style={{ minWidth: 0 }}>{children}</div>
+      <div className="settings-folder-row-content" style={{ minWidth: 0 }}>{children}</div>
     </div>
   );
 }
@@ -441,7 +445,7 @@ function InventoryLedger({ inventory }: { inventory: InventoryCounts }) {
     { value: inventory.relations, label: 'relations' },
   ];
   return (
-    <div style={{
+    <div className="settings-inventory-ledger" style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
       border: '1px solid var(--ink-200)',
@@ -467,7 +471,7 @@ function ActionButton({ children, icon, onClick, disabled }: {
   disabled?: boolean;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} style={actionButtonStyle(Boolean(disabled))}>
+    <button className="settings-action-button" type="button" disabled={disabled} onClick={onClick} style={actionButtonStyle(Boolean(disabled))}>
       {icon}
       {children}
     </button>
@@ -483,7 +487,7 @@ function TutorialCard({ eyebrow, title, author, accent, onClick }: {
 }) {
   const color = accent ? 'var(--accent)' : 'var(--ink-700)';
   return (
-    <button type="button" onClick={onClick} data-testid="settings-tutorial-card" style={{
+    <button className="settings-tutorial-card" type="button" onClick={onClick} data-testid="settings-tutorial-card" style={{
       position: 'relative',
       minWidth: 0,
       minHeight: 112,
@@ -527,7 +531,7 @@ function TutorialCard({ eyebrow, title, author, accent, onClick }: {
 
 function Paperclip() {
   return (
-    <div aria-hidden="true" style={{
+    <div className="settings-paperclip" aria-hidden="true" style={{
       position: 'relative',
       width: 20,
       height: 26,
@@ -556,7 +560,7 @@ function Paperclip() {
 
 function DateStamp({ children }: { children: ReactNode }) {
   return (
-    <div style={{
+    <div className="settings-date-stamp" style={{
       padding: '4px 9px',
       border: '1px solid color-mix(in srgb, var(--ink-500) 45%, transparent)',
       borderRadius: 2,

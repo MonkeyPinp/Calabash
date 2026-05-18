@@ -23,8 +23,7 @@ function tokenFromGhCli() {
 
 function githubTokenCandidates() {
   return [
-    process.env.CALABASH_METRICS_TOKEN,
-    process.env.CNB_TOKEN,
+    process.env.METRICS_TOKEN,
     process.env.GH_TOKEN,
     process.env.GITHUB_TOKEN,
     tokenFromGhCli(),

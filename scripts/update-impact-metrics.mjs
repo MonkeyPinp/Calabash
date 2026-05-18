@@ -21,7 +21,15 @@ function tokenFromGhCli() {
   }
 }
 
-const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || tokenFromGhCli();
+const token = process.env.CALABASH_METRICS_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || tokenFromGhCli();
+
+function readPreviousMetrics() {
+  try {
+    return JSON.parse(readFileSync(outputPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
 
 async function githubJson(endpoint, { optional = false } = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -136,6 +144,30 @@ function dailyCounts(series) {
   return Array.isArray(series?.daily) ? series.daily.map((entry) => entry.count ?? 0) : [];
 }
 
+function trafficSnapshot(response, previousMetrics, key, dailyKey) {
+  if (!response.unavailable) {
+    return {
+      count: response.count,
+      uniques: response.uniques,
+      daily: response[dailyKey],
+    };
+  }
+
+  const previous = previousMetrics?.repository?.[key];
+  if (previous && !previous.unavailable && typeof previous.count === 'number') {
+    return {
+      ...previous,
+      stale: true,
+      staleReason: {
+        status: response.status,
+        message: response.message,
+      },
+    };
+  }
+
+  return response;
+}
+
 function renderImpactSvg(metrics) {
   const summary = metrics.summary;
   const generatedAt = formatDate(metrics.generatedAt);
@@ -221,6 +253,11 @@ const [repo, releases, views, clones, referrers, paths] = await Promise.all([
   githubJson(`/repos/${OWNER}/${REPO}/traffic/popular/paths`, { optional: true }),
 ]);
 
+const previousMetrics = readPreviousMetrics();
+const views14d = trafficSnapshot(views, previousMetrics, 'views14d', 'views');
+const clones14d = trafficSnapshot(clones, previousMetrics, 'clones14d', 'clones');
+const referrers14d = Array.isArray(referrers) ? referrers : (previousMetrics?.repository?.referrers14d ?? []);
+const popularPaths14d = Array.isArray(paths) ? paths : (previousMetrics?.repository?.popularPaths14d ?? []);
 const downloads = summarizeReleaseDownloads(releases);
 const githubPagesVisits = numberFromEnv('CALABASH_GITHUB_PAGES_VISITS_30D');
 const edgeOneRequests = numberFromEnv('CALABASH_EDGEONE_REQUESTS_30D');
@@ -242,10 +279,10 @@ const metrics = {
     releaseDownloads: downloads.totalDownloads,
     desktopDownloads: downloads.desktopDownloads,
     latestReleaseDownloads: downloads.latestRelease?.downloads ?? null,
-    githubRepoViews14d: views.unavailable ? null : views.count,
-    githubRepoVisitors14d: views.unavailable ? null : views.uniques,
-    githubClones14d: clones.unavailable ? null : clones.count,
-    githubUniqueCloners14d: clones.unavailable ? null : clones.uniques,
+    githubRepoViews14d: views14d.unavailable ? null : views14d.count,
+    githubRepoVisitors14d: views14d.unavailable ? null : views14d.uniques,
+    githubClones14d: clones14d.unavailable ? null : clones14d.count,
+    githubUniqueCloners14d: clones14d.unavailable ? null : clones14d.uniques,
   },
   web: {
     githubPages: {
@@ -263,10 +300,10 @@ const metrics = {
     stars: repo.stargazers_count,
     forks: repo.forks_count,
     openIssues: repo.open_issues_count,
-    views14d: views.unavailable ? views : { count: views.count, uniques: views.uniques, daily: views.views },
-    clones14d: clones.unavailable ? clones : { count: clones.count, uniques: clones.uniques, daily: clones.clones },
-    referrers14d: Array.isArray(referrers) ? referrers : [],
-    popularPaths14d: Array.isArray(paths) ? paths : [],
+    views14d,
+    clones14d,
+    referrers14d,
+    popularPaths14d,
   },
   releases: downloads,
 };

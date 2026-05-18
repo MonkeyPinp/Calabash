@@ -30,6 +30,7 @@ jobs:
 
       - name: Update metrics
         env:
+          CALABASH_METRICS_TOKEN: ${{ secrets.CALABASH_METRICS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           CALABASH_GITHUB_PAGES_VISITS_30D: ${{ vars.CALABASH_GITHUB_PAGES_VISITS_30D }}
           CALABASH_GITHUB_PAGES_SOURCE: ${{ vars.CALABASH_GITHUB_PAGES_SOURCE }}

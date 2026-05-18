@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-18T18:15:43.220Z",
+  "generatedAt": "2026-05-18T18:16:59.920Z",
   "appVersion": "0.5.4",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -109,7 +109,12 @@
           "count": 57,
           "uniques": 6
         }
-      ]
+      ],
+      "stale": true,
+      "staleReason": {
+        "status": 403,
+        "message": "{\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/metrics/traffic#get-page-views\",\"status\":\"403\"}"
+      }
     },
     "clones14d": {
       "count": 599,
@@ -185,7 +190,12 @@
           "count": 285,
           "uniques": 107
         }
-      ]
+      ],
+      "stale": true,
+      "staleReason": {
+        "status": 403,
+        "message": "{\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/metrics/traffic#get-repository-clones\",\"status\":\"403\"}"
+      }
     },
     "referrers14d": [
       {

@@ -16,10 +16,6 @@ Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](
   <img src="docs/assets/impact-snapshot.svg" width="760" alt="Impacto do Calabash: downloads, desktop, visitas do repo e visitantes" />
 </p>
 
-![Calabash para ler sem perder o fio dos suspeitos e pistas](docs/assets/calabash-github-repo-card-pt-BR.png)
-
-![Captura do Calabash como quadro de casos, notas de mistério e grafo de relações sem spoilers](docs/assets/calabash-demo.png)
-
 ## O Que É
 
 Calabash é um quadro local-first para acompanhar personagens, aliases, pistas, relações e teorias enquanto você lê. O nome vem do cachimbo calabash associado a Sherlock Holmes: a ferramenta não resolve o caso por você, mas fica ao seu lado enquanto você pensa.
@@ -27,6 +23,10 @@ Calabash é um quadro local-first para acompanhar personagens, aliases, pistas, 
 Você pode usá-lo como app de notas para mistério, grafo de relações de personagens, rastreador de pistas ou quadro privado para romances longos, casos de mangá, mistérios fair-play e competições de puzzles.
 
 A demo pública atual roda inteiramente no navegador. Não há conta, banco de dados hospedado para leitores nem salvamento no servidor.
+
+![Calabash para ler sem perder o fio dos suspeitos e pistas](docs/assets/calabash-github-repo-card-pt-BR.png)
+
+![Captura do Calabash como quadro de casos, notas de mistério e grafo de relações sem spoilers](docs/assets/calabash-demo.png)
 
 ## Sem IA, Por Design
 

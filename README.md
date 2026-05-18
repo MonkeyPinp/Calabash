@@ -16,10 +16,6 @@ Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.
   <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash impact snapshot: releases, desktop downloads, repo views, and visitors" />
 </p>
 
-![Calabash private case board for reading mysteries](docs/assets/calabash-github-repo-card-en.png)
-
-![Calabash spoiler-safe mystery reading notes and relationship board screenshot](docs/assets/calabash-demo.png)
-
 ## What It Is
 
 Calabash is a local-first case-file board for tracking characters, aliases, clues, relationships, and theories while you read. It is named after Sherlock Holmes' calabash pipe: the tool does not solve the case for you, but it sits beside you while you think.
@@ -27,6 +23,10 @@ Calabash is a local-first case-file board for tracking characters, aliases, clue
 Use it as a mystery reading notes app, detective fiction relationship graph, clue tracker, or private case board for long novels, fair-play mysteries, manga cases, and puzzle competitions.
 
 The current public demo runs entirely in the browser. There is no account system, no hosted reader database, and no server-side save file.
+
+![Calabash private case board for reading mysteries](docs/assets/calabash-github-repo-card-en.png)
+
+![Calabash spoiler-safe mystery reading notes and relationship board screenshot](docs/assets/calabash-demo.png)
 
 ## No AI, By Design
 

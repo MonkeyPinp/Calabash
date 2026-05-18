@@ -13,7 +13,7 @@ Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.
 ## Impact Snapshot
 
 <p align="center">
-  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash impact snapshot: releases, desktop downloads, repo views, and clones" />
+  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash impact snapshot: releases, desktop downloads, repo views, and visitors" />
 </p>
 
 ![Calabash private case board for reading mysteries](docs/assets/calabash-github-repo-card-en.png)

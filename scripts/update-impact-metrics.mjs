@@ -141,7 +141,6 @@ function renderImpactSvg(metrics) {
   const generatedAt = formatDate(metrics.generatedAt);
   const latest = metrics.releases.latestRelease?.tag ?? 'latest';
   const viewsDaily = dailyCounts(metrics.repository.views14d);
-  const clonesDaily = dailyCounts(metrics.repository.clones14d);
 
   const cells = [
     {
@@ -167,16 +166,16 @@ function renderImpactSvg(metrics) {
     },
     {
       x: 400,
-      label: 'repo clones',
-      value: formatNumber(summary.githubClones14d),
-      sub: `${formatNumber(summary.githubUniqueCloners14d)} unique`,
+      label: 'repo visitors',
+      value: formatNumber(summary.githubRepoVisitors14d),
+      sub: 'last 14 days',
       accent: '#6a4f1b',
     },
   ];
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="128" viewBox="0 0 760 128" role="img" aria-labelledby="title desc">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="132" viewBox="0 0 760 132" role="img" aria-labelledby="title desc">
   <title id="title">Calabash impact snapshot</title>
-  <desc id="desc">Release downloads ${formatNumber(summary.releaseDownloads)}, desktop downloads ${formatNumber(summary.desktopDownloads)}, repository views ${formatNumber(summary.githubRepoViews14d)}, repository clones ${formatNumber(summary.githubClones14d)}.</desc>
+  <desc id="desc">Release downloads ${formatNumber(summary.releaseDownloads)}, desktop downloads ${formatNumber(summary.desktopDownloads)}, repository views ${formatNumber(summary.githubRepoViews14d)}, and repository visitors ${formatNumber(summary.githubRepoVisitors14d)}.</desc>
   <defs>
     <filter id="soft-shadow" x="-4%" y="-12%" width="108%" height="130%">
       <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#2b1c10" flood-opacity="0.14"/>
@@ -197,17 +196,16 @@ function renderImpactSvg(metrics) {
       .chart-note { font: italic 10px Georgia, "Times New Roman", serif; fill: #715f43; }
     </style>
   </defs>
-  <rect x="1" y="1" width="758" height="126" rx="10" fill="url(#paper)" stroke="#c9ad73" filter="url(#soft-shadow)"/>
-  <rect x="1" y="1" width="758" height="126" rx="10" fill="url(#dot-grid)" opacity="0.42"/>
+  <rect x="1" y="1" width="758" height="130" rx="10" fill="url(#paper)" stroke="#c9ad73" filter="url(#soft-shadow)"/>
+  <rect x="1" y="1" width="758" height="130" rx="10" fill="url(#dot-grid)" opacity="0.42"/>
   <path d="M1 29H759" stroke="#8f2f1f" stroke-width="5"/>
   <text class="eyebrow" x="28" y="22" fill="#74603d">PUBLIC IMPACT · v${escapeXml(metrics.appVersion)} · ${generatedAt}</text>
   ${cells.map(metricCell).join('')}
-  <g transform="translate(520, 36)">
-    <text class="chart-title" x="0" y="0">VIEWS + CLONES · 14 DAYS</text>
-    <line x1="0" y1="66" x2="204" y2="66" stroke="#c9ad73" stroke-width="1"/>
+  <g transform="translate(522, 38)">
+    <text class="chart-title" x="0" y="0">REPO VIEWS · 14 DAYS</text>
+    <line x1="0" y1="66" x2="176" y2="66" stroke="#c9ad73" stroke-width="1"/>
     <g>
-      ${renderBars(clonesDaily, { x: 0, y: 20, width: 204, height: 46, color: '#8f2f1f', opacity: 0.26 })}
-      ${renderBars(viewsDaily, { x: 0, y: 20, width: 204, height: 46, color: '#1f5f7a', opacity: 0.82 })}
+      ${renderBars(viewsDaily, { x: 0, y: 20, width: 176, height: 46, color: '#1f5f7a', opacity: 0.84 })}
     </g>
   </g>
 </svg>

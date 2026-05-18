@@ -13,7 +13,7 @@ Idiomas: [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](
 ## Impacto
 
 <p align="center">
-  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Impacto de Calabash: descargas, escritorio, vistas del repo y clones" />
+  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Impacto de Calabash: descargas, escritorio, vistas del repo y visitantes" />
 </p>
 
 ![Calabash para leer sin perder el hilo de sospechas y pistas](docs/assets/calabash-github-repo-card-es.png)

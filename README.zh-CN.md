@@ -13,7 +13,7 @@
 ## 影响力快照
 
 <p align="center">
-  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash 影响力快照：发布下载、桌面下载、仓库访问和克隆" />
+  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash 影响力快照：发布下载、桌面下载、仓库访问和访客" />
 </p>
 
 ![Calabash 边读边破案的防剧透案件板](docs/assets/calabash-github-repo-card-zh-CN.png)

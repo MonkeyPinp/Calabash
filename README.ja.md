@@ -13,7 +13,7 @@
 ## インパクトスナップショット
 
 <p align="center">
-  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash impact snapshot: release downloads, desktop downloads, repository views, and clones" />
+  <img src="docs/assets/impact-snapshot.svg" width="760" alt="Calabash impact snapshot: release downloads, desktop downloads, repository views, and visitors" />
 </p>
 
 ![Calabash 読みながら事件を組み立てる読書ボード](docs/assets/calabash-github-repo-card-ja.png)

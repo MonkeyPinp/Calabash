@@ -21,7 +21,7 @@ function tokenFromGhCli() {
   }
 }
 
-const token = process.env.CALABASH_METRICS_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || tokenFromGhCli();
+const token = process.env.CALABASH_METRICS_TOKEN || process.env.CNB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || tokenFromGhCli();
 
 function readPreviousMetrics() {
   try {

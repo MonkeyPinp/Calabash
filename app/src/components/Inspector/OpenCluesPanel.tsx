@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ListTodo, Plus, Trash2 } from 'lucide-react';
+import { Check, ListTodo, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import type { OpenClue } from '@/types';
 import { createOpenClue, deleteOpenClue, listOpenClues, updateOpenClue } from '@/db/books';
 import { isOpenClueVisibleAtChapter } from '@/lib/clues';
@@ -52,9 +52,18 @@ export default function OpenCluesPanel({
     return () => { cancelled = true; };
   }, [bookId]);
 
-  const visibleOpenClues = useMemo(
-    () => clues.filter((clue) => clue.status === 'open' && isOpenClueVisibleAtChapter(clue, currentChapter)),
+  const visibleClues = useMemo(
+    () => clues
+      .filter((clue) => isOpenClueVisibleAtChapter(clue, currentChapter))
+      .sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'open' ? -1 : 1;
+        return a.chapterIntroduced - b.chapterIntroduced || a.createdAt - b.createdAt;
+      }),
     [clues, currentChapter],
+  );
+  const visibleOpenCount = useMemo(
+    () => visibleClues.filter((clue) => clue.status === 'open').length,
+    [visibleClues],
   );
 
   async function handleAdd(e: React.FormEvent) {
@@ -73,6 +82,11 @@ export default function OpenCluesPanel({
 
   async function handleExplain(clue: OpenClue) {
     const updated = await updateOpenClue(bookId, clue.id, { status: 'explained' });
+    setClues((items) => items.map((item) => item.id === clue.id ? updated : item));
+  }
+
+  async function handleReopen(clue: OpenClue) {
+    const updated = await updateOpenClue(bookId, clue.id, { status: 'open' });
     setClues((items) => items.map((item) => item.id === clue.id ? updated : item));
   }
 
@@ -113,7 +127,7 @@ export default function OpenCluesPanel({
             {t('clues.title')}
           </div>
           <div style={{ fontSize: 10.5, color: 'var(--ink-500)', marginTop: 1 }}>
-            {t('clues.visibleCount', { count: visibleOpenClues.length })}
+            {t('clues.visibleCount', { count: visibleOpenCount })}
           </div>
         </div>
       </div>
@@ -137,82 +151,97 @@ export default function OpenCluesPanel({
         </button>
       </form>
 
-      {visibleOpenClues.length === 0 ? (
+      {visibleClues.length === 0 ? (
         <div style={{ fontSize: 11.5, color: 'var(--ink-500)', lineHeight: 1.45, padding: '4px 1px 1px' }}>
           {t('clues.empty')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {visibleOpenClues.map((clue) => (
-            <div
-              key={clue.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '24px 1fr auto 24px',
-                alignItems: 'start',
-                gap: 6,
-                padding: '7px 6px',
-                border: '1px solid var(--ink-150)',
-                borderRadius: 4,
-                background: 'var(--bg-canvas)',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => void handleExplain(clue)}
-                title={t('clues.markExplained')}
-                aria-label={t('clues.markExplained')}
+          {visibleClues.map((clue) => {
+            const explained = clue.status === 'explained';
+            return (
+              <div
+                key={clue.id}
                 style={{
-                  width: 22,
-                  height: 22,
                   display: 'grid',
-                  placeItems: 'center',
+                  gridTemplateColumns: '24px 1fr auto 24px',
+                  alignItems: 'start',
+                  gap: 6,
+                  padding: '7px 6px',
+                  border: '1px solid var(--ink-150)',
                   borderRadius: 4,
-                  border: '1px solid var(--ink-200)',
-                  background: 'var(--bg-panel)',
-                  color: 'var(--ink-500)',
-                  cursor: 'pointer',
+                  background: explained ? 'color-mix(in srgb, var(--bg-canvas) 65%, var(--bg-panel))' : 'var(--bg-canvas)',
+                  opacity: explained ? 0.72 : 1,
                 }}
               >
-                <Check size={12} />
-              </button>
-              <div style={{ minWidth: 0, fontSize: 12, color: 'var(--ink-800)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>
-                {clue.text}
+                <button
+                  type="button"
+                  onClick={() => void (explained ? handleReopen(clue) : handleExplain(clue))}
+                  title={explained ? t('clues.markOpen') : t('clues.markExplained')}
+                  aria-label={explained ? t('clues.markOpen') : t('clues.markExplained')}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: 4,
+                    border: explained ? '1px solid color-mix(in srgb, var(--ink-500) 35%, transparent)' : '1px solid var(--ink-200)',
+                    background: explained ? 'color-mix(in srgb, var(--ink-500) 8%, var(--bg-panel))' : 'var(--bg-panel)',
+                    color: 'var(--ink-500)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {explained ? <RotateCcw size={11} /> : <Check size={12} />}
+                </button>
+                <div
+                  style={{
+                    minWidth: 0,
+                    fontSize: 12,
+                    color: explained ? 'var(--ink-500)' : 'var(--ink-800)',
+                    lineHeight: 1.35,
+                    overflowWrap: 'anywhere',
+                    textDecoration: explained ? 'line-through' : 'none',
+                    textDecorationThickness: explained ? '1px' : undefined,
+                  }}
+                >
+                  {clue.text}
+                </div>
+                <span
+                  style={{
+                    padding: '2px 5px',
+                    border: '1px solid var(--ink-200)',
+                    borderRadius: 3,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 8.5,
+                    color: explained ? 'var(--ink-400)' : 'var(--ink-500)',
+                    background: 'var(--bg-panel)',
+                    whiteSpace: 'nowrap',
+                    textDecoration: explained ? 'line-through' : 'none',
+                  }}
+                >
+                  {t('clues.chapterShort', { chapter: clue.chapterIntroduced })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleDelete(clue)}
+                  title={t('clues.delete')}
+                  aria-label={t('clues.delete')}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    display: 'grid',
+                    placeItems: 'center',
+                    border: '1px solid transparent',
+                    background: 'transparent',
+                    color: 'var(--ink-400)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
               </div>
-              <span
-                style={{
-                  padding: '2px 5px',
-                  border: '1px solid var(--ink-200)',
-                  borderRadius: 3,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 8.5,
-                  color: 'var(--ink-500)',
-                  background: 'var(--bg-panel)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t('clues.chapterShort', { chapter: clue.chapterIntroduced })}
-              </span>
-              <button
-                type="button"
-                onClick={() => void handleDelete(clue)}
-                title={t('clues.delete')}
-                aria-label={t('clues.delete')}
-                style={{
-                  width: 22,
-                  height: 22,
-                  display: 'grid',
-                  placeItems: 'center',
-                  border: '1px solid transparent',
-                  background: 'transparent',
-                  color: 'var(--ink-400)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

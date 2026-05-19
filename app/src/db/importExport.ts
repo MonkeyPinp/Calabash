@@ -268,6 +268,8 @@ function normalizeBookTemplate(payload: Record<string, unknown>): CalabashExport
       socialPosition: stringValue(raw.socialPosition),
       notes: stringValue(raw.notes),
       chapterIntroduced,
+      timeLayerId: normalizeTimeLayerReference(raw.timeLayerId ?? raw.timeLayer ?? raw.layer, timeLayers),
+      timeLayerPositions: normalizeTimeLayerPositions(raw.timeLayerPositions ?? raw.layerPositions, timeLayers),
       position: normalizePoint(raw.position, defaultCharacterPosition(index)),
       locked: booleanValue(raw.locked),
       createdAt: 0,
@@ -458,6 +460,20 @@ function normalizePoint(value: unknown, fallback: { x: number; y: number }): { x
   };
 }
 
+function normalizeTimeLayerPositions(value: unknown, layers: TimeLayer[]): Record<string, { x: number; y: number }> | undefined {
+  if (!isRecord(value)) return undefined;
+  const positions: Record<string, { x: number; y: number }> = {};
+  for (const [key, rawPoint] of Object.entries(value)) {
+    const layerId = normalizeTimeLayerReference(key, layers);
+    if (!layerId) continue;
+    const point = normalizePoint(rawPoint, { x: Number.NaN, y: Number.NaN });
+    if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
+      positions[layerId] = point;
+    }
+  }
+  return Object.keys(positions).length > 0 ? positions : undefined;
+}
+
 function normalizeAliases(value: unknown, name: string, chapterIntroduced: number): Alias[] {
   const aliases = Array.isArray(value)
     ? value.flatMap((item): Alias[] => {
@@ -632,6 +648,8 @@ export async function exportBookTemplateAsJson(bookId: string): Promise<Calabash
       socialPosition: character.socialPosition,
       notes: character.notes,
       chapterIntroduced: character.chapterIntroduced,
+      timeLayerId: character.timeLayerId,
+      timeLayerPositions: character.timeLayerPositions,
       position: character.position,
       locked: character.locked,
     })),

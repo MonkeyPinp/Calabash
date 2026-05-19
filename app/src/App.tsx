@@ -24,6 +24,7 @@ import GlobalSearch from './components/CommandBar/GlobalSearch';
 import { ChapterTotalTooLowError, createBook, getBook, listBooks, updateBook } from './db/books';
 import { listCategories } from './db/categories';
 import { createAnnotation, deleteAnnotation, restoreAnnotation, updateAnnotation } from './db/annotations';
+import { updateCharacter } from './db/characters';
 import { createGroupRange, deleteGroupRange, restoreGroupRange, updateGroupRange } from './db/groupRanges';
 import { createEvidenceImage, deleteEvidenceImage, restoreEvidenceImage, updateEvidenceImage } from './db/evidenceImages';
 import { updateRelationship } from './db/relationships';
@@ -934,6 +935,7 @@ export default function App() {
   const setEvidenceImages = useGraphStore((s) => s.setEvidenceImages);
   const addStickyNote = useGraphStore((s) => s.addStickyNote);
   const removeStickyNote = useGraphStore((s) => s.removeStickyNote);
+  const updateCharacterInStore = useGraphStore((s) => s.updateCharacterInStore);
   const updateRelationshipInStore = useGraphStore((s) => s.updateRelationshipInStore);
   const updateStickyNoteInStore = useGraphStore((s) => s.updateStickyNoteInStore);
   const addGroupRange = useGraphStore((s) => s.addGroupRange);
@@ -1455,6 +1457,7 @@ export default function App() {
 
   function handleTimeLayerChange(id: string) {
     setCurrentTimeLayerId(id);
+    setSelectedCharId(null);
     setSelectedRelId(null);
     setSelectedStickyNoteId(null);
     setSelectedGroupRangeId(null);
@@ -1481,7 +1484,28 @@ export default function App() {
 
       if (removedLayerIds.size > 0) {
         const hasRemovedLayer = (id?: string | null): id is string => Boolean(id && removedLayerIds.has(id));
+        const stripRemovedLayerPositions = (positions?: Record<string, { x: number; y: number }>) => {
+          if (!positions) return { changed: false, positions: undefined };
+          const nextPositions = Object.fromEntries(
+            Object.entries(positions).filter(([layerId]) => !removedLayerIds.has(layerId)),
+          );
+          return {
+            changed: Object.keys(nextPositions).length !== Object.keys(positions).length,
+            positions: Object.keys(nextPositions).length > 0 ? nextPositions : undefined,
+          };
+        };
         await Promise.all([
+          ...characters.filter((character) => {
+            const stripped = stripRemovedLayerPositions(character.timeLayerPositions);
+            return hasRemovedLayer(character.timeLayerId) || stripped.changed;
+          }).map(async (character) => {
+            const stripped = stripRemovedLayerPositions(character.timeLayerPositions);
+            const updated = await updateCharacter(character.id, {
+              ...(hasRemovedLayer(character.timeLayerId) ? { timeLayerId: null } : {}),
+              ...(stripped.changed ? { timeLayerPositions: stripped.positions } : {}),
+            });
+            updateCharacterInStore(updated);
+          }),
           ...relationships.filter((rel) => hasRemovedLayer(rel.timeLayerId)).map(async (rel) => {
             const updated = await updateRelationship(rel.id, { timeLayerId: null });
             updateRelationshipInStore(updated);
@@ -2387,6 +2411,7 @@ export default function App() {
               <CharacterInspector
                 characterId={selectedCharId}
                 bookId={activeBookId}
+                timeLayers={timeLayers}
                 onDeleted={() => setSelectedCharId(null)}
                 onDuplicated={(id) => setSelectedCharId(id)}
               />

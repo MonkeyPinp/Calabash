@@ -41,7 +41,7 @@ import { computeForceLayout } from '@/lib/layout';
 import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
 import { isEvidenceImageVisibleAtChapter } from '@/lib/evidenceImages';
-import { ALL_TIME_LAYERS_ID, isVisibleInTimeLayer } from '@/lib/timeLayers';
+import { ALL_TIME_LAYERS_ID, isVisibleInTimeLayer, resolveTimeLayerPosition } from '@/lib/timeLayers';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -56,6 +56,22 @@ type LayoutMove = {
   before: { x: number; y: number };
   after: { x: number; y: number };
 };
+
+function characterPositionPatchForLayer(
+  character: Character,
+  position: { x: number; y: number },
+  currentTimeLayerId: string,
+): Pick<Character, 'position'> | Pick<Character, 'timeLayerPositions'> {
+  if (currentTimeLayerId === ALL_TIME_LAYERS_ID || character.timeLayerId) {
+    return { position };
+  }
+  return {
+    timeLayerPositions: {
+      ...(character.timeLayerPositions ?? {}),
+      [currentTimeLayerId]: position,
+    },
+  };
+}
 
 const DEFAULT_CHARACTER_NODE_WIDTH = 184;
 const CHARACTER_NODE_MAX_WIDTH = 440;
@@ -274,7 +290,12 @@ function CalabashCanvasInner({
       const positionById = new Map(moves.map((move) => [move.id, move[phase]]));
       await Promise.all(
         moves.map(async (move) => {
-          const updated = await updateCharacter(move.id, { position: move[phase] });
+          const character = useGraphStore.getState().characters.find((item) => item.id === move.id);
+          if (!character) return;
+          const updated = await updateCharacter(
+            move.id,
+            characterPositionPatchForLayer(character, move[phase], currentTimeLayerId),
+          );
           updateCharacterInStore(updated);
         }),
       );
@@ -288,7 +309,7 @@ function CalabashCanvasInner({
       );
       scheduleFitView();
     },
-    [scheduleFitView, updateCharacterInStore],
+    [currentTimeLayerId, scheduleFitView, updateCharacterInStore],
   );
 
   useEffect(() => {
@@ -300,7 +321,10 @@ function CalabashCanvasInner({
   const characterNodes: Node[] = useMemo(
     () =>
       characters
-        .filter((c) => c.chapterIntroduced <= currentChapter)
+        .filter((c) => (
+          c.chapterIntroduced <= currentChapter &&
+          isVisibleInTimeLayer(c.timeLayerId, currentTimeLayerId)
+        ))
         .map((c) => {
           const name = resolveDisplayName(c.aliases, currentChapter);
           const kind = normalizeCharacterKind(c.kind);
@@ -313,7 +337,7 @@ function CalabashCanvasInner({
           return {
             id: c.id,
             type: 'character',
-            position: c.position,
+            position: resolveTimeLayerPosition(c, currentTimeLayerId),
             width,
             height,
             draggable: !boardLocked && c.locked !== true,
@@ -332,7 +356,7 @@ function CalabashCanvasInner({
             },
           };
         }),
-    [characters, currentChapter, characterNodeViewMode, t, boardLocked],
+    [characters, currentChapter, currentTimeLayerId, characterNodeViewMode, t, boardLocked],
   );
 
   // Sticky note nodes
@@ -507,7 +531,10 @@ function CalabashCanvasInner({
 
   const runLayout = useCallback(async () => {
     if (!bookId || boardLocked) return;
-    const visible = characters.filter((c) => c.chapterIntroduced <= currentChapter);
+    const visible = characters.filter((c) => (
+      c.chapterIntroduced <= currentChapter &&
+      isVisibleInTimeLayer(c.timeLayerId, currentTimeLayerId)
+    ));
     const visibleIds = new Set(visible.map((c) => c.id));
     const nodeSizes = new Map(
       visible.map((c) => {
@@ -542,10 +569,11 @@ function CalabashCanvasInner({
       .map((c): LayoutMove | null => {
         const pos = positions.get(c.id);
         if (!pos) return null;
-        if (c.position.x === pos.x && c.position.y === pos.y) return null;
+        const before = resolveTimeLayerPosition(c, currentTimeLayerId);
+        if (before.x === pos.x && before.y === pos.y) return null;
         return {
           id: c.id,
-          before: { x: c.position.x, y: c.position.y },
+          before,
           after: pos,
         };
       })
@@ -861,9 +889,30 @@ function CalabashCanvasInner({
       if (node.type === 'character') {
         const char = characters.find((c) => c.id === node.id);
         if (!char) return;
-        void updateCharacter(node.id, { position: newPos });
-        updateCharacterInStore({ ...char, position: newPos });
-        // Character position undo is optional; skip for now to keep undo stack cleaner
+        const newPatch = characterPositionPatchForLayer(char, newPos, currentTimeLayerId);
+        void updateCharacter(node.id, newPatch);
+        updateCharacterInStore({ ...char, ...newPatch });
+        if (oldPos && (oldPos.x !== newPos.x || oldPos.y !== newPos.y)) {
+          const oldPatch = characterPositionPatchForLayer(char, oldPos, currentTimeLayerId);
+          pushUndo(
+            async () => {
+              const latest = useGraphStore.getState().characters.find((c) => c.id === node.id) ?? char;
+              const updated = await updateCharacter(
+                node.id,
+                characterPositionPatchForLayer(latest, oldPos, currentTimeLayerId),
+              );
+              updateCharacterInStore(updated);
+            },
+            async () => {
+              const latest = useGraphStore.getState().characters.find((c) => c.id === node.id) ?? { ...char, ...oldPatch };
+              const updated = await updateCharacter(
+                node.id,
+                characterPositionPatchForLayer(latest, newPos, currentTimeLayerId),
+              );
+              updateCharacterInStore(updated);
+            },
+          );
+        }
       } else if (node.type === 'stickyNote') {
         const note = stickyNotes.find((s) => s.id === node.id);
         if (!note) return;
@@ -900,7 +949,7 @@ function CalabashCanvasInner({
         }
       }
     },
-    [bookId, boardLocked, lockedNodeIds, characters, stickyNotes, groupRanges, evidenceImages, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, updateEvidenceImageInStore, pushUndo],
+    [bookId, boardLocked, lockedNodeIds, characters, stickyNotes, groupRanges, evidenceImages, currentTimeLayerId, updateCharacterInStore, updateStickyNoteInStore, updateGroupRangeInStore, updateEvidenceImageInStore, pushUndo],
   );
 
   const toggleBoardLocked = useCallback(() => {
@@ -1295,6 +1344,7 @@ function CalabashCanvasInner({
           position={pendingPosition}
           bookId={bookId}
           currentChapter={currentChapter}
+          timeLayerId={currentTimeLayerId === ALL_TIME_LAYERS_ID ? null : currentTimeLayerId}
           onClose={() => setPendingPosition(null)}
           onCreated={() => setPendingPosition(null)}
         />

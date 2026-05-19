@@ -15,6 +15,8 @@ export interface CreateCharacterInput {
   socialPosition?: string;
   notes?: string;
   portraitId?: string;
+  timeLayerId?: string | null;
+  timeLayerPositions?: Record<string, { x: number; y: number }>;
   position?: { x: number; y: number };
   locked?: boolean;
 }
@@ -34,6 +36,8 @@ export async function createCharacter(input: CreateCharacterInput): Promise<Char
     notes: input.notes,
     portraitId: input.portraitId,
     chapterIntroduced: input.chapterIntroduced,
+    timeLayerId: input.timeLayerId ?? null,
+    timeLayerPositions: input.timeLayerPositions,
     position: input.position ?? { x: 0, y: 0 },
     locked: input.locked === true,
     createdAt: now,

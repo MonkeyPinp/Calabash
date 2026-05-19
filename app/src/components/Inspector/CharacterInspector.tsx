@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2, Copy, Lock, Unlock } from 'lucide-react';
-import type { Alias, CharacterKind } from '@/types';
+import type { Alias, CharacterKind, TimeLayer } from '@/types';
 import { updateCharacter, deleteCharacter, restoreCharacter, createCharacter } from '@/db/characters';
 import { deleteRelationship, restoreRelationship } from '@/db/relationships';
 import { savePortrait, getPortrait } from '@/db/portraits';
@@ -15,6 +15,7 @@ import {
 } from '@/lib/roles';
 import { syncPrimaryAliasForNameEdit } from '@/lib/characterNames';
 import PresetTextInput from '@/components/Form/PresetTextInput';
+import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -45,11 +46,18 @@ const fieldStyle: React.CSSProperties = {
 export interface CharacterInspectorProps {
   characterId: string;
   bookId: string;
+  timeLayers?: TimeLayer[];
   onDeleted?: () => void;
   onDuplicated?: (newId: string) => void;
 }
 
-export default function CharacterInspector({ characterId, bookId, onDeleted, onDuplicated }: CharacterInspectorProps) {
+export default function CharacterInspector({
+  characterId,
+  bookId,
+  timeLayers = [],
+  onDeleted,
+  onDuplicated,
+}: CharacterInspectorProps) {
   const t = useT();
   const characters = useGraphStore((s) => s.characters);
   const relationships = useGraphStore((s) => s.relationships);
@@ -145,6 +153,7 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
       profession: character.profession,
       socialPosition: character.socialPosition,
       notes: character.notes,
+      timeLayerId: character.timeLayerId ?? null,
       position: { x: character.position.x + 40, y: character.position.y + 40 },
     });
     addCharacter(copy);
@@ -208,6 +217,22 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
   function handleNotesBlur(e: React.FocusEvent<HTMLTextAreaElement>) {
     const val = e.target.value;
     if (val !== (character!.notes ?? '')) void persist({ notes: val || undefined });
+  }
+
+  async function handleTimeLayerChange(timeLayerId: string | null) {
+    const before = character!.timeLayerId ?? null;
+    if (timeLayerId === before) return;
+    await persist({ timeLayerId });
+    pushUndo(
+      async () => {
+        const updated = await updateCharacter(characterId, { timeLayerId: before });
+        updateCharacterInStore(updated);
+      },
+      async () => {
+        const updated = await updateCharacter(characterId, { timeLayerId });
+        updateCharacterInStore(updated);
+      },
+    );
   }
 
   // ── Alias handlers ──────────────────────────────────────────────────────────
@@ -431,6 +456,17 @@ export default function CharacterInspector({ characterId, bookId, onDeleted, onD
           onBlur={handleChapterBlur}
         />
       </div>
+
+      {timeLayers.length > 0 && (
+        <div style={fieldStyle}>
+          <label style={labelStyle}>{t('timeLayer.field')}</label>
+          <TimeLayerSelect
+            layers={timeLayers}
+            value={character.timeLayerId}
+            onChange={(timeLayerId) => void handleTimeLayerChange(timeLayerId)}
+          />
+        </div>
+      )}
 
       {/* Profession */}
       <div style={fieldStyle}>

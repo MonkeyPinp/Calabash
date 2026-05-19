@@ -83,6 +83,19 @@ export function isVisibleInTimeLayer(itemTimeLayerId: string | null | undefined,
   return itemTimeLayerId === currentTimeLayerId;
 }
 
+export function resolveTimeLayerPosition(
+  item: {
+    position: { x: number; y: number };
+    timeLayerId?: string | null;
+    timeLayerPositions?: Record<string, { x: number; y: number }>;
+  },
+  currentTimeLayerId: string,
+): { x: number; y: number } {
+  if (currentTimeLayerId === ALL_TIME_LAYERS_ID) return item.position;
+  if (item.timeLayerId) return item.position;
+  return item.timeLayerPositions?.[currentTimeLayerId] ?? item.position;
+}
+
 export function getTimeLayerName(layers: TimeLayer[], id: string | null | undefined): string | undefined {
   if (!id) return undefined;
   return layers.find((layer) => layer.id === id)?.name ?? id;

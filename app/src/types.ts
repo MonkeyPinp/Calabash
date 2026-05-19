@@ -74,6 +74,8 @@ export interface Character {
   notes?: string;
   portraitId?: string;
   chapterIntroduced: number;
+  timeLayerId?: string | null;
+  timeLayerPositions?: Record<string, { x: number; y: number }>;
   position: { x: number; y: number };
   locked?: boolean;
   createdAt: number;

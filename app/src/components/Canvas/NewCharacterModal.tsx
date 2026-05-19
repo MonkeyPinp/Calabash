@@ -37,6 +37,7 @@ export interface NewCharacterModalProps {
   position: { x: number; y: number };
   bookId: string;
   currentChapter: number;
+  timeLayerId?: string | null;
   onClose: () => void;
   onCreated: (char: Character) => void;
 }
@@ -45,6 +46,7 @@ export default function NewCharacterModal({
   position,
   bookId,
   currentChapter,
+  timeLayerId = null,
   onClose,
   onCreated,
 }: NewCharacterModalProps) {
@@ -78,6 +80,7 @@ export default function NewCharacterModal({
       role: normalizeCharacterRole(values.role),
       profession: values.profession || undefined,
       chapterIntroduced: values.chapterIntroduced,
+      timeLayerId,
       position,
     });
     addCharacter(char);

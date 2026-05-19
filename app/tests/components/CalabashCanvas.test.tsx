@@ -203,6 +203,44 @@ describe('CalabashCanvas', () => {
     expect(screen.queryByText('FutureGuy')).not.toBeInTheDocument();
   });
 
+  it('shows global characters on every time layer and scoped characters only on their layer', () => {
+    const loopOnly: Character = {
+      ...characters[1],
+      id: 'loop-only',
+      name: 'Loop 2 clue',
+      aliases: [{ name: 'Loop 2 clue', chapterRevealed: 1 }],
+      timeLayerId: 'loop-2',
+    };
+    const { rerender } = render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[characters[0], loopOnly]}
+          relationships={[]}
+          currentChapter={10}
+          currentTimeLayerId="loop-1"
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('Poirot')).toBeInTheDocument();
+    expect(screen.queryByText('Loop 2 clue')).not.toBeInTheDocument();
+
+    rerender(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={[characters[0], loopOnly]}
+          relationships={[]}
+          currentChapter={10}
+          currentTimeLayerId="loop-2"
+          bookId={null}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText('Loop 2 clue')).toBeInTheDocument();
+  });
+
   it('shows sticky notes only after their display chapter and renders their episode tag', () => {
     const { rerender } = render(
       <div style={{ width: 800, height: 600 }}>
@@ -312,6 +350,41 @@ describe('CalabashCanvas', () => {
     });
 
     await expect(db.characters.get('a')).resolves.toMatchObject({ position: { x: 50, y: 60 } });
+  });
+
+  it('stores auto-layout moves as layer-specific positions when a time layer is selected', async () => {
+    const layoutCharacters = characters.map((character) => ({ ...character }));
+    await db.characters.bulkPut(layoutCharacters);
+    useGraphStore.setState({ characters: layoutCharacters });
+
+    let runLayout: (() => Promise<void>) | undefined;
+    render(
+      <div style={{ width: 800, height: 600 }}>
+        <CalabashCanvas
+          characters={layoutCharacters}
+          relationships={[]}
+          currentChapter={10}
+          currentTimeLayerId="loop-2"
+          bookId="b"
+          onLayoutReady={(fn) => { runLayout = fn; }}
+        />
+      </div>,
+    );
+
+    await waitFor(() => expect(runLayout).toBeTypeOf('function'));
+
+    await act(async () => {
+      await runLayout?.();
+    });
+
+    await expect(db.characters.get('a')).resolves.toMatchObject({
+      position: { x: 0, y: 0 },
+      timeLayerPositions: { 'loop-2': { x: 50, y: 60 } },
+    });
+    expect(useGraphStore.getState().characters.find((character) => character.id === 'a')).toMatchObject({
+      position: { x: 0, y: 0 },
+      timeLayerPositions: { 'loop-2': { x: 50, y: 60 } },
+    });
   });
 
   it('shows group ranges only after their display chapter and renders their chapter tag', () => {

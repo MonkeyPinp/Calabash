@@ -73,6 +73,8 @@ describe('importExport', () => {
       bookId: book.id, name: 'James Sheppard', role: 'witness',
       roleReveals: [{ role: 'murderer', chapterRevealed: 27 }],
       chapterIntroduced: 1,
+      timeLayerId: 'loop-2',
+      timeLayerPositions: { 'loop-2': { x: 240, y: 80 } },
     });
     await createRelationship({
       bookId: book.id, sourceId: c1.id, targetId: c2.id,
@@ -112,6 +114,8 @@ describe('importExport', () => {
       { id: 'loop-2', name: 'Loop 2', order: 2, color: '#8f2f1f' },
     ]);
     expect(exported.book.defaultTimeLayerId).toBe('loop-2');
+    expect(exported.characters.find((c) => c.name === 'James Sheppard')?.timeLayerId).toBe('loop-2');
+    expect(exported.characters.find((c) => c.name === 'James Sheppard')?.timeLayerPositions?.['loop-2']).toEqual({ x: 240, y: 80 });
     expect(exported.relationships[0].timeLayerId).toBe('loop-2');
     expect(exported.portraits[0].dataUrl).toMatch(/^data:image\/png;base64,/);
     expect(exported.annotations).toHaveLength(1);
@@ -143,6 +147,8 @@ describe('importExport', () => {
     expect(reChars.find((c) => c.name === 'James Sheppard')?.roleReveals).toEqual([
       { role: 'murderer', chapterRevealed: 27 },
     ]);
+    expect(reChars.find((c) => c.name === 'James Sheppard')?.timeLayerId).toBe('loop-2');
+    expect(reChars.find((c) => c.name === 'James Sheppard')?.timeLayerPositions?.['loop-2']).toEqual({ x: 240, y: 80 });
 
     const reRels = await listRelationshipsByBook(newBookId);
     expect(reRels).toHaveLength(1);

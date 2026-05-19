@@ -41,6 +41,20 @@ describe('characters DAO', () => {
     await expect(updateCharacter(c.id, { kind: 'item' })).resolves.toMatchObject({ kind: 'item' });
   });
 
+  it('stores time layer scope and layer-specific positions on character rows', async () => {
+    const c = await createCharacter({
+      bookId: BOOK_ID,
+      name: 'Second loop clue',
+      chapterIntroduced: 1,
+      timeLayerId: 'loop-2',
+      timeLayerPositions: { 'loop-2': { x: 80, y: 120 } },
+    });
+
+    expect(c.timeLayerId).toBe('loop-2');
+    expect(c.timeLayerPositions?.['loop-2']).toEqual({ x: 80, y: 120 });
+    await expect(updateCharacter(c.id, { timeLayerId: null })).resolves.toMatchObject({ timeLayerId: null });
+  });
+
   it('createCharacter accepts custom aliases and position', async () => {
     const c = await createCharacter({
       bookId: BOOK_ID,

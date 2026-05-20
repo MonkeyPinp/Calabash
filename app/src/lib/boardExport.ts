@@ -1,5 +1,5 @@
 import type { Node } from '@xyflow/react';
-import { toBlob } from 'html-to-image';
+import { getFontEmbedCSS, toBlob } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
 export type BoardExportFormat = 'png' | 'pdf';
@@ -14,6 +14,7 @@ export type BoardExportFn = (options: BoardExportOptions) => Promise<Blob>;
 const EXPORT_PADDING = 96;
 const EXPORT_MAX_LONG_SIDE = 2600;
 const EXPORT_MIN_LONG_SIDE = 1200;
+let cachedFontEmbedCSS: Promise<string> | null = null;
 
 interface ExportBounds {
   minX: number;
@@ -75,9 +76,14 @@ export async function exportReactFlowBoard(input: {
   options: BoardExportOptions;
 }): Promise<Blob> {
   const viewport = input.container?.querySelector<HTMLElement>('.react-flow__viewport');
-  const bounds = getVisibleNodeBounds(input.nodes);
+  const nodeBounds = getVisibleNodeBounds(input.nodes);
+  const bounds = viewport && nodeBounds
+    ? mergeVisualExtentBounds(nodeBounds, viewport)
+    : nodeBounds;
   if (!viewport || !bounds) throw new Error('No board content to export');
 
+  await waitForDocumentFonts();
+  const fontEmbedCSS = await getCachedFontEmbedCSS(viewport);
   const dimensions = getBoardExportDimensions(bounds);
   const backgroundColor = input.options.transparent
     ? 'transparent'
@@ -87,6 +93,7 @@ export async function exportReactFlowBoard(input: {
     backgroundColor,
     // Portraits are backed by blob: URLs; adding cache-busting query params breaks them.
     cacheBust: false,
+    fontEmbedCSS,
     width: dimensions.width,
     height: dimensions.height,
     pixelRatio: 1,
@@ -117,6 +124,71 @@ export async function exportReactFlowBoard(input: {
   });
   pdf.addImage(await blobToDataUrl(pngBlob), 'PNG', 0, 0, dimensions.width, dimensions.height);
   return pdf.output('blob');
+}
+
+export function warmReactFlowBoardExport(container: HTMLElement | null) {
+  const viewport = container?.querySelector<HTMLElement>('.react-flow__viewport');
+  if (!viewport) return;
+
+  void waitForDocumentFonts()
+    .then(() => getCachedFontEmbedCSS(viewport))
+    .catch(() => undefined);
+}
+
+async function getCachedFontEmbedCSS(viewport: HTMLElement) {
+  cachedFontEmbedCSS ??= getFontEmbedCSS(viewport, {
+    cacheBust: false,
+    preferredFontFormat: 'woff2',
+  }).catch((error) => {
+    cachedFontEmbedCSS = null;
+    throw error;
+  });
+
+  try {
+    return await cachedFontEmbedCSS;
+  } catch {
+    return undefined;
+  }
+}
+
+export function mergeVisualExtentBounds(bounds: ExportBounds, viewport: HTMLElement): ExportBounds {
+  const viewportRect = viewport.getBoundingClientRect();
+  const { scaleX, scaleY } = getViewportScale(viewport);
+  if (viewportRect.width <= 0 || viewportRect.height <= 0 || scaleX <= 0 || scaleY <= 0) return bounds;
+
+  let next = bounds;
+  viewport.querySelectorAll<HTMLElement | SVGElement>('[data-board-export-extent]').forEach((element) => {
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    next = {
+      minX: Math.min(next.minX, (rect.left - viewportRect.left) / scaleX),
+      minY: Math.min(next.minY, (rect.top - viewportRect.top) / scaleY),
+      maxX: Math.max(next.maxX, (rect.right - viewportRect.left) / scaleX),
+      maxY: Math.max(next.maxY, (rect.bottom - viewportRect.top) / scaleY),
+    };
+  });
+
+  return next;
+}
+
+function getViewportScale(viewport: HTMLElement) {
+  const transform = getComputedStyle(viewport).transform;
+  if (!transform || transform === 'none') return { scaleX: 1, scaleY: 1 };
+
+  const matrix = new DOMMatrixReadOnly(transform);
+  const scaleX = Math.abs(matrix.a) || 1;
+  const scaleY = Math.abs(matrix.d) || scaleX;
+  return { scaleX, scaleY };
+}
+
+async function waitForDocumentFonts() {
+  if (typeof document === 'undefined' || !('fonts' in document)) return;
+
+  try {
+    await document.fonts.ready;
+  } catch {
+    // Export can still proceed with fallback fonts if the browser rejects font readiness.
+  }
 }
 
 function cssVar(name: string, fallback: string) {

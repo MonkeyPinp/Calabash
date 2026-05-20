@@ -42,7 +42,7 @@ import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
 import { isEvidenceImageVisibleAtChapter } from '@/lib/evidenceImages';
 import { ALL_TIME_LAYERS_ID, isVisibleInTimeLayer, resolveTimeLayerPosition } from '@/lib/timeLayers';
-import { exportReactFlowBoard, type BoardExportFn } from '@/lib/boardExport';
+import { exportReactFlowBoard, warmReactFlowBoardExport, type BoardExportFn } from '@/lib/boardExport';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -603,6 +603,14 @@ function CalabashCanvasInner({
   useEffect(() => {
     onExportReady?.(exportBoard);
   }, [onExportReady, exportBoard]);
+
+  useEffect(() => {
+    if (!bookId) return;
+    const timeout = window.setTimeout(() => {
+      warmReactFlowBoardExport(containerRef.current);
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [bookId]);
 
   // ── Selection handlers ─────────────────────────────────────────────────────
 

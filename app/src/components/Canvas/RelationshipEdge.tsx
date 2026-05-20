@@ -121,6 +121,7 @@ function RelationshipEdgeImpl(props: EdgeProps) {
         >
           <div
             data-testid="certainty-badge"
+            data-board-export-extent="true"
             onClick={(event) => void handleBadgeClick(event)}
             style={{
               pointerEvents: 'all',

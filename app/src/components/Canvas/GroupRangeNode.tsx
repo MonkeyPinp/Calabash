@@ -194,6 +194,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
         <div
           className="nodrag nopan"
           data-testid="group-range-label"
+          data-board-export-extent="true"
           onPointerDown={handleLabelPointerDown}
           onPointerMove={handleLabelPointerMove}
           onPointerUp={handleLabelPointerUp}
@@ -228,6 +229,7 @@ function GroupRangeNodeImpl(props: NodeProps) {
         </div>
         <div
           title={`Visible from chapter ${range.chapterIntroduced}`}
+          data-board-export-extent="true"
           style={{
             position: 'absolute',
             right: 28,

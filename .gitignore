@@ -17,6 +17,7 @@ dist-ssr/
 coverage/
 playwright-report/
 test-results/
+output/
 *.tsbuildinfo
 src-tauri/gen/
 src-tauri/target/

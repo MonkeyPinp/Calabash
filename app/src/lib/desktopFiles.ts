@@ -1,4 +1,8 @@
 const CALABASH_JSON_FILTERS = [{ name: 'Calabash JSON', extensions: ['json'] }];
+const BOARD_EXPORT_FILTERS = {
+  png: [{ name: 'PNG image', extensions: ['png'] }],
+  pdf: [{ name: 'PDF document', extensions: ['pdf'] }],
+};
 const BACKUP_DIR = 'backups';
 
 type TauriWindow = Window & { __TAURI_INTERNALS__?: unknown };
@@ -51,6 +55,29 @@ export async function saveDesktopTextFile(input: {
   if (!selected) return null;
 
   await writeTextFile(selected, input.text);
+  return selected;
+}
+
+export async function saveDesktopBinaryFile(input: {
+  title: string;
+  defaultPath: string;
+  bytes: Uint8Array;
+  extension: 'png' | 'pdf';
+}): Promise<string | null> {
+  if (!isDesktopRuntime()) return null;
+  const [{ save }, { writeFile }] = await Promise.all([
+    import('@tauri-apps/plugin-dialog'),
+    import('@tauri-apps/plugin-fs'),
+  ]);
+
+  const selected = await save({
+    title: input.title,
+    defaultPath: input.defaultPath,
+    filters: BOARD_EXPORT_FILTERS[input.extension],
+  });
+  if (!selected) return null;
+
+  await writeFile(selected, input.bytes);
   return selected;
 }
 

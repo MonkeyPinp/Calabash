@@ -42,6 +42,7 @@ import { isStickyNoteVisibleAtChapter } from '@/lib/stickyNotes';
 import { GROUP_RANGE_COLOR_MAP, isGroupRangeVisibleAtChapter } from '@/lib/groupRanges';
 import { isEvidenceImageVisibleAtChapter } from '@/lib/evidenceImages';
 import { ALL_TIME_LAYERS_ID, isVisibleInTimeLayer, resolveTimeLayerPosition } from '@/lib/timeLayers';
+import { exportReactFlowBoard, type BoardExportFn } from '@/lib/boardExport';
 import { useGraphStore } from '@/stores/graphStore';
 import { useT } from '@/i18n';
 import type { CharacterNodeViewMode } from '@/stores/uiStore';
@@ -191,6 +192,7 @@ export interface CalabashCanvasProps {
   onRequestInspector?: () => void;
   onFitViewReady?: (fn: () => void) => void;
   onLayoutReady?: (fn: () => Promise<void>) => void;
+  onExportReady?: (fn: BoardExportFn) => void;
 }
 
 function CalabashCanvasInner({
@@ -216,6 +218,7 @@ function CalabashCanvasInner({
   onRequestInspector,
   onFitViewReady,
   onLayoutReady,
+  onExportReady,
 }: CalabashCanvasProps) {
   const t = useT();
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
@@ -591,6 +594,15 @@ function CalabashCanvasInner({
   useEffect(() => {
     onLayoutReady?.(runLayout);
   }, [onLayoutReady, runLayout]);
+
+  const exportBoard = useCallback<BoardExportFn>(
+    (options) => exportReactFlowBoard({ container: containerRef.current, nodes: rfNodes, options }),
+    [rfNodes],
+  );
+
+  useEffect(() => {
+    onExportReady?.(exportBoard);
+  }, [onExportReady, exportBoard]);
 
   // ── Selection handlers ─────────────────────────────────────────────────────
 

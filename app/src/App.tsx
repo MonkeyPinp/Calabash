@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowRight, BookOpen, CircleDashed, Clock3, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, CircleDashed, Clock3, Download, FilePlus2, FileText, Github, Image as ImageIcon, Moon, Sun, PanelLeft, PanelRight, Undo2, Redo2, LayoutGrid, StickyNote, Shield, ShieldOff, Settings as SettingsIcon, Search, Upload, UserPlus } from 'lucide-react';
 import CalabashCanvas from './components/Canvas/CalabashCanvas';
 import ChapterSlider, { type ChapterSliderMark } from './components/Canvas/ChapterSlider';
 import BookList from './components/Sidebar/BookList';
@@ -31,12 +31,13 @@ import { updateRelationship } from './db/relationships';
 import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
-import { isDesktopRuntime, openDesktopJsonFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
+import { isDesktopRuntime, openDesktopJsonFile, saveDesktopBinaryFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
 import { ALL_TIME_LAYERS_ID, resolveDefaultTimeLayerId } from './lib/timeLayers';
 import { useT } from './i18n';
 import type { Book, Category, EvidenceImageKind, TimeLayer } from './types';
 import type { CharacterNodeViewMode } from './stores/uiStore';
 import { EVIDENCE_IMAGE_DEFAULT_HEIGHT, EVIDENCE_IMAGE_DEFAULT_WIDTH } from './lib/evidenceImages';
+import type { BoardExportFn, BoardExportFormat } from './lib/boardExport';
 
 const GITHUB_URL = 'https://github.com/Guesswhat-Studio/Calabash';
 const ONBOARDING_SEEN_KEY = 'calabash-onboarding-seen';
@@ -481,6 +482,18 @@ function slugifyFilePart(value: string): string {
     || 'case';
 }
 
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function inferEvidenceImageKind(fileName: string): EvidenceImageKind {
   const normalized = fileName.toLowerCase();
   if (/floor|plan|map|layout|平面|地图|地圖/.test(normalized)) return 'floorPlan';
@@ -901,6 +914,8 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [timeLayerManagerOpen, setTimeLayerManagerOpen] = useState(false);
   const [timeLayerSaving, setTimeLayerSaving] = useState(false);
+  const [boardExportMenuOpen, setBoardExportMenuOpen] = useState(false);
+  const [boardExportBusy, setBoardExportBusy] = useState(false);
   const libraryImportInputRef = useRef<HTMLInputElement>(null);
   const evidenceImageInputRef = useRef<HTMLInputElement>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -968,6 +983,26 @@ export default function App() {
   useEffect(() => () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }, []);
+
+  useEffect(() => {
+    if (!boardExportMenuOpen) return;
+
+    const closeMenu = (event: MouseEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('[data-board-export-menu]')) return;
+      setBoardExportMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setBoardExportMenuOpen(false);
+    };
+
+    window.addEventListener('mousedown', closeMenu);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('mousedown', closeMenu);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [boardExportMenuOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1057,6 +1092,11 @@ export default function App() {
     layoutRef.current = fn;
   }, []);
 
+  const boardExportRef = useRef<BoardExportFn | undefined>(undefined);
+  const handleBoardExportReady = useCallback((fn: BoardExportFn) => {
+    boardExportRef.current = fn;
+  }, []);
+
   async function handleExport() {
     try {
       const data = await exportLibraryAsJson();
@@ -1113,6 +1153,49 @@ export default function App() {
     } catch (error) {
       console.error('Failed to export Calabash template', error);
       alert(t('app.exportTemplateFailed'));
+    }
+  }
+
+  async function handleExportBoardImage(format: BoardExportFormat) {
+    setBoardExportMenuOpen(false);
+    if (!boardExportRef.current || !activeBookSummary || spoilerShieldCoverActive) {
+      alert(t('boardExport.noBoard'));
+      return;
+    }
+
+    setBoardExportBusy(true);
+    try {
+      const blob = await boardExportRef.current({
+        format,
+        transparent: true,
+      });
+      const extension = format;
+      const chapter = String(currentChapter).padStart(2, '0');
+      const fileName = [
+        'calabash-board',
+        slugifyFilePart(activeBookSummary.title),
+        `ch-${chapter}`,
+        'transparent',
+      ].filter(Boolean).join('-') + `.${extension}`;
+
+      if (isDesktopRuntime()) {
+        const path = await saveDesktopBinaryFile({
+          title: t('boardExport.saveTitle'),
+          defaultPath: fileName,
+          bytes: new Uint8Array(await blob.arrayBuffer()),
+          extension,
+        });
+        if (path) showToast(t('app.exportSaved', { path }));
+      } else {
+        downloadBlob(blob, fileName);
+        showToast(t('boardExport.downloaded', { name: fileName }));
+      }
+
+    } catch (error) {
+      console.error('Failed to export Calabash board image', error);
+      alert(t('boardExport.failed'));
+    } finally {
+      setBoardExportBusy(false);
     }
   }
 
@@ -1326,6 +1409,7 @@ export default function App() {
     revealedSpoilerKey !== currentSpoilerKey;
   const shieldButtonActive = spoilerShield && currentSpoilerKey !== null;
   const shieldButtonGuarding = spoilerShieldCoverActive;
+  const boardExportDisabled = !activeBookId || !activeBookSummary || spoilerShieldCoverActive || boardExportBusy;
   const chapterMarks = useMemo<ChapterSliderMark[]>(() => {
     const next = new Map<number, ChapterSliderMark>();
     const addReveal = (chapter: number) => {
@@ -2088,6 +2172,87 @@ export default function App() {
             <span className="toolbar-label">{t('app.shield')}</span>
           </button>
 
+          <div data-board-export-menu style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              type="button"
+              className="toolbar-btn"
+              onClick={() => setBoardExportMenuOpen((open) => !open)}
+              disabled={boardExportDisabled}
+              aria-haspopup="menu"
+              aria-expanded={boardExportMenuOpen}
+              title={t('app.exportBoardImage')}
+              style={{
+                ...toolbarBtnStyle,
+                opacity: boardExportDisabled ? 0.45 : 1,
+                cursor: boardExportDisabled ? 'not-allowed' : 'pointer',
+                borderColor: boardExportMenuOpen ? 'var(--ink-300)' : 'transparent',
+                background: boardExportMenuOpen ? 'var(--bg-hover)' : 'transparent',
+              }}
+            >
+              <Download size={13} />
+              <span className="toolbar-label">
+                {boardExportBusy ? t('boardExport.exporting') : t('app.exportBoardImage')}
+              </span>
+              <ChevronDown className="toolbar-label" size={12} />
+            </button>
+            {boardExportMenuOpen && !boardExportDisabled && (
+              <div
+                role="menu"
+                aria-label={t('app.exportBoardImage')}
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 7px)',
+                  right: 0,
+                  zIndex: 80,
+                  minWidth: 174,
+                  padding: 5,
+                  display: 'grid',
+                  gap: 3,
+                  background: 'var(--bg-panel)',
+                  border: '1px solid var(--ink-200)',
+                  borderRadius: 7,
+                  boxShadow: 'var(--shadow-modal)',
+                }}
+              >
+                {(['png', 'pdf'] as const).map((format) => (
+                  <button
+                    key={format}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void handleExportBoardImage(format)}
+                    style={{
+                      minHeight: 34,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '0 10px',
+                      border: '1px solid transparent',
+                      borderRadius: 5,
+                      background: 'transparent',
+                      color: 'var(--ink-800)',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.background = 'var(--bg-hover)';
+                      event.currentTarget.style.borderColor = 'var(--ink-150)';
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.background = 'transparent';
+                      event.currentTarget.style.borderColor = 'transparent';
+                    }}
+                  >
+                    {format === 'png' ? <ImageIcon size={13} /> : <FileText size={13} />}
+                    <span>{t(format === 'png' ? 'boardExport.png' : 'boardExport.pdf')}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="toolbar-divider" style={dividerStyle} />
 
           {/* Inspector toggle */}
@@ -2325,6 +2490,7 @@ export default function App() {
                   }}
                   onFitViewReady={handleFitViewReady}
                   onLayoutReady={handleLayoutReady}
+                  onExportReady={handleBoardExportReady}
                 />
               </div>
               {timeLayers.length > 0 && !spoilerShieldCoverActive && (

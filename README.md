@@ -44,13 +44,14 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Open text fields**: roles and relationship types are suggestions, not hard limits.
 - **Sticky notes and groups**: keep clues near the board and draw colored group regions behind characters.
 - **Illustrations**: pin floor plans, screenshots, and other visual references above or below the board.
+- **Board export**: export the current board as a transparent PNG or PDF from the top toolbar.
 - **Starter imports**: start a new book from a single-book JSON file, including an LLM-friendly template.
 - **Local library**: save books in IndexedDB and back them up with Export/Import.
 - **Built-in tutorials**: try *The Murder of Roger Ackroyd* or *Hida Trick House Murder Case*.
 - **Multilingual UI**: English, Simplified Chinese, Japanese, Spanish, and Brazilian Portuguese.
 - **Templates and chapter safety**: `v0.5.2` adds reusable book templates, current-book template export, GitHub preview cards, and guards chapter totals from shrinking below existing chapter content.
 - **Touch and fallback polish**: `v0.5.3` adds tablet touch smoke coverage, a compact Help panel, a read-only phone fallback, and clearer library/settings entry points.
-- **Board stability, time layers, and impact**: `v0.5.4` makes Help click-to-open, lets Auto-layout be undone/redone, adds time layers with a *Seven Deaths* loop demo and tablet layer thumbnails, improves phone Settings, and adds a README Impact Snapshot.
+- **Board stability, time layers, export, and impact**: `v0.5.4` makes Help click-to-open, lets Auto-layout be undone/redone, adds time layers with a *Seven Deaths* loop demo and tablet layer thumbnails, exports boards as PNG/PDF, improves phone Settings, and adds a README Impact Snapshot.
 
 ## Data And Privacy
 
@@ -186,7 +187,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.5.1`: iPad Safari safe-area fix for the bottom chapter slider and CNB release deployment coverage.
 - `0.5.2`: reusable book templates, current-book template export, GitHub preview cards, and chapter-total guards for existing chapter content.
 - `0.5.3`: tablet touch smoke coverage, live GitHub update-check smoke, compact Help guidance, read-only phone fallback, and library/settings polish.
-- `0.5.4`: click-to-open Help, undoable Auto-layout, time layers with a *Seven Deaths* loop tutorial, tablet-friendly layer thumbnails, responsive phone Settings polish, and the README Impact Snapshot.
+- `0.5.4`: click-to-open Help, undoable Auto-layout, time layers with a *Seven Deaths* loop tutorial, tablet-friendly layer thumbnails, toolbar PNG/PDF board export, responsive phone Settings polish, and the README Impact Snapshot.
 
 ## License
 

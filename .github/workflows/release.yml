@@ -297,7 +297,7 @@ jobs:
           CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
           CNB_API_ENDPOINT: https://api.cnb.cool
           CNB_REPO: Guesswhat-Studio/Calabash
-          MIN_GITHUB_ASSET_COUNT: "5"
+          MIN_GITHUB_ASSET_COUNT: "4"
           CNB_ASSET_TTL: "0"
           CNB_DELETE_OLD_RELEASES: "true"
         run: node scripts/mirror-github-release-to-cnb.mjs

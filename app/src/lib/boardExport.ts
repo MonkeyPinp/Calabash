@@ -76,54 +76,60 @@ export async function exportReactFlowBoard(input: {
   options: BoardExportOptions;
 }): Promise<Blob> {
   const viewport = input.container?.querySelector<HTMLElement>('.react-flow__viewport');
-  const nodeBounds = getVisibleNodeBounds(input.nodes);
-  const bounds = viewport && nodeBounds
-    ? mergeVisualExtentBounds(nodeBounds, viewport)
-    : nodeBounds;
-  if (!viewport || !bounds) throw new Error('No board content to export');
+  if (!viewport) throw new Error('No board content to export');
 
-  await waitForDocumentFonts();
-  const fontEmbedCSS = await getCachedFontEmbedCSS(viewport);
-  const dimensions = getBoardExportDimensions(bounds);
-  const backgroundColor = input.options.transparent
-    ? 'transparent'
-    : cssVar('--bg-canvas', '#f4ecd3');
+  viewport.classList.add('calabash-board-exporting');
+  try {
+    await nextAnimationFrame();
+    const nodeBounds = getVisibleNodeBounds(input.nodes);
+    const bounds = nodeBounds ? mergeVisualExtentBounds(nodeBounds, viewport) : nodeBounds;
+    if (!bounds) throw new Error('No board content to export');
 
-  const pngBlob = await toBlob(viewport, {
-    backgroundColor,
-    // Portraits are backed by blob: URLs; adding cache-busting query params breaks them.
-    cacheBust: false,
-    fontEmbedCSS,
-    width: dimensions.width,
-    height: dimensions.height,
-    pixelRatio: 1,
-    filter: (node) => {
-      if (!(node instanceof HTMLElement)) return true;
-      return !(
-        node.classList.contains('react-flow__handle') ||
-        node.classList.contains('react-flow__resize-control')
-      );
-    },
-    style: {
-      width: `${dimensions.width}px`,
-      height: `${dimensions.height}px`,
-      overflow: 'visible',
-      transform: `translate(${dimensions.offsetX}px, ${dimensions.offsetY}px) scale(${dimensions.scale})`,
-      transformOrigin: 'top left',
-    },
-  });
+    await waitForDocumentFonts();
+    const fontEmbedCSS = await getCachedFontEmbedCSS(viewport);
+    const dimensions = getBoardExportDimensions(bounds);
+    const backgroundColor = input.options.transparent
+      ? 'transparent'
+      : cssVar('--bg-canvas', '#f4ecd3');
 
-  if (!pngBlob) throw new Error('Board export failed');
-  if (input.options.format === 'png') return pngBlob;
+    const pngBlob = await toBlob(viewport, {
+      backgroundColor,
+      // Portraits are backed by blob: URLs; adding cache-busting query params breaks them.
+      cacheBust: false,
+      fontEmbedCSS,
+      width: dimensions.width,
+      height: dimensions.height,
+      pixelRatio: 1,
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return true;
+        return !(
+          node.classList.contains('react-flow__handle') ||
+          node.classList.contains('react-flow__resize-control')
+        );
+      },
+      style: {
+        width: `${dimensions.width}px`,
+        height: `${dimensions.height}px`,
+        overflow: 'visible',
+        transform: `translate(${dimensions.offsetX}px, ${dimensions.offsetY}px) scale(${dimensions.scale})`,
+        transformOrigin: 'top left',
+      },
+    });
 
-  const pdf = new jsPDF({
-    orientation: dimensions.width >= dimensions.height ? 'landscape' : 'portrait',
-    unit: 'px',
-    format: [dimensions.width, dimensions.height],
-    compress: true,
-  });
-  pdf.addImage(await blobToDataUrl(pngBlob), 'PNG', 0, 0, dimensions.width, dimensions.height);
-  return pdf.output('blob');
+    if (!pngBlob) throw new Error('Board export failed');
+    if (input.options.format === 'png') return pngBlob;
+
+    const pdf = new jsPDF({
+      orientation: dimensions.width >= dimensions.height ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [dimensions.width, dimensions.height],
+      compress: true,
+    });
+    pdf.addImage(await blobToDataUrl(pngBlob), 'PNG', 0, 0, dimensions.width, dimensions.height);
+    return pdf.output('blob');
+  } finally {
+    viewport.classList.remove('calabash-board-exporting');
+  }
 }
 
 export function warmReactFlowBoardExport(container: HTMLElement | null) {
@@ -189,6 +195,12 @@ async function waitForDocumentFonts() {
   } catch {
     // Export can still proceed with fallback fonts if the browser rejects font readiness.
   }
+}
+
+function nextAnimationFrame() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
 }
 
 function cssVar(name: string, fallback: string) {

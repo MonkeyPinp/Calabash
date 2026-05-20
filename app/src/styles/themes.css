@@ -10,7 +10,7 @@
 
 :root[lang='zh-CN'] {
   --font-display: "Noto Serif SC", "Songti SC", SimSun, "Newsreader", serif;
-  --font-case-title: "Special Elite", "Noto Serif SC", "Songti SC", SimSun, serif;
+  --font-case-title: "Noto Serif SC", "Songti SC", SimSun, "Special Elite", serif;
 }
 
 :root[data-theme='light'] {

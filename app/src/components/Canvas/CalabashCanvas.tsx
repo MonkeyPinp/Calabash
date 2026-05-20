@@ -1349,6 +1349,12 @@ function CalabashCanvasInner({
         .react-flow__node-groupRange.selected .react-flow__resize-control {
           pointer-events: auto !important;
         }
+        .calabash-board-exporting [data-testid="group-range-label"] {
+          max-width: none !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          white-space: nowrap !important;
+        }
         .shortcut-legend {
           pointer-events: none !important;
         }

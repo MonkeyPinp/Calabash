@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-20T04:43:26.231Z",
-  "appVersion": "0.5.4",
+  "generatedAt": "2026-05-21T04:47:38.174Z",
+  "appVersion": "0.5.5",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
     "githubTrafficWindow": "last_14_days_utc",
@@ -11,13 +11,13 @@
     "githubPagesVisits30d": null,
     "edgeOneRequests30d": null,
     "edgeOneUniqueIps30d": null,
-    "releaseDownloads": 31,
-    "desktopDownloads": 26,
-    "latestReleaseDownloads": 6,
-    "githubRepoViews14d": 152,
-    "githubRepoVisitors14d": 12,
-    "githubClones14d": 801,
-    "githubUniqueCloners14d": 268
+    "releaseDownloads": 35,
+    "desktopDownloads": 29,
+    "latestReleaseDownloads": 4,
+    "githubRepoViews14d": 165,
+    "githubRepoVisitors14d": 15,
+    "githubClones14d": 832,
+    "githubUniqueCloners14d": 285
   },
   "web": {
     "githubPages": {
@@ -36,14 +36,9 @@
     "forks": 1,
     "openIssues": 5,
     "views14d": {
-      "count": 152,
-      "uniques": 12,
+      "count": 165,
+      "uniques": 15,
       "daily": [
-        {
-          "timestamp": "2026-05-05T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
         {
           "timestamp": "2026-05-06T00:00:00Z",
           "count": 0,
@@ -108,18 +103,18 @@
           "timestamp": "2026-05-18T00:00:00Z",
           "count": 21,
           "uniques": 4
+        },
+        {
+          "timestamp": "2026-05-19T00:00:00Z",
+          "count": 13,
+          "uniques": 5
         }
       ]
     },
     "clones14d": {
-      "count": 801,
-      "uniques": 268,
+      "count": 832,
+      "uniques": 285,
       "daily": [
-        {
-          "timestamp": "2026-05-05T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
         {
           "timestamp": "2026-05-06T00:00:00Z",
           "count": 0,
@@ -184,18 +179,28 @@
           "timestamp": "2026-05-18T00:00:00Z",
           "count": 202,
           "uniques": 65
+        },
+        {
+          "timestamp": "2026-05-19T00:00:00Z",
+          "count": 31,
+          "uniques": 19
         }
       ]
     },
     "referrers14d": [
       {
         "referrer": "github.com",
-        "count": 30,
-        "uniques": 3
+        "count": 31,
+        "uniques": 4
       },
       {
         "referrer": "tuilixy.net",
-        "count": 7,
+        "count": 8,
+        "uniques": 2
+      },
+      {
+        "referrer": "Bing",
+        "count": 2,
         "uniques": 1
       }
     ],
@@ -203,12 +208,18 @@
       {
         "path": "/Guesswhat-Studio/Calabash",
         "title": "Overview",
-        "count": 41,
-        "uniques": 5
+        "count": 43,
+        "uniques": 6
       },
       {
         "path": "/Guesswhat-Studio/Calabash/releases",
         "title": "/releases",
+        "count": 10,
+        "uniques": 2
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/tags",
+        "title": "/tags",
         "count": 9,
         "uniques": 1
       },
@@ -219,14 +230,14 @@
         "uniques": 3
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/tags",
-        "title": "/tags",
-        "count": 8,
-        "uniques": 1
-      },
-      {
         "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.2.1",
         "title": "/releases/tag/v0.2.1",
+        "count": 5,
+        "uniques": 4
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.1",
+        "title": "/releases/tag/v0.3.1",
         "count": 5,
         "uniques": 4
       },
@@ -237,8 +248,8 @@
         "uniques": 1
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.1",
-        "title": "/releases/tag/v0.3.1",
+        "path": "/Guesswhat-Studio/Calabash/tree/main/.github",
+        "title": "/tree/main/.github",
         "count": 4,
         "uniques": 3
       },
@@ -253,24 +264,38 @@
         "title": "/releases/tag/v0.3.0",
         "count": 4,
         "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tree/main/.github",
-        "title": "/tree/main/.github",
-        "count": 3,
-        "uniques": 2
       }
     ]
   },
   "releases": {
-    "totalDownloads": 31,
-    "desktopDownloads": 26,
-    "webDownloads": 5,
+    "totalDownloads": 35,
+    "desktopDownloads": 29,
+    "webDownloads": 6,
     "latestRelease": {
-      "tag": "v0.5.3",
-      "downloads": 6
+      "tag": "v0.5.5",
+      "downloads": 4
     },
     "assets": [
+      {
+        "release": "v0.5.5",
+        "name": "calabash-web-v0.5.5.zip",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.5",
+        "name": "Calabash_0.5.5_darwin_aarch64.dmg",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.5",
+        "name": "Calabash_0.5.5_linux_x64",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.5",
+        "name": "Calabash_0.5.5_windows_x64.exe",
+        "downloadCount": 1
+      },
       {
         "release": "v0.5.3",
         "name": "calabash-web-v0.5.3.zip",

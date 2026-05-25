@@ -13,6 +13,7 @@ import {
   getCharacterRoleCssVar,
   normalizeCharacterRole,
 } from '@/lib/roles';
+import { compressPortraitToJpeg } from '@/lib/portraitCompression';
 import { syncPrimaryAliasForNameEdit } from '@/lib/characterNames';
 import PresetTextInput from '@/components/Form/PresetTextInput';
 import TimeLayerSelect from '@/components/Form/TimeLayerSelect';
@@ -271,11 +272,12 @@ export default function CharacterInspector({
   async function handlePortraitChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const portrait = await savePortrait({ bookId, blob: file, mimeType: file.type });
+    const compressed = await compressPortraitToJpeg(file);
+    const portrait = await savePortrait({ bookId, blob: compressed.blob, mimeType: compressed.mimeType });
     await persist({ portraitId: portrait.id });
     // Revoke old URL
     if (prevPortraitUrlRef.current) URL.revokeObjectURL(prevPortraitUrlRef.current);
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(compressed.blob);
     prevPortraitUrlRef.current = url;
     setPortraitUrl(url);
     e.target.value = '';

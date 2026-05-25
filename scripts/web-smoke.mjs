@@ -145,6 +145,9 @@ async function smokeViewport(browser, url, scenario) {
     if (!/Shield|防剧透|シールド|Escudo/i.test(helpPanelState.text)) {
       throw new Error('Canvas help panel is missing the Shield explanation.');
     }
+    if (!/Lock\/unlock selection|锁定\/解锁选择|選択をロック\/解除|Bloquear\/desbloquear selección|Bloquear\/desbloquear seleção/i.test(helpPanelState.text)) {
+      throw new Error('Canvas help panel is missing the L lock-selection shortcut.');
+    }
 
     const inspectorLayout = await page.evaluate(() => {
       const guideList = document.querySelector('[data-testid="empty-inspector-guide-list"]');
@@ -246,8 +249,8 @@ async function smokeViewport(browser, url, scenario) {
       return { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width) };
     }),
   );
-  if (tutorialRects.length !== 3) {
-    throw new Error(`Expected 3 settings tutorial cards, got ${tutorialRects.length}.`);
+  if (tutorialRects.length !== 4) {
+    throw new Error(`Expected 4 settings tutorial cards, got ${tutorialRects.length}.`);
   }
   const tutorialTopSpread = Math.max(...tutorialRects.map((rect) => rect.top)) - Math.min(...tutorialRects.map((rect) => rect.top));
   if (tutorialTopSpread > 3) {

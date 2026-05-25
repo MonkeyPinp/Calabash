@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.6 - 2026-05-25
+
+- Added `L` as a canvas shortcut for locking or unlocking the selected board items.
+- Compressed uploaded portraits to JPEG at 75% quality before storing them locally.
+- Added desktop diagnostic logging for failed board image exports, with the log path shown in the error dialog.
+- Kept the web smoke test aligned with the current Help panel and four tutorial cards.
+- Bumped web, desktop, import/export, docs example, and impact metadata to `0.5.6`.
+
 ## 0.5.5 - 2026-05-20
 
 - Changed the canvas Help panel to open only on click, preventing hover popups from covering board space.

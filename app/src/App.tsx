@@ -32,6 +32,7 @@ import { hasSpoilerSensitiveRoleAtChapter } from './lib/roles';
 import { addSpoilerChapter, getSpoilerShieldToolbarAction, removeSpoilerChapter } from './lib/spoilerShield';
 import { getTutorialDefaultViewMode, seedTutorialBook, type TutorialKind } from './lib/demoData';
 import { isDesktopRuntime, openDesktopJsonFile, saveDesktopBinaryFile, saveDesktopLibraryBackup, saveDesktopTextFile } from './lib/desktopFiles';
+import { writeDesktopDiagnosticLog } from './lib/desktopDiagnostics';
 import { ALL_TIME_LAYERS_ID, resolveDefaultTimeLayerId } from './lib/timeLayers';
 import { useT } from './i18n';
 import type { Book, Category, EvidenceImageKind, TimeLayer } from './types';
@@ -1164,6 +1165,7 @@ export default function App() {
     }
 
     setBoardExportBusy(true);
+    let exportStage = 'render';
     try {
       const blob = await boardExportRef.current({
         format,
@@ -1179,6 +1181,7 @@ export default function App() {
       ].filter(Boolean).join('-') + `.${extension}`;
 
       if (isDesktopRuntime()) {
+        exportStage = 'save';
         const path = await saveDesktopBinaryFile({
           title: t('boardExport.saveTitle'),
           defaultPath: fileName,
@@ -1187,13 +1190,26 @@ export default function App() {
         });
         if (path) showToast(t('app.exportSaved', { path }));
       } else {
+        exportStage = 'download';
         downloadBlob(blob, fileName);
         showToast(t('boardExport.downloaded', { name: fileName }));
       }
 
     } catch (error) {
       console.error('Failed to export Calabash board image', error);
-      alert(t('boardExport.failed'));
+      const logPath = await writeDesktopDiagnosticLog({
+        area: 'board-export',
+        message: 'Failed to export Calabash board image',
+        error,
+        context: {
+          stage: exportStage,
+          format,
+          currentChapter,
+          bookId: activeBookId,
+          title: activeBookSummary.title,
+        },
+      });
+      alert(logPath ? t('boardExport.failedWithLog', { path: logPath }) : t('boardExport.failed'));
     } finally {
       setBoardExportBusy(false);
     }

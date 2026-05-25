@@ -155,6 +155,11 @@ const kbdStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
 /** Choose which handles to use based on the relative position of two node centres. */
 function pickHandles(sx: number, sy: number, tx: number, ty: number) {
   const dx = tx - sx;
@@ -262,6 +267,7 @@ function CalabashCanvasInner({
       ['E', t('shortcut.connectEdge')],
       ['F', t('shortcut.fitToView')],
       ['/', t('shortcut.search')],
+      ['L', t('shortcut.lockSelection')],
       ['Del', t('shortcut.deleteSelection')],
       ['Ctrl Z', t('shortcut.undo')],
     ] as const,
@@ -820,6 +826,77 @@ function CalabashCanvasInner({
      pushUndo, clearSelection, boardLocked],
   );
 
+  const toggleSelectionLocked = useCallback(
+    async () => {
+      if (boardLocked || selectedNodeIds.size === 0) return;
+
+      const targets = [
+        ...characters
+          .filter((character) => selectedNodeIds.has(character.id))
+          .map((character) => ({ kind: 'character' as const, id: character.id, locked: character.locked === true })),
+        ...stickyNotes
+          .filter((note) => selectedNodeIds.has(note.id))
+          .map((note) => ({ kind: 'stickyNote' as const, id: note.id, locked: note.locked === true })),
+        ...groupRanges
+          .filter((range) => selectedNodeIds.has(range.id))
+          .map((range) => ({ kind: 'groupRange' as const, id: range.id, locked: range.locked === true })),
+        ...evidenceImages
+          .filter((image) => selectedNodeIds.has(image.id))
+          .map((image) => ({ kind: 'evidenceImage' as const, id: image.id, locked: image.locked === true })),
+      ];
+      if (targets.length === 0) return;
+
+      const nextLocked = targets.some((target) => !target.locked);
+      const applyLockState = async (target: (typeof targets)[number], locked: boolean) => {
+        if (target.kind === 'character') {
+          const updated = await updateCharacter(target.id, { locked });
+          updateCharacterInStore(updated);
+        } else if (target.kind === 'stickyNote') {
+          const updated = await updateAnnotation(target.id, { locked });
+          updateStickyNoteInStore(updated);
+        } else if (target.kind === 'groupRange') {
+          const updated = await updateGroupRange(target.id, { locked });
+          updateGroupRangeInStore(updated);
+        } else {
+          const updated = await updateEvidenceImage(target.id, { locked });
+          updateEvidenceImageInStore(updated);
+        }
+      };
+
+      await Promise.all(targets.map((target) => applyLockState(target, nextLocked)));
+      pushUndo(
+        async () => { await Promise.all(targets.map((target) => applyLockState(target, target.locked))); },
+        async () => { await Promise.all(targets.map((target) => applyLockState(target, nextLocked))); },
+      );
+    },
+    [
+      boardLocked,
+      selectedNodeIds,
+      characters,
+      stickyNotes,
+      groupRanges,
+      evidenceImages,
+      updateCharacterInStore,
+      updateStickyNoteInStore,
+      updateGroupRangeInStore,
+      updateEvidenceImageInStore,
+      pushUndo,
+    ],
+  );
+
+  useEffect(() => {
+    async function handleWindowKeyDown(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== 'l' && event.key !== 'L') return;
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+      await toggleSelectionLocked();
+    }
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [toggleSelectionLocked]);
+
   const handleKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Escape') {
@@ -827,8 +904,7 @@ function CalabashCanvasInner({
         return;
       }
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      const target = e.target as HTMLElement;
-      if (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (isEditableTarget(e.target)) return;
       e.preventDefault();
       await deleteSelection();
     },
@@ -1145,7 +1221,7 @@ function CalabashCanvasInner({
             width: 'min(520px, calc(100vw - 36px))',
             maxWidth: 'calc(100vw - 36px)',
             boxSizing: 'border-box',
-            padding: '11px 12px 12px',
+            padding: '9px 10px 10px',
             borderRadius: 6,
             border: '1px solid var(--ink-200)',
             background: 'var(--bg-panel)',
@@ -1163,7 +1239,7 @@ function CalabashCanvasInner({
             letterSpacing: '.12em',
             textTransform: 'uppercase',
             fontWeight: 700,
-            marginBottom: 7,
+            marginBottom: 5,
           }}>
             {t('help.shortcuts')}
           </div>
@@ -1171,7 +1247,7 @@ function CalabashCanvasInner({
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
-              gap: 6,
+              gap: 5,
               fontSize: 11,
               color: 'var(--ink-600)',
             }}
@@ -1185,7 +1261,7 @@ function CalabashCanvasInner({
                   gridTemplateColumns: 'auto 1fr',
                   alignItems: 'center',
                   columnGap: 6,
-                  padding: '4px 5px',
+                  padding: '3px 5px',
                   border: '1px solid var(--ink-150)',
                   borderRadius: 4,
                   background: 'color-mix(in srgb, var(--bg-canvas) 70%, transparent)',
@@ -1210,7 +1286,7 @@ function CalabashCanvasInner({
             style={{
               height: 1,
               background: 'var(--ink-150)',
-              margin: '10px 0 9px',
+              margin: '7px 0 6px',
             }}
           />
           <div style={{
@@ -1220,11 +1296,11 @@ function CalabashCanvasInner({
             letterSpacing: '.12em',
             textTransform: 'uppercase',
             fontWeight: 700,
-            marginBottom: 7,
+            marginBottom: 5,
           }}>
             {t('help.tools')}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 6 }}>
             {helpTools.map((tool) => (
               <div
                 key={tool.key}
@@ -1234,7 +1310,7 @@ function CalabashCanvasInner({
                   gridTemplateColumns: '18px 1fr',
                   columnGap: 8,
                   alignItems: 'start',
-                  padding: '6px',
+                  padding: '5px',
                   border: '1px solid var(--ink-150)',
                   borderRadius: 4,
                   background: 'color-mix(in srgb, var(--bg-canvas) 62%, transparent)',
@@ -1260,7 +1336,7 @@ function CalabashCanvasInner({
                   <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-900)', fontWeight: 700, lineHeight: 1.15 }}>
                     {tool.label}
                   </span>
-                  <span style={{ display: 'block', marginTop: 1, fontSize: 10.5, color: 'var(--ink-500)', lineHeight: 1.3 }}>
+                  <span style={{ display: 'block', marginTop: 1, fontSize: 10.5, color: 'var(--ink-500)', lineHeight: 1.24 }}>
                     {tool.body}
                   </span>
                 </span>

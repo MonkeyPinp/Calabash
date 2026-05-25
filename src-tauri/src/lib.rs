@@ -1,6 +1,10 @@
 use serde::Deserialize;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};
-use std::{fs::create_dir_all, path::PathBuf};
+use std::{
+    fs::{create_dir_all, OpenOptions},
+    io::Write,
+    path::PathBuf,
+};
 use tauri::Manager;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -29,6 +33,43 @@ async fn execute_sqlite_transaction(
     execute_sqlite_statements(&db_url, statements).await
 }
 
+#[tauri::command]
+fn write_app_log(app: tauri::AppHandle, entry: String) -> Result<String, String> {
+    let mut log_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|error| format!("Could not resolve app config directory: {error}"))?;
+    log_dir.push("logs");
+    create_dir_all(&log_dir).map_err(|error| format!("Could not create log directory: {error}"))?;
+
+    let log_path = log_dir.join("calabash.log");
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .map_err(|error| format!("Could not open log file: {error}"))?;
+
+    let mut bounded_entry = entry;
+    if bounded_entry.len() > 20_000 {
+        let cutoff = bounded_entry
+            .char_indices()
+            .map(|(index, _)| index)
+            .take_while(|index| *index <= 20_000)
+            .last()
+            .unwrap_or(0);
+        bounded_entry.truncate(cutoff);
+        bounded_entry.push_str("\n[truncated]");
+    }
+
+    writeln!(file, "{bounded_entry}\n---")
+        .map_err(|error| format!("Could not write log file: {error}"))?;
+
+    log_path
+        .to_str()
+        .map(|path| path.to_string())
+        .ok_or_else(|| "Log path is not valid UTF-8".to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -38,7 +79,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             execute_sqlite_transaction,
-            get_sqlite_db_path
+            get_sqlite_db_path,
+            write_app_log
         ])
         .run(tauri::generate_context!())
         .expect("error while running Calabash");

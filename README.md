@@ -6,7 +6,7 @@
 
 > A spoiler-safe case board and relationship graph for mystery and detective fiction readers.
 
-[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.6`
+[Live demo](https://guesswhat-studio.github.io/Calabash/) · [Report an issue](https://github.com/Guesswhat-Studio/Calabash/issues/new/choose) · Version `0.5.7`
 
 Languages: **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md)
 
@@ -53,6 +53,7 @@ Calabash is deliberately manual. No AI extraction, no summaries, no automatic su
 - **Touch and fallback polish**: `v0.5.3` adds tablet touch smoke coverage, a compact Help panel, a read-only phone fallback, and clearer library/settings entry points.
 - **Board stability, time layers, export, and impact**: `v0.5.5` makes Help click-to-open, lets Auto-layout be undone/redone, adds time layers with a *Seven Deaths* loop demo and tablet layer thumbnails, exports boards as PNG/PDF, improves phone Settings, and adds a README Impact Snapshot.
 - **Desktop reliability polish**: `v0.5.6` adds `L` to lock or unlock selected board items, compresses uploaded portraits as JPEG, and writes desktop export diagnostics to a local log when board image export fails.
+- **Desktop export hotfix**: `v0.5.7` fixes Windows/macOS/Linux desktop PNG/PDF board export by allowing binary files to be written through the native save dialog.
 
 ## Data And Privacy
 
@@ -191,6 +192,7 @@ Calabash uses `0.x` beta versioning for now:
 - `0.5.3`: tablet touch smoke coverage, live GitHub update-check smoke, compact Help guidance, read-only phone fallback, and library/settings polish.
 - `0.5.5`: click-to-open Help, undoable Auto-layout, time layers with a *Seven Deaths* loop tutorial, tablet-friendly layer thumbnails, toolbar PNG/PDF board export, responsive phone Settings polish, and the README Impact Snapshot.
 - `0.5.6`: selected-item lock shortcut, JPEG portrait compression, desktop export diagnostic logs, and refreshed smoke/release metadata.
+- `0.5.7`: desktop PNG/PDF board export hotfix for binary file saves.
 
 ## License
 

@@ -1,5 +1,5 @@
 {
-  "calabashVersion": "0.5.6",
+  "calabashVersion": "0.5.7",
   "calabashTemplateVersion": 1,
   "template": {
     "id": "puzzle-contest-basic",

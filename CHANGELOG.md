@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.7 - 2026-05-25
+
+- Fixed desktop PNG/PDF board export by allowing the Tauri filesystem plugin to write binary files selected through the save dialog.
+- Bumped web, desktop, import/export, docs example, template, and impact metadata to `0.5.7`.
+
 ## 0.5.6 - 2026-05-25
 
 - Added `L` as a canvas shortcut for locking or unlocking the selected board items.

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="132" viewBox="0 0 760 132" role="img" aria-labelledby="title desc">
   <title id="title">Calabash impact snapshot</title>
-  <desc id="desc">Release downloads 40, desktop downloads 33, repository views 177, and repository visitors 22.</desc>
+  <desc id="desc">Release downloads 46, desktop downloads 38, repository views 177, and repository visitors 22.</desc>
   <defs>
     <filter id="soft-shadow" x="-4%" y="-12%" width="108%" height="130%">
       <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#2b1c10" flood-opacity="0.14"/>
@@ -24,15 +24,15 @@
   <rect x="1" y="1" width="758" height="130" rx="10" fill="url(#paper)" stroke="#c9ad73" filter="url(#soft-shadow)"/>
   <rect x="1" y="1" width="758" height="130" rx="10" fill="url(#dot-grid)" opacity="0.42"/>
   <path d="M1 29H759" stroke="#8f2f1f" stroke-width="5"/>
-  <text class="eyebrow" x="28" y="22" fill="#74603d">PUBLIC IMPACT · v0.5.7 · 2026-05-25</text>
+  <text class="eyebrow" x="28" y="22" fill="#74603d">PUBLIC IMPACT · v0.5.7 · 2026-05-26</text>
   
     <g transform="translate(28, 64)">
-      <text class="metric-value" x="0" y="0" fill="#8f2f1f">40</text>
+      <text class="metric-value" x="0" y="0" fill="#8f2f1f">46</text>
       <text class="metric-label" x="0" y="22">release downloads</text>
-      <text class="metric-sub" x="0" y="40">4 on v0.5.6</text>
+      <text class="metric-sub" x="0" y="40">5 on v0.5.7</text>
     </g>
     <g transform="translate(152, 64)">
-      <text class="metric-value" x="0" y="0" fill="#9f6b14">33</text>
+      <text class="metric-value" x="0" y="0" fill="#9f6b14">38</text>
       <text class="metric-label" x="0" y="22">desktop downloads</text>
       <text class="metric-sub" x="0" y="40">desktop builds</text>
     </g>

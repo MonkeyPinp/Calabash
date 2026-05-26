@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-25T21:55:51.623Z",
+  "generatedAt": "2026-05-26T04:42:29.794Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -11,9 +11,9 @@
     "githubPagesVisits30d": null,
     "edgeOneRequests30d": null,
     "edgeOneUniqueIps30d": null,
-    "releaseDownloads": 40,
-    "desktopDownloads": 33,
-    "latestReleaseDownloads": 4,
+    "releaseDownloads": 46,
+    "desktopDownloads": 38,
+    "latestReleaseDownloads": 5,
     "githubRepoViews14d": 177,
     "githubRepoVisitors14d": 22,
     "githubClones14d": 1081,
@@ -268,14 +268,34 @@
     ]
   },
   "releases": {
-    "totalDownloads": 40,
-    "desktopDownloads": 33,
-    "webDownloads": 7,
+    "totalDownloads": 46,
+    "desktopDownloads": 38,
+    "webDownloads": 8,
     "latestRelease": {
-      "tag": "v0.5.6",
-      "downloads": 4
+      "tag": "v0.5.7",
+      "downloads": 5
     },
     "assets": [
+      {
+        "release": "v0.5.7",
+        "name": "calabash-web-v0.5.7.zip",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.7",
+        "name": "Calabash_0.5.7_darwin_aarch64.dmg",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.7",
+        "name": "Calabash_0.5.7_linux_x64",
+        "downloadCount": 1
+      },
+      {
+        "release": "v0.5.7",
+        "name": "Calabash_0.5.7_windows_x64.exe",
+        "downloadCount": 2
+      },
       {
         "release": "v0.5.6",
         "name": "calabash-web-v0.5.6.zip",
@@ -294,7 +314,7 @@
       {
         "release": "v0.5.6",
         "name": "Calabash_0.5.6_windows_x64.exe",
-        "downloadCount": 1
+        "downloadCount": 2
       },
       {
         "release": "v0.5.5",

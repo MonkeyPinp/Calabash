@@ -1,0 +1,48 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # 北京时间每天的 0点、6点、12点、18点 执行
+  workflow_dispatch: # 允许你在后台手动点击按钮立即触发同步
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Soft Sync with File Protection
+        run: |
+          # 1. 把我们当前这个珍贵的 sync.yml 临时复制备份到虚拟机的一个安全地方
+          cp .github/workflows/sync.yml /tmp/sync.yml
+          
+          # 2. 链接原作者仓库并拉取最新代码
+          git remote add upstream https://github.com/Guesswhat-Studio/Calabash.git
+          git fetch upstream
+          
+          # 3. 强行把整个工作区重置到原作者的最新状态（此时网页上的 sync.yml 确实会短暂消失）
+          git checkout main
+          git reset --hard upstream/main
+          
+          # 4. 关键：把刚刚备份的 sync.yml 重新放回它原本的文件夹里！
+          mkdir -p .github/workflows
+          cp /tmp/sync.yml .github/workflows/sync.yml
+          
+          # 5. 让 Git 检查变化，把 sync.yml 重新打包加进你的版本库
+          git add .github/workflows/sync.yml
+          
+          # 6. 提交并强行推送到你的仓库
+          # 如果原作者有更新，就提交更新；如果没有，--allow-empty 保证脚本不会因为没有新代码而报错
+          git commit --allow-empty -m "Automated upstream sync & retained sync config"
+          git push origin main --force

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-29T04:46:58.120Z",
+  "generatedAt": "2026-05-30T04:37:53.676Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -14,10 +14,10 @@
     "releaseDownloads": 46,
     "desktopDownloads": 38,
     "latestReleaseDownloads": 5,
-    "githubRepoViews14d": 189,
+    "githubRepoViews14d": 144,
     "githubRepoVisitors14d": 24,
-    "githubClones14d": 1352,
-    "githubUniqueCloners14d": 431
+    "githubClones14d": 1180,
+    "githubUniqueCloners14d": 380
   },
   "web": {
     "githubPages": {
@@ -36,14 +36,9 @@
     "forks": 1,
     "openIssues": 5,
     "views14d": {
-      "count": 189,
+      "count": 144,
       "uniques": 24,
       "daily": [
-        {
-          "timestamp": "2026-05-14T00:00:00Z",
-          "count": 46,
-          "uniques": 1
-        },
         {
           "timestamp": "2026-05-15T00:00:00Z",
           "count": 21,
@@ -108,18 +103,18 @@
           "timestamp": "2026-05-27T00:00:00Z",
           "count": 4,
           "uniques": 2
+        },
+        {
+          "timestamp": "2026-05-28T00:00:00Z",
+          "count": 1,
+          "uniques": 1
         }
       ]
     },
     "clones14d": {
-      "count": 1352,
-      "uniques": 431,
+      "count": 1180,
+      "uniques": 380,
       "daily": [
-        {
-          "timestamp": "2026-05-14T00:00:00Z",
-          "count": 183,
-          "uniques": 59
-        },
         {
           "timestamp": "2026-05-15T00:00:00Z",
           "count": 108,
@@ -184,13 +179,18 @@
           "timestamp": "2026-05-27T00:00:00Z",
           "count": 13,
           "uniques": 8
+        },
+        {
+          "timestamp": "2026-05-28T00:00:00Z",
+          "count": 11,
+          "uniques": 7
         }
       ]
     },
     "referrers14d": [
       {
         "referrer": "github.com",
-        "count": 33,
+        "count": 31,
         "uniques": 6
       },
       {
@@ -208,26 +208,14 @@
       {
         "path": "/Guesswhat-Studio/Calabash",
         "title": "Overview",
-        "count": 53,
-        "uniques": 12
+        "count": 43,
+        "uniques": 13
       },
       {
         "path": "/Guesswhat-Studio/Calabash/releases",
         "title": "/releases",
-        "count": 14,
+        "count": 13,
         "uniques": 2
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tags",
-        "title": "/tags",
-        "count": 11,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/blob/main/README.zh-CN.md",
-        "title": "/blob/main/README.zh-CN.md",
-        "count": 9,
-        "uniques": 3
       },
       {
         "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.1",
@@ -236,16 +224,22 @@
         "uniques": 6
       },
       {
+        "path": "/Guesswhat-Studio/Calabash/tags",
+        "title": "/tags",
+        "count": 8,
+        "uniques": 1
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/blob/main/README.zh-CN.md",
+        "title": "/blob/main/README.zh-CN.md",
+        "count": 7,
+        "uniques": 3
+      },
+      {
         "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.2.1",
         "title": "/releases/tag/v0.2.1",
         "count": 5,
         "uniques": 4
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/actions",
-        "title": "/actions",
-        "count": 5,
-        "uniques": 1
       },
       {
         "path": "/Guesswhat-Studio/Calabash/tree/main/.github",
@@ -254,16 +248,22 @@
         "uniques": 3
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/releases/new",
-        "title": "/releases/new",
-        "count": 4,
-        "uniques": 1
-      },
-      {
         "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.0",
         "title": "/releases/tag/v0.3.0",
         "count": 4,
         "uniques": 1
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/pulls",
+        "title": "/pulls",
+        "count": 3,
+        "uniques": 1
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.5.2",
+        "title": "/releases/tag/v0.5.2",
+        "count": 2,
+        "uniques": 2
       }
     ]
   },

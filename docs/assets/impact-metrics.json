@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-03T04:55:44.447Z",
+  "generatedAt": "2026-06-04T04:55:27.957Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -14,10 +14,10 @@
     "releaseDownloads": 46,
     "desktopDownloads": 38,
     "latestReleaseDownloads": 5,
-    "githubRepoViews14d": 50,
-    "githubRepoVisitors14d": 17,
-    "githubClones14d": 615,
-    "githubUniqueCloners14d": 199
+    "githubRepoViews14d": 38,
+    "githubRepoVisitors14d": 15,
+    "githubClones14d": 651,
+    "githubUniqueCloners14d": 191
   },
   "web": {
     "githubPages": {
@@ -36,14 +36,9 @@
     "forks": 1,
     "openIssues": 5,
     "views14d": {
-      "count": 50,
-      "uniques": 17,
+      "count": 38,
+      "uniques": 15,
       "daily": [
-        {
-          "timestamp": "2026-05-19T00:00:00Z",
-          "count": 13,
-          "uniques": 5
-        },
         {
           "timestamp": "2026-05-20T00:00:00Z",
           "count": 2,
@@ -108,18 +103,18 @@
           "timestamp": "2026-06-01T00:00:00Z",
           "count": 2,
           "uniques": 1
+        },
+        {
+          "timestamp": "2026-06-02T00:00:00Z",
+          "count": 1,
+          "uniques": 1
         }
       ]
     },
     "clones14d": {
-      "count": 615,
-      "uniques": 199,
+      "count": 651,
+      "uniques": 191,
       "daily": [
-        {
-          "timestamp": "2026-05-19T00:00:00Z",
-          "count": 31,
-          "uniques": 19
-        },
         {
           "timestamp": "2026-05-20T00:00:00Z",
           "count": 184,
@@ -184,27 +179,22 @@
           "timestamp": "2026-06-01T00:00:00Z",
           "count": 6,
           "uniques": 6
+        },
+        {
+          "timestamp": "2026-06-02T00:00:00Z",
+          "count": 67,
+          "uniques": 16
         }
       ]
     },
     "referrers14d": [
       {
         "referrer": "github.com",
-        "count": 9,
+        "count": 8,
         "uniques": 4
       },
       {
-        "referrer": "Bing",
-        "count": 2,
-        "uniques": 1
-      },
-      {
         "referrer": "cnb.cool",
-        "count": 1,
-        "uniques": 1
-      },
-      {
-        "referrer": "tuilixy.net",
         "count": 1,
         "uniques": 1
       }
@@ -213,26 +203,20 @@
       {
         "path": "/Guesswhat-Studio/Calabash",
         "title": "Overview",
-        "count": 20,
+        "count": 18,
         "uniques": 9
       },
       {
         "path": "/Guesswhat-Studio/Calabash/releases",
         "title": "/releases",
-        "count": 6,
-        "uniques": 3
+        "count": 5,
+        "uniques": 2
       },
       {
         "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.3.1",
         "title": "/releases/tag/v0.3.1",
-        "count": 4,
-        "uniques": 3
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/tags",
-        "title": "/tags",
         "count": 3,
-        "uniques": 1
+        "uniques": 2
       },
       {
         "path": "/Guesswhat-Studio/Calabash/blob/main/docs/CODE_SIGNING.md",
@@ -241,15 +225,21 @@
         "uniques": 2
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/commits/main",
-        "title": "/commits/main",
+        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.5.6",
+        "title": "/releases/tag/v0.5.6",
         "count": 2,
         "uniques": 1
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/releases/tag/v0.5.6",
-        "title": "/releases/tag/v0.5.6",
+        "path": "/Guesswhat-Studio/Calabash/tags",
+        "title": "/tags",
         "count": 2,
+        "uniques": 1
+      },
+      {
+        "path": "/Guesswhat-Studio/Calabash/blob/main/.cnb.yml",
+        "title": "/blob/main/.cnb.yml",
+        "count": 1,
         "uniques": 1
       },
       {
@@ -259,14 +249,14 @@
         "uniques": 1
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/commit/a31459ae52070683444674378886099741d9ed57",
-        "title": "/commit/a31459ae52070683444674378886099741d9ed57",
+        "path": "/Guesswhat-Studio/Calabash/commits",
+        "title": "/commits",
         "count": 1,
         "uniques": 1
       },
       {
-        "path": "/Guesswhat-Studio/Calabash/commits",
-        "title": "/commits",
+        "path": "/Guesswhat-Studio/Calabash/releases/new",
+        "title": "/releases/new",
         "count": 1,
         "uniques": 1
       }

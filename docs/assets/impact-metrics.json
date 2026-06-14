@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-13T04:50:00.146Z",
+  "generatedAt": "2026-06-14T04:55:29.597Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -14,9 +14,9 @@
     "releaseDownloads": 46,
     "desktopDownloads": 38,
     "latestReleaseDownloads": 5,
-    "githubRepoViews14d": 20,
-    "githubRepoVisitors14d": 10,
-    "githubClones14d": 365,
+    "githubRepoViews14d": 17,
+    "githubRepoVisitors14d": 9,
+    "githubClones14d": 377,
     "githubUniqueCloners14d": 117
   },
   "web": {
@@ -36,19 +36,9 @@
     "forks": 1,
     "openIssues": 4,
     "views14d": {
-      "count": 20,
-      "uniques": 10,
+      "count": 17,
+      "uniques": 9,
       "daily": [
-        {
-          "timestamp": "2026-05-28T00:00:00Z",
-          "count": 1,
-          "uniques": 1
-        },
-        {
-          "timestamp": "2026-05-29T00:00:00Z",
-          "count": 3,
-          "uniques": 3
-        },
         {
           "timestamp": "2026-05-30T00:00:00Z",
           "count": 1,
@@ -108,23 +98,23 @@
           "timestamp": "2026-06-10T00:00:00Z",
           "count": 0,
           "uniques": 0
+        },
+        {
+          "timestamp": "2026-06-11T00:00:00Z",
+          "count": 0,
+          "uniques": 0
+        },
+        {
+          "timestamp": "2026-06-12T00:00:00Z",
+          "count": 1,
+          "uniques": 1
         }
       ]
     },
     "clones14d": {
-      "count": 365,
+      "count": 377,
       "uniques": 117,
       "daily": [
-        {
-          "timestamp": "2026-05-28T00:00:00Z",
-          "count": 11,
-          "uniques": 7
-        },
-        {
-          "timestamp": "2026-05-29T00:00:00Z",
-          "count": 10,
-          "uniques": 9
-        },
         {
           "timestamp": "2026-05-30T00:00:00Z",
           "count": 20,
@@ -184,6 +174,16 @@
           "timestamp": "2026-06-10T00:00:00Z",
           "count": 19,
           "uniques": 11
+        },
+        {
+          "timestamp": "2026-06-11T00:00:00Z",
+          "count": 18,
+          "uniques": 10
+        },
+        {
+          "timestamp": "2026-06-12T00:00:00Z",
+          "count": 15,
+          "uniques": 7
         }
       ]
     },
@@ -197,18 +197,13 @@
         "referrer": "Google",
         "count": 2,
         "uniques": 1
-      },
-      {
-        "referrer": "cnb.cool",
-        "count": 1,
-        "uniques": 1
       }
     ],
     "popularPaths14d": [
       {
         "path": "/Guesswhat-Studio/Calabash",
         "title": "Overview",
-        "count": 9,
+        "count": 8,
         "uniques": 6
       },
       {
@@ -226,18 +221,6 @@
       {
         "path": "/Guesswhat-Studio/Calabash/blob/main/.cnb.yml",
         "title": "/blob/main/.cnb.yml",
-        "count": 1,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/blob/main/docs/CODE_SIGNING.md",
-        "title": "/blob/main/docs/CODE_SIGNING.md",
-        "count": 1,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/commits",
-        "title": "/commits",
         "count": 1,
         "uniques": 1
       },

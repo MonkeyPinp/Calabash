@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-17T04:55:38.720Z",
+  "generatedAt": "2026-06-18T04:54:15.661Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -14,10 +14,10 @@
     "releaseDownloads": 46,
     "desktopDownloads": 38,
     "latestReleaseDownloads": 5,
-    "githubRepoViews14d": 15,
-    "githubRepoVisitors14d": 9,
-    "githubClones14d": 497,
-    "githubUniqueCloners14d": 134
+    "githubRepoViews14d": 14,
+    "githubRepoVisitors14d": 8,
+    "githubClones14d": 446,
+    "githubUniqueCloners14d": 130
   },
   "web": {
     "githubPages": {
@@ -34,16 +34,11 @@
   "repository": {
     "stars": 5,
     "forks": 1,
-    "openIssues": 5,
+    "openIssues": 6,
     "views14d": {
-      "count": 15,
-      "uniques": 9,
+      "count": 14,
+      "uniques": 8,
       "daily": [
-        {
-          "timestamp": "2026-06-02T00:00:00Z",
-          "count": 1,
-          "uniques": 1
-        },
         {
           "timestamp": "2026-06-03T00:00:00Z",
           "count": 1,
@@ -108,18 +103,18 @@
           "timestamp": "2026-06-15T00:00:00Z",
           "count": 2,
           "uniques": 2
+        },
+        {
+          "timestamp": "2026-06-16T00:00:00Z",
+          "count": 0,
+          "uniques": 0
         }
       ]
     },
     "clones14d": {
-      "count": 497,
-      "uniques": 134,
+      "count": 446,
+      "uniques": 130,
       "daily": [
-        {
-          "timestamp": "2026-06-02T00:00:00Z",
-          "count": 67,
-          "uniques": 16
-        },
         {
           "timestamp": "2026-06-03T00:00:00Z",
           "count": 5,
@@ -184,6 +179,11 @@
           "timestamp": "2026-06-15T00:00:00Z",
           "count": 114,
           "uniques": 25
+        },
+        {
+          "timestamp": "2026-06-16T00:00:00Z",
+          "count": 16,
+          "uniques": 10
         }
       ]
     },
@@ -215,12 +215,6 @@
       {
         "path": "/Guesswhat-Studio/Calabash/actions",
         "title": "/actions",
-        "count": 1,
-        "uniques": 1
-      },
-      {
-        "path": "/Guesswhat-Studio/Calabash/blob/main/.cnb.yml",
-        "title": "/blob/main/.cnb.yml",
         "count": 1,
         "uniques": 1
       },

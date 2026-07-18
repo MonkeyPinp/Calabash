@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-17T04:21:01.977Z",
+  "generatedAt": "2026-07-18T04:16:39.919Z",
   "appVersion": "0.5.7",
   "source": {
     "repository": "Guesswhat-Studio/Calabash",
@@ -16,7 +16,7 @@
     "latestReleaseDownloads": 7,
     "githubRepoViews14d": 21,
     "githubRepoVisitors14d": 16,
-    "githubClones14d": 269,
+    "githubClones14d": 271,
     "githubUniqueCloners14d": 95
   },
   "web": {
@@ -39,11 +39,6 @@
       "count": 21,
       "uniques": 16,
       "daily": [
-        {
-          "timestamp": "2026-07-02T00:00:00Z",
-          "count": 0,
-          "uniques": 0
-        },
         {
           "timestamp": "2026-07-03T00:00:00Z",
           "count": 4,
@@ -108,18 +103,18 @@
           "timestamp": "2026-07-15T00:00:00Z",
           "count": 0,
           "uniques": 0
+        },
+        {
+          "timestamp": "2026-07-16T00:00:00Z",
+          "count": 0,
+          "uniques": 0
         }
       ]
     },
     "clones14d": {
-      "count": 269,
+      "count": 271,
       "uniques": 95,
       "daily": [
-        {
-          "timestamp": "2026-07-02T00:00:00Z",
-          "count": 19,
-          "uniques": 13
-        },
         {
           "timestamp": "2026-07-03T00:00:00Z",
           "count": 12,
@@ -183,6 +178,11 @@
         {
           "timestamp": "2026-07-15T00:00:00Z",
           "count": 24,
+          "uniques": 14
+        },
+        {
+          "timestamp": "2026-07-16T00:00:00Z",
+          "count": 21,
           "uniques": 14
         }
       ]
